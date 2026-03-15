@@ -6,10 +6,10 @@ export const BRAND = {
 };
 
 export const NAVIGATION = [
-  { label: "Shop", href: "#shop" },
+  { label: "Benefits", href: "#benefits" },
   { label: "Ingredients", href: "#ingredients" },
-  { label: "Science", href: "#science" },
-  { label: "Cart", href: "#cart" },
+  { label: "How It Works", href: "#how-it-works" },
+  { label: "Reviews", href: "#social" },
 ];
 
 export const FLAVORS = {

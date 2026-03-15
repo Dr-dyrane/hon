@@ -24,7 +24,7 @@ export function Logo({ className, showWordmark = true }: LogoProps) {
           alt="House of Nutrition"
           width={100}
           height={28}
-          className="h-5 w-auto dark:invert"
+          className="h-6 w-auto dark:invert"
           priority
         />
       )}

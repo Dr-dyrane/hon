@@ -53,8 +53,8 @@ export function Navbar() {
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
           isScrolled
-            ? "py-3 bg-background/60 backdrop-blur-2xl"
-            : "py-5 bg-transparent"
+            ? "py-3 bg-background/70 backdrop-blur-xl shadow-[0_1px_3px_rgba(0,0,0,0.02)]"
+            : "py-6 bg-transparent"
         )}
       >
         <div className="container-shell flex items-center justify-between relative px-4 sm:px-6">
@@ -80,16 +80,30 @@ export function Navbar() {
 
           {/* Right Actions */}
           <div className="flex items-center justify-end gap-3 md:gap-4 w-auto md:w-1/4">
-            <div className="hidden md:flex">
+            <motion.div layout className="hidden md:flex">
               <ThemeToggle />
-            </div>
+            </motion.div>
             
-            <Link
-              href="#shop"
-              className="hidden md:inline-flex items-center justify-center button-primary !h-[28px] !min-h-[28px] px-4 text-[10px] font-bold uppercase tracking-[0.15em] rounded-full whitespace-nowrap"
-            >
-              Get HON
-            </Link>
+            <AnimatePresence>
+              {isScrolled && (
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, scale: 0.8, width: 0 }}
+                  animate={{ opacity: 1, scale: 1, width: "auto" }}
+                  exit={{ opacity: 0, scale: 0.8, width: 0 }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  className="overflow-hidden"
+                  style={{ display: "flex", alignItems: "center" }}
+                >
+                  <Link
+                    href="#shop"
+                    className="hidden md:inline-flex items-center justify-center button-primary !h-[28px] !min-h-[28px] px-4 text-[10px] font-bold uppercase tracking-[0.15em] rounded-full whitespace-nowrap"
+                  >
+                    Get HON
+                  </Link>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Mobile Menu Toggle */}
             <button
