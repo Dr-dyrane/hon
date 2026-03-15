@@ -45,7 +45,7 @@ export const PRODUCTS = {
   },
   shot_glow: {
     category: "shots",
-    name: "Health Shot: Glow",
+    name: "Glow",
     description: "Rich in Vitamin C and anti-inflammatories to brighten skin and strengthen immunity.",
     price: 5.99,
     ingredients: ["Carrot", "Ginger", "Turmeric", "Orange", "Lime", "Black Pepper"],
@@ -53,7 +53,7 @@ export const PRODUCTS = {
   },
   shot_immunity: {
     category: "shots",
-    name: "Health Shot: Immunity / Detox",
+    name: "Immunity / Detox",
     description: "Antimicrobial boost to flush out toxins and empower your immune system.",
     price: 5.99,
     ingredients: ["Turmeric", "Ginger", "Cinnamon", "Garlic", "Clove", "Honey", "ACV"],
@@ -61,7 +61,7 @@ export const PRODUCTS = {
   },
   shot_metabolism: {
     category: "shots",
-    name: "Health Shot: Metabolism",
+    name: "Metabolism",
     description: "Promotes gut health and kick-starts digestion with natural probiotics.",
     price: 5.99,
     ingredients: ["Mint", "Pineapple", "Cucumber", "Spinach", "Chia Seed", "Lime", "Probiotic"],

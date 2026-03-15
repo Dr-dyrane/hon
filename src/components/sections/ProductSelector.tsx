@@ -69,7 +69,7 @@ export function ProductSelector() {
         <div className="flex flex-col md:flex-row items-center justify-center gap-12 lg:gap-24 w-full">
           {/* Product Toggles */}
           <div className="flex flex-col md:flex-row gap-4 order-2 md:order-1 w-full md:w-auto">
-            <div className="flex flex-row md:flex-col gap-4 w-full md:w-auto overflow-hidden md:overflow-hidden">
+            <div className="flex flex-row md:flex-col gap-4 w-full md:w-auto overflow-scroll md:overflow-hidden scrollbar-hide">
               {filteredProducts.map((key) => {
               const prod = PRODUCTS[key as keyof typeof PRODUCTS] as any;
               return (
@@ -79,7 +79,7 @@ export function ProductSelector() {
                   className={cn(
                     "flex-1 px-6 py-4 rounded-3xl transition-all duration-500 text-left",
                     selectedProduct === key 
-                      ? "bg-foreground text-background shadow-float scale-105" 
+                      ? "bg-foreground text-background shadow-float" 
                       : "bg-surface opacity-60 hover:opacity-100 hover:shadow-md"
                   )}
                 >
