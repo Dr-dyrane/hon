@@ -16,37 +16,66 @@ const ICON_MAP = {
 export function BenefitsGrid() {
   return (
     <SectionContainer variant="alt" id="benefits">
-      <div className="text-center mb-20">
-        <motion.h2 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+      <div className="flex flex-col lg:flex-row items-end justify-between mb-24 gap-8">
+        <div className="max-w-2xl">
+          <motion.span 
+            initial={{ opacity: 0, x: -10 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="text-[10px] font-black uppercase tracking-[0.4em] text-accent/60"
+          >
+            Capabilities
+          </motion.span>
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            viewport={{ once: true }}
+            className="mt-6 text-5xl md:text-6xl lg:text-7xl font-black text-foreground tracking-tighter leading-[0.95]"
+          >
+            Built for <br /> <span className="text-muted/20">Real Performance.</span>
+          </motion.h2>
+        </div>
+        
+        <motion.p 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
           viewport={{ once: true }}
-          className="text-4xl md:text-5xl font-black text-foreground"
+          className="text-muted/60 text-sm font-medium max-w-[280px] lg:text-right leading-relaxed mb-4"
         >
-          Built for <br /> <span className="text-muted/40">Real Performance.</span>
-        </motion.h2>
+          Each benefit is a result of meticulous engineering and plant-powered science.
+        </motion.p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {BENEFITS.map((benefit, i) => {
           const Icon = ICON_MAP[benefit.icon as keyof typeof ICON_MAP];
           return (
             <motion.div
               key={benefit.title}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1, duration: 0.8, ease: "easeOut" }}
+              transition={{ delay: i * 0.1, duration: 1, ease: [0.22, 1, 0.36, 1] }}
               viewport={{ once: true }}
-              className="card-soft group p-10 flex flex-col relative overflow-hidden"
+              className="group relative h-[380px] rounded-[2.5rem] bg-background border border-border/5 p-10 flex flex-col justify-between overflow-hidden hover:shadow-float shadow-soft transition-all duration-700"
             >
+              {/* Subtle background texture/glow */}
+              <div className="absolute -right-20 -bottom-20 w-40 h-40 bg-accent/5 rounded-full blur-3xl group-hover:bg-accent/10 transition-colors" />
+              
               <div className="relative z-10">
-                <div className="w-14 h-14 rounded-2xl surface flex items-center justify-center mb-8 text-accent shadow-sm">
-                  <Icon size={28} strokeWidth={1.5} />
+                <div className="w-14 h-14 rounded-2xl surface border border-border/5 flex items-center justify-center mb-10 text-accent shadow-sm group-hover:scale-110 group-hover:shadow-soft transition-all duration-700">
+                  <Icon size={24} strokeWidth={1.5} />
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-4 tracking-tight">{benefit.title}</h3>
-                <p className="text-muted leading-relaxed">
+                <h3 className="text-2xl font-black text-foreground mb-6 tracking-tighter">{benefit.title}</h3>
+                <p className="text-muted/60 text-sm font-medium leading-relaxed">
                   {benefit.description}
                 </p>
+              </div>
+              
+              <div className="relative z-10 flex items-center gap-2 overflow-hidden">
+                <div className="h-[1px] w-8 bg-accent/30 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-accent opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-700">Measured Result</span>
               </div>
             </motion.div>
           );
@@ -55,3 +84,4 @@ export function BenefitsGrid() {
     </SectionContainer>
   );
 }
+

@@ -6,9 +6,10 @@ export const BRAND = {
 };
 
 export const NAVIGATION = [
+  { label: "The System", href: "#solution" },
   { label: "Benefits", href: "#benefits" },
   { label: "Ingredients", href: "#ingredients" },
-  { label: "How It Works", href: "#how-it-works" },
+  { label: "Experience", href: "#lifestyle" },
   { label: "Reviews", href: "#social" },
 ];
 
@@ -49,10 +50,10 @@ export const BENEFITS = [
 ];
 
 export const INGREDIENTS = [
-  { name: "Pea Protein", detail: "Bioavailable amino acids for muscle repair." },
-  { name: "Brown Rice Protein", detail: "Clean, sustainable source of energy." },
-  { name: "Cocoa", detail: "Natural antioxidants and rich flavor." },
-  { name: "Natural Flavors", detail: "Pure essence, nothing synthetic." },
+  { name: "Pea Protein", detail: "Bioavailable amino acids for muscle repair.", image: "/images/ingredients/pea.png" },
+  { name: "Brown Rice Protein", detail: "Clean, sustainable source of energy.", image: "/images/ingredients/rice.png" },
+  { name: "Cocoa", detail: "Natural antioxidants and rich flavor.", image: "/images/ingredients/cocoa.png" },
+  { name: "Natural Flavors", detail: "Pure essence, nothing synthetic.", image: "/images/ingredients/pea.png" }, // Reusing pea for natural flavors as it's often extracted from plants
 ];
 
 export const TRUST_INDICATORS = [

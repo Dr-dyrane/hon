@@ -97,13 +97,14 @@ export function Navbar() {
                 >
                   <Link
                     href="#shop"
-                    className="hidden md:inline-flex items-center justify-center button-primary !h-[28px] !min-h-[28px] px-4 text-[10px] font-bold uppercase tracking-[0.15em] rounded-full whitespace-nowrap"
+                    className="hidden md:inline-flex items-center justify-center button-primary !h-[32px] !min-h-[32px] px-6 text-[9px] font-black uppercase tracking-[0.2em] rounded-full whitespace-nowrap shadow-float hover:scale-105 transition-transform"
                   >
-                    Choose Flavor
+                    Start Order
                   </Link>
                 </motion.div>
               )}
             </AnimatePresence>
+
 
             {/* Mobile Menu Toggle */}
             <button
