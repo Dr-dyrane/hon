@@ -35,10 +35,10 @@ export function ProductSelector() {
                 key={key}
                 onClick={() => setSelected(key as keyof typeof FLAVORS)}
                 className={cn(
-                  "px-8 py-4 rounded-3xl transition-all duration-500 text-left min-w-[200px] border",
+                  "px-8 py-4 rounded-3xl transition-all duration-500 text-left min-w-[200px]",
                   selected === key 
-                    ? "bg-accent text-accent-foreground shadow-float border-transparent translate-x-2" 
-                    : "bg-surface border-border-soft opacity-60 hover:opacity-100"
+                    ? "bg-accent text-accent-foreground shadow-float translate-x-2" 
+                    : "bg-surface shadow-sm opacity-60 hover:opacity-100 hover:shadow-md"
                 )}
               >
                 <div className="text-xs font-black uppercase tracking-widest opacity-60 mb-1">{key}</div>

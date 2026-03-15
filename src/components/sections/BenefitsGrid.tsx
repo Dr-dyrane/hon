@@ -40,7 +40,7 @@ export function BenefitsGrid() {
               className="card-soft group p-10 flex flex-col relative overflow-hidden"
             >
               <div className="relative z-10">
-                <div className="w-14 h-14 rounded-2xl surface border border-border-soft flex items-center justify-center mb-8 text-accent">
+                <div className="w-14 h-14 rounded-2xl surface flex items-center justify-center mb-8 text-accent shadow-sm">
                   <Icon size={28} strokeWidth={1.5} />
                 </div>
                 <h3 className="text-xl font-bold text-foreground mb-4 tracking-tight">{benefit.title}</h3>

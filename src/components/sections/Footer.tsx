@@ -9,7 +9,7 @@ export function Footer() {
   const links = ["Shop", "Ingredients", "Science", "Privacy", "Terms", "Instagram"];
 
   return (
-    <footer className="surface border-t border-border-soft py-20 px-6">
+    <footer className="relative surface py-20 px-6 shadow-[0_-8px_30px_rgba(0,0,0,0.04)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.2)]">
       <div className="container-shell flex flex-col items-center">
         <div className="mb-12">
           <Logo />

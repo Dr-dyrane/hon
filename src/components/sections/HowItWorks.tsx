@@ -29,7 +29,7 @@ export function HowItWorks() {
               viewport={{ once: true }}
               className="flex flex-col items-center"
             >
-              <div className="w-24 h-24 rounded-full surface border border-border-soft flex items-center justify-center mb-6 text-accent">
+              <div className="w-24 h-24 rounded-full surface flex items-center justify-center mb-6 text-accent shadow-sm">
                 <span className="text-xs font-black uppercase tracking-tighter">HON</span>
               </div>
               <h3 className="text-xl font-bold text-foreground">{step.label}</h3>
@@ -55,7 +55,7 @@ export function HowItWorks() {
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ delay: 1 }}
-        className="mt-20 surface py-4 px-8 rounded-full text-center border border-border-soft inline-block"
+        className="mt-20 surface py-4 px-8 rounded-full text-center inline-block shadow-sm"
       >
         <span className="text-sm font-bold text-muted/60">Total Prep Time: <span className="text-accent">Under 30 Seconds</span></span>
       </motion.div>

@@ -52,7 +52,7 @@ export function SolutionSection() {
                 viewport={{ once: true }}
                 className="flex flex-col items-center group"
               >
-                <div className="w-16 h-16 rounded-full surface border border-border-soft flex items-center justify-center mb-8 group-hover:scale-110 group-hover:shadow-soft transition-all duration-500">
+                <div className="w-16 h-16 rounded-full surface flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 group-hover:shadow-soft transition-all duration-500">
                    <Icon size={32} className="text-accent" />
                 </div>
                 <span className="text-sm font-black text-foreground tracking-tight uppercase max-w-[100px] leading-tight">

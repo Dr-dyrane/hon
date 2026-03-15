@@ -213,6 +213,7 @@ canvas {
 }
 
 .section-shell {
+  min-height: 100svh;
   padding-top: var(--spacing-section);
   padding-bottom: var(--spacing-section);
 }
