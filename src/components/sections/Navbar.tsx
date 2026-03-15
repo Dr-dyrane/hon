@@ -99,7 +99,7 @@ export function Navbar() {
                     href="#shop"
                     className="hidden md:inline-flex items-center justify-center button-primary !h-[28px] !min-h-[28px] px-4 text-[10px] font-bold uppercase tracking-[0.15em] rounded-full whitespace-nowrap"
                   >
-                    Get HON
+                    Choose Flavor
                   </Link>
                 </motion.div>
               )}
@@ -204,7 +204,7 @@ export function Navbar() {
                   onClick={closeMobileMenu}
                   className="button-primary w-full justify-center min-h-[56px] text-xs font-semibold uppercase tracking-[0.15em]"
                 >
-                  Get HON
+                  Choose Your Flavor
                 </Link>
               </motion.div>
             </motion.div>

@@ -21,12 +21,10 @@ export function ProblemSection() {
           viewport={{ once: true }}
           className="flex-1"
         >
-          <h2 className="text-4xl md:text-5xl font-black text-foreground leading-tight">
-            Most Protein Powders <br /> <span className="text-muted/40 text-accent">Are Junk.</span>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-foreground leading-[1.1] tracking-tight">
+            Most Protein Powders <br /> 
+            <span className="text-muted/60 opacity-80">Are Junk.</span>
           </h2>
-          <p className="mt-6 text-xl text-muted max-w-md">
-            The industry is filled with hidden fillers and synthetic additives that compromise your health and performance.
-          </p>
         </motion.div>
 
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
@@ -49,11 +47,13 @@ export function ProblemSection() {
       </div>
 
       <motion.p 
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        className="text-center mt-24 text-2xl font-serif italic text-accent opacity-80"
+        initial={{ opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.3, duration: 0.8 }}
+        className="text-center mt-24 text-2xl md:text-3xl font-medium tracking-tight text-foreground/80"
       >
-        &quot;Your body deserves better fuel.&quot;
+        Your body deserves better fuel.
       </motion.p>
     </SectionContainer>
   );

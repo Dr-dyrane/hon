@@ -1,11 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { Button } from "@/components/ui/Button";
+import { useTheme } from "next-themes";
 
 export function CTASection() {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = mounted && resolvedTheme === "dark";
+
   return (
     <SectionContainer className="flex items-center justify-center px-4">
       <div className="relative overflow-hidden w-full bg-accent text-accent-foreground rounded-[2rem] md:rounded-[3rem] shadow-float max-w-6xl mx-auto my-12">
@@ -21,16 +31,24 @@ export function CTASection() {
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             viewport={{ once: true }}
           >
-            <h2 className="text-5xl md:text-7xl lg:text-8xl font-black text-accent-foreground leading-[0.9] tracking-tight">
+            <h2 className="text-5xl md:text-7xl lg:text-8xl font-black text-accent-foreground leading-[0.9] tracking-tight"
+              style={{ color: isDark ? 'black' : 'white' }}>
               Upgrade Your <br /> Protein.
             </h2>
-            <p className="mt-8 text-lg md:text-xl text-accent-foreground opacity-70 max-w-lg mx-auto leading-relaxed">
-              Clean plant-based protein for real performance. No junk, no fillers, just fuel.
-            </p>
 
             <div className="mt-12 flex flex-col items-center gap-8">
-              <Button size="lg" variant="secondary" className="px-12 md:px-16 text-base md:text-lg !bg-accent-foreground !text-accent shadow-sm hover:shadow-md h-14 rounded-full border-none">
-                Buy Now — $54.99
+              <Button
+                size="lg"
+                variant="secondary"
+                className="px-12 md:px-16 text-base md:text-lg !bg-accent-foreground !text-accent shadow-sm hover:shadow-md h-14 rounded-full border-none"
+                onClick={() => {
+                  const el = document.getElementById("shop");
+                  if (el) {
+                    el.scrollIntoView({ behavior: "smooth" });
+                  }
+                }}
+              >
+                Choose Your Flavor — $54.99
               </Button>
 
               <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 md:gap-x-8 md:gap-y-4 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-accent-foreground opacity-60">

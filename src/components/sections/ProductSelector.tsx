@@ -86,7 +86,12 @@ export function ProductSelector() {
                 </p>
                 <div className="mt-10 flex flex-col gap-4">
                   <div className="text-3xl font-black text-foreground">$54.<span className="text-lg">99</span></div>
-                  <Button size="lg" className="w-full">Add to Cart</Button>
+                  <Button size="lg" className="w-full" onClick={() => {
+                    const el = document.getElementById("shop");
+                    if (el) {
+                      el.scrollIntoView({ behavior: "smooth" });
+                    }
+                  }}>Checkout Now</Button>
                 </div>
               </motion.div>
             </AnimatePresence>
