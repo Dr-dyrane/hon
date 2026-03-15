@@ -85,7 +85,7 @@ export function SolutionSection() {
           />
 
           <Image 
-            src="/images/products/chocolate.png"
+            src="/images/products/protein_chocolate.png"
             alt="HOP Product Solution"
             width={500}
             height={600}

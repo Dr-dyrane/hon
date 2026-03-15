@@ -5,16 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import Image from "next/image";
 import { useTheme } from "next-themes";
-import { FLAVORS } from "@/lib/data";
+import { PRODUCTS } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
 export function HeroSection() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [currentFlavor, setCurrentFlavor] = useState<keyof typeof FLAVORS>("chocolate");
+  const [currentProduct, setCurrentProduct] = useState<keyof typeof PRODUCTS>("protein_chocolate");
 
-  const toggleFlavor = () => {
-    setCurrentFlavor(prev => prev === "chocolate" ? "vanilla" : "chocolate");
+  const toggleProduct = () => {
+    setCurrentProduct(prev => prev === "protein_chocolate" ? "soy_powder" : "protein_chocolate");
   };
 
   useEffect(() => {
@@ -23,16 +23,16 @@ export function HeroSection() {
 
   const isDark = mounted && resolvedTheme === "dark";
 
-  const flavorData = {
-    chocolate: {
-      image: "/images/products/chocolate.png",
+  const productData: any = {
+    protein_chocolate: {
+      image: "/images/products/protein_chocolate.png",
       bgGlow: "bg-[#4A2C2A]/20",
       accent: "text-[#D7C5A3]",
     },
-    vanilla: {
-      image: "/images/products/vanilla.png",
-      bgGlow: "bg-[#F3E5AB]/10",
-      accent: "text-[#D7C5A3]",
+    soy_powder: {
+      image: "/images/products/soy_powder.png",
+      bgGlow: "bg-accent/10",
+      accent: "text-accent",
     }
   };
 
@@ -58,7 +58,7 @@ export function HeroSection() {
         {/* Dynamic Glow based on flavor */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentFlavor + (isDark ? "-dark" : "-light")}
+            key={currentProduct + (isDark ? "-dark" : "-light")}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -67,7 +67,7 @@ export function HeroSection() {
           >
             <div className={cn(
               "absolute inset-0 blur-[120px] opacity-30 transition-colors duration-1000",
-              currentFlavor === "chocolate" ? "bg-[#4A2C2A]/20" : "bg-[#F3E5AB]/10"
+              currentProduct === "protein_chocolate" ? "bg-[#4A2C2A]/20" : "bg-accent/10"
             )} />
             
             {/* Custom glows for depth */}
@@ -180,10 +180,9 @@ export function HeroSection() {
               )} />
             </div>
 
-            {/* Floating Jar with Crossfade */}
             <AnimatePresence mode="wait">
               <motion.div
-                key={currentFlavor + (isDark ? "-dark" : "-light")}
+                key={currentProduct + (isDark ? "-dark" : "-light")}
                 initial={{ opacity: 0, scale: 0.85, y: 40, rotateY: -15 }}
                 animate={{ opacity: 1, scale: 1, y: 0, rotateY: 0 }}
                 exit={{ opacity: 0, scale: 1.05, y: -20, rotateY: 15 }}
@@ -196,18 +195,18 @@ export function HeroSection() {
               >
                 <div 
                   className="relative w-[85%] max-w-[380px] drop-shadow-[0_35px_35px_rgba(0,0,0,0.15)] group transition-all duration-700 hover:scale-105 preserve-3d cursor-pointer active:scale-95"
-                  onClick={toggleFlavor}
+                  onClick={toggleProduct}
                 >
                    <Image
-                    src={flavorData[currentFlavor].image}
-                    alt={`${currentFlavor} protein jar`}
+                    src={productData[currentProduct].image}
+                    alt={`${currentProduct} jar`}
                     width={800}
                     height={1000}
                     priority
                     className="w-full h-auto drop-shadow-2xl animate-float-slow mask-radial"
                   />
                   
-                  {/* Floating elements to enhance 3D feel in the whitespace */}
+                  {/* Floating elements to enhance 3D feel */}
                   <motion.div 
                     animate={{ y: [0, -20, 0], x: [0, 10, 0], rotate: [0, 15, 0] }}
                     transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
@@ -228,25 +227,24 @@ export function HeroSection() {
             </AnimatePresence>
           </div>
 
-          {/* Flavor Selection Chips - Interactive */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, duration: 1 }}
             className="flex items-center gap-3 mt-8 bg-surface/50 backdrop-blur-md p-2 rounded-full shadow-soft"
           >
-            {(Object.keys(FLAVORS) as Array<keyof typeof FLAVORS>).map((flavor) => (
+            {["protein_chocolate", "soy_powder"].map((prodKey) => (
               <button
-                key={flavor}
-                onClick={() => setCurrentFlavor(flavor)}
+                key={prodKey}
+                onClick={() => setCurrentProduct(prodKey as any)}
                 className={cn(
                   "px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all duration-500",
-                  currentFlavor === flavor
+                  currentProduct === prodKey
                     ? "bg-foreground text-background shadow-lg scale-105"
                     : "text-muted hover:text-foreground hover:bg-surface"
                 )}
               >
-                {flavor}
+                {PRODUCTS[prodKey as keyof typeof PRODUCTS].name}
               </button>
             ))}
           </motion.div>
