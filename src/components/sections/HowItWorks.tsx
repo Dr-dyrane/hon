@@ -30,7 +30,7 @@ export function HowItWorks() {
               className="flex flex-col items-center"
             >
               <div className="w-24 h-24 rounded-full surface flex items-center justify-center mb-6 text-accent shadow-sm">
-                <span className="text-xs font-black uppercase tracking-tighter">HON</span>
+                <span className="text-xs font-black uppercase tracking-tighter">HOP</span>
               </div>
               <h3 className="text-xl font-bold text-foreground">{step.label}</h3>
               <p className="text-sm text-muted/40 font-medium uppercase tracking-widest mt-2">{step.sub}</p>

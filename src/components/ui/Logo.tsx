@@ -11,7 +11,7 @@ export function Logo({ className, showWordmark = true }: LogoProps) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <Image
-        src="/images/hero/hon-mark.svg"
+        src="/images/hero/hop-mark.svg"
         alt=""
         width={28}
         height={28}
@@ -20,8 +20,8 @@ export function Logo({ className, showWordmark = true }: LogoProps) {
       />
       {showWordmark && (
         <Image
-          src="/images/hero/hon-wordmark.svg"
-          alt="House of Nutrition"
+          src="/images/hero/hop-wordmark.svg"
+          alt="House of Prax"
           width={100}
           height={28}
           className="h-6 w-auto dark:invert"
@@ -36,8 +36,8 @@ export function LogoMark({ className }: { className?: string }) {
   return (
     <div className={cn("relative", className)}>
       <Image
-        src="/images/hero/hon-mark.svg"
-        alt="HON"
+        src="/images/hero/hop-mark.svg"
+        alt="HOP"
         width={36}
         height={36}
         className="dark:invert"

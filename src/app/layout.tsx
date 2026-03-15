@@ -9,15 +9,15 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "House of Nutrition | Premium Plant Protein",
+  title: "House of Prax | Premium Plant Protein",
   description: "Clean plant-based protein designed for gym-focused performance and recovery. Minimal luxury wellness blended with athletic energy.",
-  keywords: ["plant protein", "vegan protein", "gym supplements", "clean nutrition", "house of nutrition"],
-  authors: [{ name: "House of Nutrition" }],
+  keywords: ["plant protein", "vegan protein", "gym supplements", "clean nutrition", "house of prax"],
+  authors: [{ name: "House of Prax" }],
   openGraph: {
-    title: "House of Nutrition",
+    title: "House of Prax",
     description: "Premium Plant Protein for Real Training.",
-    url: "https://hon.well",
-    siteName: "House of Nutrition",
+    url: "https://prax.well",
+    siteName: "House of Prax",
     type: "website",
   },
 };

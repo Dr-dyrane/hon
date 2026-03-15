@@ -63,7 +63,7 @@ export function HeroSection() {
           <div className="flex justify-center lg:justify-start mb-8">
             <span className="hero-eyebrow">
               <Image
-                src="/images/hero/hon-mark.svg"
+                src="/images/hero/hop-mark.svg"
                 alt=""
                 width={14}
                 height={14}
@@ -145,7 +145,7 @@ export function HeroSection() {
                 >
                   <Image
                     src={isDark ? "/images/hero/hero-product-dark.png" : "/images/hero/hero-product.png"}
-                    alt="House of Nutrition plant protein jar"
+                    alt="House of Prax plant protein jar"
                     width={800}
                     height={1000}
                     priority

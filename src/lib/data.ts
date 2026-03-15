@@ -1,6 +1,6 @@
 export const BRAND = {
-  name: "House of Nutrition",
-  shorthand: "HON",
+  name: "House of Prax",
+  shorthand: "HOP",
   tagline: "Clean Plant Protein – Built for Real Training",
   subtext: "Plant-based protein designed for strength, recovery, and everyday performance.",
 };

@@ -17,7 +17,7 @@ export function LifestyleGallery() {
   return (
     <SectionContainer variant="white" id="lifestyle" className="overflow-hidden">
       <div className="flex flex-col items-center text-center mb-16">
-        <span className="text-xs font-bold uppercase tracking-[0.3em] text-muted/40">Life in HON</span>
+        <span className="text-xs font-bold uppercase tracking-[0.3em] text-muted/40">Life in HOP</span>
         <h2 className="mt-4 text-4xl md:text-5xl font-black text-foreground">Fuel Your Training.</h2>
       </div>
 

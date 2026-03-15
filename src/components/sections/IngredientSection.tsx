@@ -20,7 +20,7 @@ export function IngredientSection() {
             Nothing Hidden. <br /> Nothing Fake.
           </h2>
           <p className="mt-8 text-xl text-muted leading-relaxed">
-            Every ingredient in House of Nutrition serves a specific purpose for your recovery and performance.
+            Every ingredient in House of Prax serves a specific purpose for your recovery and performance.
           </p>
         </motion.div>
 

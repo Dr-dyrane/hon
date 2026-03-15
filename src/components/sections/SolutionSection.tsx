@@ -71,7 +71,7 @@ export function SolutionSection() {
         >
           <Image 
             src="/images/hero/hero-product.png"
-            alt="HON Product Solution"
+            alt="HOP Product Solution"
             width={300}
             height={400}
             className="relative z-10 mx-auto w-48 opacity-90"
