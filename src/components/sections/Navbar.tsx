@@ -57,14 +57,16 @@ export function Navbar() {
             : "py-5 bg-transparent"
         )}
       >
-        <div className="container-shell flex items-center justify-between">
+        <div className="container-shell flex items-center justify-between relative px-4 sm:px-6">
           {/* Logo */}
-          <Link href="/" className="z-50">
-            <Logo />
-          </Link>
+          <div className="flex w-auto md:w-1/4">
+            <Link href="/" className="z-50 shrink-0">
+              <Logo />
+            </Link>
+          </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center justify-center gap-6 lg:gap-8 w-1/2">
             {NAVIGATION.map((item) => (
               <Link
                 key={item.label}
@@ -77,12 +79,14 @@ export function Navbar() {
           </div>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
+          <div className="flex items-center justify-end gap-3 md:gap-4 w-auto md:w-1/4">
+            <div className="hidden md:flex">
+              <ThemeToggle />
+            </div>
             
             <Link
               href="#shop"
-              className="hidden md:inline-flex button-primary min-h-[40px] px-5 text-[10px] font-semibold uppercase tracking-[0.15em]"
+              className="hidden md:inline-flex items-center justify-center button-primary !h-[28px] !min-h-[28px] px-4 text-[10px] font-bold uppercase tracking-[0.15em] rounded-full whitespace-nowrap"
             >
               Get HON
             </Link>
@@ -174,8 +178,13 @@ export function Navbar() {
                   ease: [0.22, 1, 0.36, 1],
                   delay: 0.1 + NAVIGATION.length * 0.06,
                 }}
-                className="mt-12"
+                className="mt-12 flex flex-col gap-8"
               >
+                <div className="flex items-center justify-between px-2">
+                  <span className="text-xl font-medium text-muted">Appearance</span>
+                  <ThemeToggle />
+                </div>
+
                 <Link
                   href="#shop"
                   onClick={closeMobileMenu}

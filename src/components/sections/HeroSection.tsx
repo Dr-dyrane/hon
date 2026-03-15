@@ -1,11 +1,22 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import Image from "next/image";
+import { useTheme } from "next-themes";
 
 export function HeroSection() {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
+  const isDark = mounted && resolvedTheme === "dark";
+
   return (
     <section className="hero-shell relative flex flex-col items-center justify-center overflow-hidden bg-background">
       {/* Atmosphere Layer */}
@@ -74,7 +85,6 @@ export function HeroSection() {
 
           <div className="mt-10 flex flex-wrap gap-3 justify-center lg:justify-start">
             <Button size="lg" variant="primary">Shop Now</Button>
-            <Button size="lg" variant="secondary">See Ingredients</Button>
           </div>
 
           <div className="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs font-medium tracking-wide text-muted uppercase">
@@ -96,48 +106,48 @@ export function HeroSection() {
         {/* Product Layer */}
         <div className="relative flex flex-col items-center justify-center lg:justify-end h-full min-h-[420px] lg:min-h-[500px]">
           <div className="relative w-full max-w-[420px] lg:max-w-[480px] aspect-square flex items-center justify-center">
-            {/* Shadow under jar */}
             <div className="product-shadow-wrap">
-              <Image 
-                src="/images/hero/hero-product-shadow.png"
-                alt="" 
-                width={600} 
-                height={100} 
-                className="w-full h-auto opacity-30 dark:hidden"
-              />
-              <Image 
-                src="/images/hero/hero-product-shadow-dark.png"
-                alt="" 
-                width={600} 
-                height={100} 
-                className="w-full h-auto opacity-50 hidden dark:block"
-              />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={isDark ? "shadow-dark" : "shadow-light"}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Image 
+                    src={isDark ? "/images/hero/hero-product-shadow-dark.png" : "/images/hero/hero-product-shadow.png"}
+                    alt="" 
+                    width={600} 
+                    height={100} 
+                    className={`w-full h-auto ${isDark ? 'opacity-50' : 'opacity-30'}`}
+                  />
+                </motion.div>
+              </AnimatePresence>
             </div>
 
             {/* Floating Jar */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 30 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-              className="relative z-10 w-full"
-            >
-              <Image 
-                src="/images/hero/hero-product.png"
-                alt="House of Nutrition plant protein jar"
-                width={800}
-                height={1000}
-                priority
-                className="hero-product-image drop-shadow-2xl dark:hidden"
-              />
-              <Image 
-                src="/images/hero/hero-product-dark.png"
-                alt="House of Nutrition plant protein jar"
-                width={800}
-                height={1000}
-                priority
-                className="hero-product-image drop-shadow-2xl hidden dark:block"
-              />
-            </motion.div>
+            <AnimatePresence mode="wait">
+              {mounted && (
+                <motion.div
+                  key={isDark ? "jar-dark" : "jar-light"}
+                  initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ delay: 0.1, duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+                  className="relative z-10 w-full"
+                >
+                  <Image 
+                    src={isDark ? "/images/hero/hero-product-dark.png" : "/images/hero/hero-product.png"}
+                    alt="House of Nutrition plant protein jar"
+                    width={800}
+                    height={1000}
+                    priority
+                    className="hero-product-image drop-shadow-2xl"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Flavor Chips */}

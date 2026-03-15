@@ -53,7 +53,7 @@ export function ProblemSection() {
         whileInView={{ opacity: 1 }}
         className="text-center mt-24 text-2xl font-serif italic text-accent opacity-80"
       >
-        "Your body deserves better fuel."
+        &quot;Your body deserves better fuel.&quot;
       </motion.p>
     </SectionContainer>
   );

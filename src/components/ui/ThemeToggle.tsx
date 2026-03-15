@@ -3,10 +3,10 @@
 import * as React from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
   // Avoid hydration mismatch
@@ -14,35 +14,27 @@ export function ThemeToggle() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return <div className="w-10 h-10" />;
+  if (!mounted) return <div className="w-12 h-6" />;
 
-  const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const isDark = resolvedTheme === "dark";
 
   return (
     <button
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="relative w-10 h-10 flex items-center justify-center rounded-full surface border border-border-soft hover:border-border-strong transition-colors group overflow-hidden shadow-soft"
+      className="relative flex items-center w-12 h-6 p-1 rounded-full bg-border-strong transition-colors duration-300 ease-in-out outline-none border-none focus:outline-none focus-visible:ring-0"
       aria-label="Toggle theme"
     >
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={isDark ? "dark" : "light"}
-          initial={{ y: 20, opacity: 0, rotate: -45 }}
-          animate={{ y: 0, opacity: 1, rotate: 0 }}
-          exit={{ y: -20, opacity: 0, rotate: 45 }}
-          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="text-foreground"
-        >
-          {isDark ? (
-            <Moon size={18} strokeWidth={2} />
-          ) : (
-            <Sun size={18} strokeWidth={2} />
-          )}
-        </motion.div>
-      </AnimatePresence>
-      
-      {/* Subtle hover effect */}
-      <div className="absolute inset-0 bg-foreground/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <motion.div
+        className="flex items-center justify-center w-4 h-4 rounded-full bg-background shadow-sm transform-gpu text-foreground"
+        animate={{ x: isDark ? 24 : 0 }}
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+      >
+        {isDark ? (
+          <Moon size={10} strokeWidth={2.5} />
+        ) : (
+          <Sun size={10} strokeWidth={2.5} />
+        )}
+      </motion.div>
     </button>
   );
 }
