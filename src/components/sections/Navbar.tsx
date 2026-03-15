@@ -19,7 +19,6 @@ export function Navbar() {
     });
   }, [scrollY]);
 
-  // Close mobile menu on resize to desktop
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -30,7 +29,6 @@ export function Navbar() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = "hidden";
@@ -42,13 +40,8 @@ export function Navbar() {
     };
   }, [isMobileMenuOpen]);
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-  };
+  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   return (
     <>
@@ -57,134 +50,132 @@ export function Navbar() {
         animate={{ y: 0 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-500 py-6",
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
           isScrolled
-            ? "py-4 bg-background/80 backdrop-blur-md border-b border-border-soft"
-            : "bg-transparent"
+            ? "py-4 bg-background/80 backdrop-blur-xl border-b border-border-soft"
+            : "py-5 bg-transparent"
         )}
       >
         <div className="container-shell flex items-center justify-between">
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center space-x-2 z-50">
+          {/* Logo */}
+          <Link href="/" className="z-50">
             <Logo />
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-12">
+          <div className="hidden md:flex items-center gap-10">
             {NAVIGATION.map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
-                className="text-sm font-semibold uppercase tracking-widest text-muted hover:text-accent transition-colors"
+                className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted hover:text-foreground transition-colors duration-300"
               >
                 {item.label}
               </Link>
             ))}
           </div>
 
-          {/* Action Button & Theme Toggle */}
-          <div className="flex items-center gap-4">
+          {/* Right Actions */}
+          <div className="flex items-center gap-3">
             <ThemeToggle />
+            
             <Link
               href="#shop"
-              className="hidden sm:inline-flex button-primary min-h-[44px] px-8 text-xs font-black uppercase tracking-[0.2em]"
+              className="hidden sm:inline-flex button-primary min-h-[42px] px-6 text-[10px] font-bold uppercase tracking-[0.2em]"
             >
               Get HON
             </Link>
 
-            {/* Mobile Menu Toggle */}
+            {/* Mobile Menu Toggle - Modern text-based approach */}
             <button
               type="button"
               onClick={toggleMobileMenu}
-              className="md:hidden flex flex-col items-center justify-center w-10 h-10 gap-1.5 z-50"
+              className="md:hidden relative h-10 px-3 z-50 overflow-hidden"
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMobileMenuOpen}
             >
-              <span
-                className={cn(
-                  "block w-6 h-0.5 bg-foreground transition-all duration-300 ease-premium",
-                  isMobileMenuOpen && "rotate-45 translate-y-2"
-                )}
-              />
-              <span
-                className={cn(
-                  "block w-6 h-0.5 bg-foreground transition-all duration-300 ease-premium",
-                  isMobileMenuOpen && "opacity-0"
-                )}
-              />
-              <span
-                className={cn(
-                  "block w-6 h-0.5 bg-foreground transition-all duration-300 ease-premium",
-                  isMobileMenuOpen && "-rotate-45 -translate-y-2"
-                )}
-              />
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={isMobileMenuOpen ? "close" : "menu"}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                  className="block text-[11px] font-bold uppercase tracking-[0.2em] text-foreground"
+                >
+                  {isMobileMenuOpen ? "Close" : "Menu"}
+                </motion.span>
+              </AnimatePresence>
             </button>
           </div>
         </div>
       </motion.nav>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="fixed inset-0 z-40 md:hidden"
           >
-            {/* Backdrop */}
-            <div
-              className="absolute inset-0 bg-background/95 backdrop-blur-lg"
-              onClick={closeMobileMenu}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-background"
             />
 
-            {/* Mobile Menu Content */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-              className="relative flex flex-col items-center justify-center min-h-screen gap-8 px-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="relative flex flex-col justify-center min-h-screen px-8"
             >
-              {NAVIGATION.map((item, index) => (
-                <motion.div
-                  key={item.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{
-                    duration: 0.4,
-                    ease: [0.22, 1, 0.36, 1],
-                    delay: 0.15 + index * 0.05,
-                  }}
-                >
-                  <Link
-                    href={item.href}
-                    onClick={closeMobileMenu}
-                    className="text-2xl font-semibold uppercase tracking-widest text-foreground hover:text-accent transition-colors"
+              <nav className="flex flex-col gap-1">
+                {NAVIGATION.map((item, index) => (
+                  <motion.div
+                    key={item.label}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{
+                      duration: 0.5,
+                      ease: [0.22, 1, 0.36, 1],
+                      delay: 0.1 + index * 0.06,
+                    }}
                   >
-                    {item.label}
-                  </Link>
-                </motion.div>
-              ))}
+                    <Link
+                      href={item.href}
+                      onClick={closeMobileMenu}
+                      className="group flex items-center py-4 border-b border-border-soft"
+                    >
+                      <span className="text-3xl font-semibold tracking-tight text-foreground group-hover:text-accent transition-colors duration-300">
+                        {item.label}
+                      </span>
+                    </Link>
+                  </motion.div>
+                ))}
+              </nav>
 
-              {/* Mobile CTA Button */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
                 transition={{
-                  duration: 0.4,
+                  duration: 0.5,
                   ease: [0.22, 1, 0.36, 1],
-                  delay: 0.15 + NAVIGATION.length * 0.05,
+                  delay: 0.1 + NAVIGATION.length * 0.06,
                 }}
-                className="mt-4"
+                className="mt-10"
               >
                 <Link
                   href="#shop"
                   onClick={closeMobileMenu}
-                  className="button-primary min-h-[52px] px-10 text-sm font-black uppercase tracking-[0.2em]"
+                  className="button-primary w-full justify-center min-h-[56px] text-sm font-bold uppercase tracking-[0.15em]"
                 >
                   Get HON
                 </Link>
