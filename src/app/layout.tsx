@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
+import "aos/dist/aos.css";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -59,6 +60,7 @@ export const viewport: Viewport = {
 };
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { AOSProvider } from "@/components/providers/AOSProvider";
 
 export default function RootLayout({
   children,
@@ -68,14 +70,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        <AOSProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </AOSProvider>
         <Analytics />
       </body>
     </html>

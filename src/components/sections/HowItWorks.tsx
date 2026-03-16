@@ -17,88 +17,106 @@ export function HowItWorks() {
   return (
     <SectionContainer variant="alt" id="how-it-works">
       <div className="text-center mb-24">
-        <motion.span 
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
+        <span 
+          data-aos="fade-down"
+          data-aos-duration="600"
+          data-aos-delay="100"
           className="block text-[10px] font-black uppercase tracking-[0.5em] text-accent mb-12"
         >
           The Ritual
-        </motion.span>
-        <motion.h2 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          viewport={{ once: true }}
+        </span>
+        <h2 
+          data-aos="fade-up"
+          data-aos-duration="800"
+          data-aos-delay="200"
           className="mt-12 text-4xl md:text-5xl lg:text-6xl font-black text-foreground tracking-tighter"
         >
           Simple Daily Fuel.
-        </motion.h2>
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          viewport={{ once: true }}
+        </h2>
+        <p
+          data-aos="fade-up"
+          data-aos-duration="700"
+          data-aos-delay="300"
           className="mt-12 text-xl text-muted font-medium italic max-w-xl mx-auto"
         >
           A minimalist ritual designed for the maximalist life. Pure performance in under 30 seconds.
-        </motion.p>
+        </p>
       </div>
 
-      <div className="relative max-w-6xl mx-auto rounded-[3rem] md:rounded-[4rem] overflow-hidden bg-background shadow-float mb-20 group">
-        <Image 
-          src="/images/how-it-works.png" 
-          alt="How it works ritual" 
-          width={1200} 
-          height={600} 
-          className="w-full h-[300px] md:h-[500px] object-cover opacity-80 group-hover:scale-105 transition-transform duration-[3s] mask-soft-edge"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+      <div 
+        data-aos="zoom-in"
+        data-aos-duration="800"
+        data-aos-delay="400"
+        className="relative max-w-6xl mx-auto rounded-[3rem] md:rounded-[4rem] overflow-hidden bg-background shadow-float mb-20 group"
+      >
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 2, ease: "easeOut" }}
+        >
+          <Image 
+            src="/images/how-it-works.png" 
+            alt="How it works ritual" 
+            width={1200} 
+            height={600} 
+            className="w-full h-[300px] md:h-[500px] object-cover opacity-80 group-hover:scale-105 transition-transform duration-[3s] mask-soft-edge"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+        </motion.div>
       </div>
 
       <div className="container-shell flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
         {steps.map((step, i) => (
           <React.Fragment key={step.label}>
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.15, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              viewport={{ once: true }}
+            <div
+              data-aos="zoom-in-up"
+              data-aos-duration="600"
+              data-aos-delay={600 + i * 100}
               className="flex flex-col items-center group"
             >
-              <div className="w-20 h-20 rounded-2xl surface flex items-center justify-center mb-8 text-accent shadow-sm group-hover:scale-110 group-hover:shadow-float transition-all duration-700">
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                transition={{ duration: 0.3 }}
+                className="w-20 h-20 rounded-2xl surface flex items-center justify-center mb-8 text-accent shadow-sm group-hover:scale-110 group-hover:shadow-float transition-all duration-700"
+              >
                 <span className="text-[10px] font-black uppercase tracking-tighter text-accent/60">HOP</span>
-              </div>
+              </motion.div>
               <h3 className="text-xl font-black text-foreground tracking-tight">{step.label}</h3>
               <p className="text-[10px] text-accent font-black uppercase tracking-widest mt-3 opacity-60">{step.sub}</p>
-            </motion.div>
+            </div>
             
             {i < steps.length - 1 && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.2 + 0.3 }}
-                viewport={{ once: true }}
+              <div 
+                data-aos="fade-left"
+                data-aos-duration="600"
+                data-aos-delay={800 + i * 100}
                 className="hidden md:flex text-border/40"
               >
-                {i === steps.length - 2 ? <MoveRight size={24} strokeWidth={1} /> : <Plus size={20} />}
-              </motion.div>
+                <motion.div
+                  whileHover={{ x: 5 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {i === steps.length - 2 ? <MoveRight size={24} strokeWidth={1} /> : <Plus size={20} />}
+                </motion.div>
+              </div>
             )}
           </React.Fragment>
         ))}
       </div>
 
-      <motion.div 
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-        viewport={{ once: true }}
+      <div 
+        data-aos="fade-up"
+        data-aos-duration="700"
+        data-aos-delay="1200"
         className="mt-24 text-center"
       >
-        <span className="surface px-8 py-4 rounded-full text-[11px] font-black uppercase tracking-widest text-muted shadow-sm">
+        <motion.span 
+          whileHover={{ scale: 1.05 }}
+          transition={{ duration: 0.2 }}
+          className="surface px-8 py-4 rounded-full text-[11px] font-black uppercase tracking-widest text-muted shadow-sm"
+        >
           Total Prep Time: <span className="text-accent underline decoration-2 underline-offset-4">Under 30 Seconds</span>
-        </span>
-      </motion.div>
+        </motion.span>
+      </div>
     </SectionContainer>
   );
 }

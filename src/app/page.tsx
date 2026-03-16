@@ -13,7 +13,7 @@ import { Footer } from "@/components/sections/Footer";
 
 export default function Home() {
   return (
-    <main className="relative">
+    <main className="relative max-w-screen overflow-clip">
       <Navbar />
       <HeroSection />
       <ProblemSection />
