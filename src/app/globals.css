@@ -567,6 +567,14 @@ canvas {
   -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
 }
 
+/* Premium Animation Easing */
+:root {
+  --ease-apple: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-apple-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-apple-in: cubic-bezier(0.42, 0, 1, 1);
+  --ease-apple-in-out: cubic-bezier(0.42, 0, 0.58, 1);
+}
+
 /* Zero Ring Policy */
 :focus-visible {
   outline: none;

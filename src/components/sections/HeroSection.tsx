@@ -8,11 +8,17 @@ import { useTheme } from "next-themes";
 import { PRODUCTS } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { Product3DViewer } from "@/components/3d/Product3DViewer";
+import { useScrollAware3D } from "@/hooks/useScrollAware3D";
 
 export function HeroSection() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<keyof typeof PRODUCTS>("protein_chocolate");
+
+  // Scroll-aware 3D animation
+  const { activeSection, isScrollingIntoSection, isScrollingOutOfSection } = useScrollAware3D({
+    sectionIds: ["hero", "solution", "shop"],
+  });
 
   const toggleProduct = () => {
     setCurrentProduct(prev => prev === "protein_chocolate" ? "soy_powder" : "protein_chocolate");
@@ -199,6 +205,8 @@ export function HeroSection() {
                   theme={isDark ? "dark" : "light"}
                   className="w-full h-full cursor-pointer"
                   onClick={toggleProduct}
+                  sectionId="hero"
+                  scrollActive={isScrollingIntoSection("hero")}
                 />
                 
                 {/* Floating elements to enhance 3D feel */}

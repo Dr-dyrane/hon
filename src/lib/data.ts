@@ -26,13 +26,14 @@ export const CATEGORIES = [
 export const PRODUCTS = {
   protein_chocolate: {
     category: "protein",
-    name: "Plant-Based Protein",
+    name: "Prax Protein",
     flavor: "Chocolate",
     description: "Multi-source plant protein with 18g protein and 0g sugar per serving.",
     price: 54.99,
     stats: { protein: "18g", calories: "120", sugar: "0g" },
     ingredients: ["Soy Protein", "Peanut", "Flaxseed", "Sunflower Protein", "Pumpkin Seed", "Oat Protein", "Chia Seed"],
-    image: "/images/products/protein_chocolate.png"
+    image: "/images/products/protein_chocolate.png",
+    model: "/models/products/protein_chocolate.glb"
   },
   soy_powder: {
     category: "specialty",
@@ -41,7 +42,8 @@ export const PRODUCTS = {
     price: 24.99,
     stats: { weight: "200g", organic: "100%" },
     ingredients: ["100% Organic Soybeans"],
-    image: "/images/products/soy_powder.png"
+    image: "/images/products/soy_powder.png",
+    model: "/models/products/soy_powder.glb"
   },
   shot_glow: {
     category: "shots",
@@ -49,7 +51,8 @@ export const PRODUCTS = {
     description: "Rich in Vitamin C and anti-inflammatories to brighten skin and strengthen immunity.",
     price: 5.99,
     ingredients: ["Carrot", "Ginger", "Turmeric", "Orange", "Lime", "Black Pepper"],
-    image: "/images/products/shot_glow.png"
+    image: "/images/products/shot_glow.png",
+    model: "/models/products/shot_glow.glb"
   },
   shot_immunity: {
     category: "shots",
@@ -57,7 +60,8 @@ export const PRODUCTS = {
     description: "Antimicrobial boost to flush out toxins and empower your immune system.",
     price: 5.99,
     ingredients: ["Turmeric", "Ginger", "Cinnamon", "Garlic", "Clove", "Honey", "ACV"],
-    image: "/images/products/shot_immunity.png"
+    image: "/images/products/shot_immunity.png",
+    model: "/models/products/shot_immunity.glb"
   },
   shot_metabolism: {
     category: "shots",
@@ -65,7 +69,8 @@ export const PRODUCTS = {
     description: "Promotes gut health and kick-starts digestion with natural probiotics.",
     price: 5.99,
     ingredients: ["Mint", "Pineapple", "Cucumber", "Spinach", "Chia Seed", "Lime", "Probiotic"],
-    image: "/images/products/shot_metabolism.png"
+    image: "/images/products/shot_metabolism.png",
+    model: "/models/products/shot_metabolism.glb"
   }
 };
 

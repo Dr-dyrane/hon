@@ -1,11 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
-import { BRAND } from "@/lib/data";
+import { BRAND, PRODUCTS } from "@/lib/data";
 import { CleanIcon, PlantIcon, DigestionIcon } from "@/components/ui/Icons";
 import Image from "next/image";
+import { Product3DViewer } from "@/components/3d/Product3DViewer";
+import { useScrollAware3D } from "@/hooks/useScrollAware3D";
+import { useTheme } from "next-themes";
 
 const TRUST_INDICATORS = [
   { label: "Clean Ingredients", icon: CleanIcon },
@@ -15,6 +18,38 @@ const TRUST_INDICATORS = [
 ];
 
 export function SolutionSection() {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState<keyof typeof PRODUCTS>("protein_chocolate");
+
+  // Scroll-aware 3D animation
+  const { isScrollingIntoSection } = useScrollAware3D({
+    sectionIds: ["hero", "solution", "shop"],
+  });
+
+  const toggleProduct = () => {
+    setCurrentProduct(prev => prev === "protein_chocolate" ? "soy_powder" : "protein_chocolate");
+  };
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = mounted && resolvedTheme === "dark";
+
+  const productData: any = {
+    protein_chocolate: {
+      model: "/models/products/protein_chocolate.glb",
+      bgGlow: "bg-[#4A2C2A]/20",
+      accent: "text-[#D7C5A3]",
+    },
+    soy_powder: {
+      model: "/models/products/soy_powder.glb",
+      bgGlow: "bg-accent/10",
+      accent: "text-accent",
+    }
+  };
+
   return (
     <SectionContainer variant="white" id="solution">
       <div className="flex flex-col items-center text-center">
@@ -72,12 +107,7 @@ export function SolutionSection() {
           })}
         </div>
 
-        <div 
-          data-aos="fade-up"
-          data-aos-duration="1000"
-          data-aos-delay="800"
-          className="mt-32 relative group perspective-2000"
-        >
+        <div className="mt-32 relative group perspective-2000">
           <div className="absolute inset-0 bg-accent/5 rounded-full blur-[100px] group-hover:bg-accent/10 transition-colors duration-1000" />
           
           {/* Floating background markers to use whitespace */}
@@ -92,12 +122,13 @@ export function SolutionSection() {
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-accent/[0.03] rounded-full pointer-events-none"
           />
 
-          <Image 
-            src="/images/products/protein_chocolate.png"
-            alt="HOP Product Solution"
-            width={500}
-            height={600}
-            className="relative z-10 mx-auto w-64 md:w-80 drop-shadow-[0_45px_45px_rgba(0,0,0,0.12)] animate-float mask-radial"
+          <Product3DViewer
+            modelPath={productData[currentProduct].model}
+            theme="light"
+            className="relative z-10 mx-auto w-64 md:w-80 h-96 md:h-[450px]"
+            onClick={toggleProduct}
+            sectionId="solution"
+            scrollActive={isScrollingIntoSection("solution")}
           />
         </div>
       </div>

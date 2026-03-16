@@ -61,6 +61,7 @@ export const viewport: Viewport = {
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { AOSProvider } from "@/components/providers/AOSProvider";
+import { ThreeJSSuppressor } from "@/components/providers/ThreeJSSuppressor";
 
 export default function RootLayout({
   children,
@@ -70,6 +71,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
+        <ThreeJSSuppressor />
         <AOSProvider>
           <ThemeProvider
             attribute="class"

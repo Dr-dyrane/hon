@@ -8,12 +8,19 @@ import { Button } from "@/components/ui/Button";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
+import { Product3DViewer } from "@/components/3d/Product3DViewer";
+import { useScrollAware3D } from "@/hooks/useScrollAware3D";
 
 export function ProductSelector() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
   const [selectedProduct, setSelectedProduct] = useState<keyof typeof PRODUCTS>("protein_chocolate");
+
+  // Scroll-aware 3D animation
+  const { isScrollingIntoSection } = useScrollAware3D({
+    sectionIds: ["hero", "solution", "shop"],
+  });
 
   React.useEffect(() => {
     setMounted(true);
@@ -107,15 +114,25 @@ export function ProductSelector() {
                   animate={{ opacity: 1, scale: 1, rotateY: 0, z: 0 }}
                   exit={{ opacity: 0, scale: 1.1, rotateY: 20, z: 100 }}
                   transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                  className="product-frame relative z-10 w-full flex justify-center preserve-3d group/jar transition-transform"
+                  className="product-frame relative z-10 w-full h-[450px] flex justify-center preserve-3d group/jar transition-transform"
                 >
-                  <Image 
-                    src={PRODUCTS[selectedProduct as keyof typeof PRODUCTS].image} 
-                    alt={selectedProduct.toString()}
-                    width={500}
-                    height={650}
-                    className="w-[85%] h-auto max-w-[300px] drop-shadow-2xl animate-float mask-radial"
-                  />
+                  {(PRODUCTS[selectedProduct as keyof typeof PRODUCTS] as any).model ? (
+                    <Product3DViewer
+                      modelPath={(PRODUCTS[selectedProduct as keyof typeof PRODUCTS] as any).model}
+                      theme={isDark ? "dark" : "light"}
+                      className="w-[85%] h-full max-w-[300px]"
+                      sectionId="shop"
+                      scrollActive={isScrollingIntoSection("shop")}
+                    />
+                  ) : (
+                    <Image 
+                      src={PRODUCTS[selectedProduct as keyof typeof PRODUCTS].image} 
+                      alt={selectedProduct.toString()}
+                      width={500}
+                      height={650}
+                      className="w-[85%] h-auto max-w-[300px] drop-shadow-2xl animate-float mask-radial"
+                    />
+                  )}
                 </motion.div>
              </AnimatePresence>
           </div>
