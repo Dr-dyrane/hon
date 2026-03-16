@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useTheme } from "next-themes";
 import { PRODUCTS } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import { Product3DViewer } from "@/components/3d/Product3DViewer";
 
 export function HeroSection() {
   const { resolvedTheme } = useTheme();
@@ -25,12 +26,12 @@ export function HeroSection() {
 
   const productData: any = {
     protein_chocolate: {
-      image: "/images/products/protein_chocolate.png",
+      model: "/models/products/protein_chocolate.glb",
       bgGlow: "bg-[#4A2C2A]/20",
       accent: "text-[#D7C5A3]",
     },
     soy_powder: {
-      image: "/images/products/soy_powder.png",
+      model: "/models/products/soy_powder.glb",
       bgGlow: "bg-accent/10",
       accent: "text-accent",
     }
@@ -183,45 +184,38 @@ export function HeroSection() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentProduct + (isDark ? "-dark" : "-light")}
-                initial={{ opacity: 0, scale: 0.85, y: 40, rotateY: -15 }}
-                animate={{ opacity: 1, scale: 1, y: 0, rotateY: 0 }}
-                exit={{ opacity: 0, scale: 1.05, y: -20, rotateY: 15 }}
+                initial={{ opacity: 0, scale: 0.85, y: 40 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 1.05, y: -20 }}
                 transition={{ 
                   duration: 1.2, 
                   ease: [0.22, 1, 0.36, 1],
                   opacity: { duration: 0.8 }
                 }}
-                className="relative z-10 w-full flex justify-center perspective-[1000px]"
+                className="relative z-10 w-full h-full rounded-[2rem] overflow-hidden"
               >
-                <div 
-                  className="relative w-[85%] max-w-[380px] drop-shadow-[0_35px_35px_rgba(0,0,0,0.15)] group transition-all duration-700 hover:scale-105 preserve-3d cursor-pointer active:scale-95"
+                <Product3DViewer
+                  modelPath={productData[currentProduct].model}
+                  theme={isDark ? "dark" : "light"}
+                  className="w-full h-full cursor-pointer"
                   onClick={toggleProduct}
-                >
-                   <Image
-                    src={productData[currentProduct].image}
-                    alt={`${currentProduct} jar`}
-                    width={800}
-                    height={1000}
-                    priority
-                    className="w-full h-auto drop-shadow-2xl animate-float-slow mask-radial"
-                  />
-                  
-                  {/* Floating elements to enhance 3D feel */}
-                  <motion.div 
-                    animate={{ y: [0, -20, 0], x: [0, 10, 0], rotate: [0, 15, 0] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -top-12 -right-12 w-24 h-24 bg-accent/10 rounded-full blur-2xl pointer-events-none"
-                  />
-                  <motion.div 
-                    animate={{ y: [0, 30, 0], x: [0, -15, 0], rotate: [0, -10, 0] }}
-                    transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                    className="absolute -bottom-16 -left-16 w-32 h-32 bg-forest/5 rounded-full blur-3xl pointer-events-none"
-                  />
+                />
+                
+                {/* Floating elements to enhance 3D feel */}
+                <motion.div 
+                  animate={{ y: [0, -20, 0], x: [0, 10, 0], rotate: [0, 15, 0] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute -top-12 -right-12 w-24 h-24 bg-accent/10 rounded-full blur-2xl pointer-events-none"
+                />
+                <motion.div 
+                  animate={{ y: [0, 30, 0], x: [0, -15, 0], rotate: [0, -10, 0] }}
+                  transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                  className="absolute -bottom-16 -left-16 w-32 h-32 bg-forest/5 rounded-full blur-3xl pointer-events-none"
+                />
 
-                  {/* Tiny click indicator */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/20 backdrop-blur-sm px-4 py-2 rounded-full text-[8px] font-black uppercase tracking-widest pointer-events-none whitespace-nowrap">
-                    Click to Toggle
-                  </div>
+                {/* Tiny click indicator */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/20 backdrop-blur-sm px-4 py-2 rounded-full text-[8px] font-black uppercase tracking-widest pointer-events-none whitespace-nowrap">
+                  Click to Toggle
                 </div>
               </motion.div>
             </AnimatePresence>
