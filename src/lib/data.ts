@@ -10,11 +10,11 @@ export const BRAND = {
 };
 
 export const NAVIGATION = [
-  { label: "The System", href: "#solution" },
+  // { label: "The System", href: "#solution" },
   { label: "Products", href: "#shop" },
   { label: "Ingredients", href: "#ingredients" },
   { label: "Experience", href: "#lifestyle" },
-  { label: "Trust", href: "#social" },
+  // { label: "Trust", href: "#social" },
 ];
 
 export const CATEGORIES = [
