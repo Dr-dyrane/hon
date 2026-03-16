@@ -1,91 +1,135 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useRef } from "react";
+import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { SOCIAL_PROOF } from "@/lib/data";
 import { Star } from "lucide-react";
 
+const stats = [
+  { label: "Elite Rating", value: `${SOCIAL_PROOF.rating}`, sub: "Verified Reviews" },
+  { label: "Community", value: SOCIAL_PROOF.servings, sub: "Athletes Reached" },
+  { label: "Ingredient Quality", value: "100%", sub: "Zero Fillers" }
+];
+
 export function SocialProof() {
-  const stats = [
-    { label: "Elite Rating", value: `${SOCIAL_PROOF.rating}`, sub: "Verified Reviews" },
-    { label: "Community", value: SOCIAL_PROOF.servings, sub: "Athletes Reached" },
-    { label: "Ingredient Quality", value: "100%", sub: "Zero Fillers" }
-  ];
+  const sectionRef = useRef<HTMLElement>(null);
+  const headerRef = useRef(null);
+  const statsRef = useRef(null);
+  const isHeaderInView = useInView(headerRef, { once: true, margin: "-100px" });
+  const isStatsInView = useInView(statsRef, { once: true, margin: "-50px" });
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"]
+  });
+
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "10%"]);
 
   return (
-    <SectionContainer variant="alt" id="social" className="overflow-hidden">
-      <div className="flex flex-col items-center">
-        <div className="text-center mb-24">
-          <div 
-            data-aos="fade-down"
-            data-aos-duration="600"
-            data-aos-delay="100"
-            className="flex items-center justify-center space-x-1 mb-12 text-accent/40"
+    <SectionContainer ref={sectionRef} variant="alt" id="social" className="relative overflow-hidden">
+      {/* Ambient background */}
+      <motion.div 
+        style={{ y: backgroundY }}
+        className="absolute inset-0 pointer-events-none"
+      >
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] rounded-full bg-accent/[0.04] blur-[150px]" />
+      </motion.div>
+
+      <div className="relative z-10 flex flex-col items-center">
+        {/* Header */}
+        <div ref={headerRef} className="text-center mb-20">
+          {/* Star Rating */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={isHeaderInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.5 }}
+            className="flex items-center justify-center space-x-1 mb-8"
           >
             {[...Array(5)].map((_, i) => (
-              <Star key={i} size={16} fill="currentColor" stroke="none" />
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={isHeaderInView ? { opacity: 1, scale: 1 } : {}}
+                transition={{ delay: 0.1 + i * 0.05, duration: 0.3 }}
+              >
+                <Star size={16} fill="currentColor" stroke="none" className="text-accent/50" />
+              </motion.div>
             ))}
-          </div>
-          <h2 
-            data-aos="fade-up"
-            data-aos-duration="800"
-            data-aos-delay="200"
-            className="text-4xl md:text-6xl lg:text-7xl font-black text-foreground tracking-tighter leading-[0.9]"
+          </motion.div>
+          
+          <motion.h2 
+            initial={{ opacity: 0, y: 30 }}
+            animate={isHeaderInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="text-headline text-foreground"
           >
             Trusted by the Driven.
-          </h2>
-          <p
-            data-aos="fade-up"
-            data-aos-duration="700"
-            data-aos-delay="300"
-            className="mt-12 text-xl text-muted font-medium italic max-w-xl mx-auto"
+          </motion.h2>
+          
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={isHeaderInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="mt-6 text-body-lg text-muted max-w-lg mx-auto"
           >
-            Powering thousands of sessions daily. Join a community built on uncompromising standards.
-          </p>
+            Powering thousands of sessions daily. Join a community built 
+            on uncompromising standards.
+          </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-24 max-w-6xl mx-auto w-full">
+        {/* Stats Grid */}
+        <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-24 max-w-4xl mx-auto w-full">
           {stats.map((stat, i) => (
-            <div
+            <motion.div
               key={stat.label}
-              data-aos="zoom-in-up"
-              data-aos-duration="600"
-              data-aos-delay={400 + i * 100}
+              initial={{ opacity: 0, y: 40 }}
+              animate={isStatsInView ? { opacity: 1, y: 0 } : {}}
+              transition={{
+                delay: i * 0.15,
+                duration: 0.6,
+                ease: [0.22, 1, 0.36, 1]
+              }}
               className="text-center group"
             >
+              {/* Big number */}
               <motion.div 
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.3 }}
-                className="text-5xl md:text-8xl font-black text-foreground mb-6 tracking-tighter italic group-hover:scale-110 transition-transform duration-700"
+                className="text-6xl md:text-7xl lg:text-8xl font-bold text-foreground mb-4 tracking-tight"
               >
                 {stat.value}
               </motion.div>
-              <div className="text-[11px] font-black uppercase tracking-[0.4em] text-accent/60 mb-3">{stat.label}</div>
-              <div className="w-1.5 h-1.5 rounded-full bg-accent/20 mx-auto my-8" />
-              <div className="text-muted/40 text-[10px] font-black uppercase tracking-widest">{stat.sub}</div>
-            </div>
+              
+              {/* Label */}
+              <div className="text-[10px] font-semibold uppercase tracking-[0.25em] text-accent/50 mb-3">
+                {stat.label}
+              </div>
+              
+              {/* Divider */}
+              <div className="w-1 h-1 rounded-full bg-accent/20 mx-auto my-6" />
+              
+              {/* Sub label */}
+              <div className="text-[9px] font-medium uppercase tracking-widest text-muted/40">
+                {stat.sub}
+              </div>
+            </motion.div>
           ))}
         </div>
 
-        <div 
-          data-aos="fade-up"
-          data-aos-duration="700"
-          data-aos-delay="800"
-          className="mt-32 opacity-20 filter grayscale"
+        {/* Tagline */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 0.3 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.8, duration: 0.6 }}
+          className="mt-24"
         >
-          <motion.div
-            whileHover={{ filter: "grayscale(0%)", opacity: 0.4 }}
-            transition={{ duration: 0.5 }}
-          >
-            {/* Subtle separator or secondary social proof */}
-            <div className="text-[9px] font-black uppercase tracking-[0.5em] text-muted">
-              Designed for Performance — Refined for Life
-            </div>
-          </motion.div>
-        </div>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/30">
+            Designed for Performance — Refined for Life
+          </p>
+        </motion.div>
       </div>
     </SectionContainer>
   );
 }
-

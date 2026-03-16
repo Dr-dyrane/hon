@@ -1,88 +1,111 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useRef } from "react";
+import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 const IMAGES = [
-  { src: "/images/lifestyle/gym.png", alt: "Workout session", span: "row-span-2" },
+  { src: "/images/lifestyle/gym.png", alt: "Workout session", span: "md:row-span-2" },
   { src: "/images/lifestyle/smoothie.png", alt: "Smoothie prep", span: "" },
   { src: "/images/lifestyle/desk.png", alt: "Desk work", span: "" },
-  { src: "/images/lifestyle/recovery.png", alt: "Post-gym recovery", span: "col-span-2" },
+  { src: "/images/lifestyle/recovery.png", alt: "Post-gym recovery", span: "md:col-span-2" },
 ];
 
 export function LifestyleGallery() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const headerRef = useRef(null);
+  const galleryRef = useRef(null);
+  const isHeaderInView = useInView(headerRef, { once: true, margin: "-100px" });
+  const isGalleryInView = useInView(galleryRef, { once: true, margin: "-50px" });
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"]
+  });
+
+  const y1 = useTransform(scrollYProgress, [0, 1], ["0%", "-5%"]);
+  const y2 = useTransform(scrollYProgress, [0, 1], ["0%", "5%"]);
+
   return (
-    <SectionContainer variant="white" id="lifestyle" className="overflow-hidden">
-      <div className="flex flex-col items-center text-center mb-16">
-        <span 
-          data-aos="fade-down"
-          data-aos-duration="600"
-          data-aos-delay="100"
-          className="block text-[11px] font-black uppercase tracking-[0.5em] text-accent mb-12"
+    <SectionContainer ref={sectionRef} variant="white" id="lifestyle" className="relative overflow-hidden">
+      {/* Header */}
+      <div ref={headerRef} className="flex flex-col items-center text-center mb-16">
+        <motion.span 
+          initial={{ opacity: 0, y: 20 }}
+          animate={isHeaderInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
+          className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-accent mb-6"
         >
           Life in HOP
-        </span>
-        <h2 
-          data-aos="fade-up"
-          data-aos-duration="800"
-          data-aos-delay="200"
-          className="mt-12 text-4xl md:text-5xl lg:text-6xl font-black text-foreground tracking-tight"
+        </motion.span>
+        
+        <motion.h2 
+          initial={{ opacity: 0, y: 30 }}
+          animate={isHeaderInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.1, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="text-headline text-foreground"
         >
           Fuel Your Training.
-        </h2>
-        <p
-          data-aos="fade-up"
-          data-aos-duration="700"
-          data-aos-delay="300"
-          className="mt-12 text-xl text-muted font-medium italic max-w-xl"
+        </motion.h2>
+        
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={isHeaderInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="mt-6 text-body-lg text-muted max-w-lg"
         >
-          Designed for the athlete, refined for the everyday. Witness House of Prax in action.
-        </p>
+          Designed for the athlete, refined for the everyday. 
+          Witness House of Prax in action.
+        </motion.p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[250px] md:auto-rows-[300px] max-w-7xl mx-auto">
+      {/* Gallery Grid */}
+      <div 
+        ref={galleryRef}
+        className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5 auto-rows-[200px] md:auto-rows-[260px] max-w-6xl mx-auto"
+      >
         {IMAGES.map((img, i) => (
-          <div
+          <motion.div
             key={i}
-            data-aos="zoom-in-up"
-            data-aos-duration="600"
-            data-aos-delay={400 + i * 100}
+            initial={{ opacity: 0, y: 40 }}
+            animate={isGalleryInView ? { opacity: 1, y: 0 } : {}}
+            transition={{
+              delay: i * 0.1,
+              duration: 0.6,
+              ease: [0.22, 1, 0.36, 1]
+            }}
+            style={{ y: i % 2 === 0 ? y1 : y2 }}
             className={cn(
-              "relative rounded-[2rem] md:rounded-[3rem] overflow-hidden group shadow-soft",
+              "relative rounded-[24px] md:rounded-[32px] overflow-hidden group shadow-soft hover:shadow-float transition-shadow duration-500",
               img.span
             )}
           >
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.6 }}
-              className="relative w-full h-full"
-            >
-              <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-700 z-10" />
+            {/* Image */}
+            <div className="absolute inset-0">
               <Image 
                 src={img.src}
                 alt={img.alt}
                 fill
-                className="object-cover group-hover:scale-105 transition-transform duration-1000 ease-out mask-soft-edge"
+                className="object-cover group-hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-20" />
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                whileHover={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="absolute bottom-8 left-10 z-30 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700"
-              >
-                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white bg-black/20 backdrop-blur-md px-4 py-2 rounded-full">
-                   {img.alt}
-                 </span>
-                </motion.div>
+              {/* Overlays */}
+              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            </div>
+
+            {/* Label */}
+            <motion.div 
+              className="absolute bottom-5 left-5 z-10 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500"
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white bg-black/30 backdrop-blur-md px-4 py-2 rounded-full">
+                {img.alt}
+              </span>
             </motion.div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </SectionContainer>
   );
 }
-

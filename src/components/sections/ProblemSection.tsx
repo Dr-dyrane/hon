@@ -1,118 +1,201 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { useTheme } from "next-themes";
+import React, { useRef } from "react";
+import { motion, useScroll, useTransform, useInView } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 
 const PROBLEMS = [
-  "Artificial Sweeteners",
-  "Dairy Bloat",
-  "Cheap Fillers",
-  "Harsh Digestion"
+  { title: "Artificial Sweeteners", description: "Hidden chemicals disrupting your gut" },
+  { title: "Dairy Bloat", description: "Inflammation you don't need" },
+  { title: "Cheap Fillers", description: "Empty calories, zero value" },
+  { title: "Harsh Digestion", description: "Your body fights the fuel" }
 ];
 
+// Word reveal animation component
+function AnimatedText({ 
+  text, 
+  className = "",
+  delay = 0 
+}: { 
+  text: string; 
+  className?: string;
+  delay?: number;
+}) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  
+  return (
+    <span ref={ref} className={cn("inline-block overflow-hidden", className)}>
+      <motion.span
+        initial={{ y: "100%" }}
+        animate={isInView ? { y: 0 } : { y: "100%" }}
+        transition={{
+          duration: 0.8,
+          delay,
+          ease: [0.22, 1, 0.36, 1],
+        }}
+        className="inline-block"
+      >
+        {text}
+      </motion.span>
+    </span>
+  );
+}
+
 export function ProblemSection() {
-  const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const cardsRef = useRef(null);
+  const isCardsInView = useInView(cardsRef, { once: true, margin: "-50px" });
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"]
+  });
 
-  const isDark = mounted && resolvedTheme === "dark";
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
 
   return (
-    <SectionContainer variant="alt" id="problem" className="overflow-hidden">
-      <div className="flex flex-col lg:flex-row items-center gap-20 py-12">
-        <div className="lg:w-1/2">
-          <span 
-            data-aos="fade-down" 
-            data-aos-duration="600"
-            data-aos-delay="100"
-            className="text-[10px] font-black uppercase tracking-[0.5em] text-accent/60 mb-12 block"
+    <SectionContainer 
+      ref={sectionRef}
+      variant="alt" 
+      id="problem" 
+      className="overflow-hidden relative"
+    >
+      {/* Subtle animated background */}
+      <motion.div 
+        style={{ y: backgroundY }}
+        className="absolute inset-0 pointer-events-none"
+      >
+        <div className="absolute top-1/4 -left-1/4 w-[50vw] h-[50vw] rounded-full bg-accent/5 blur-[150px]" />
+        <div className="absolute bottom-1/4 -right-1/4 w-[40vw] h-[40vw] rounded-full bg-accent/3 blur-[120px]" />
+      </motion.div>
+
+      <div className="relative z-10 flex flex-col lg:flex-row items-start gap-20 lg:gap-32">
+        {/* Left side - Typography */}
+        <div className="lg:w-1/2 lg:sticky lg:top-40">
+          <motion.span 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent/60 mb-8 block"
           >
             The Market Status
-          </span>
-          <h2 
-            data-aos="fade-right" 
-            data-aos-duration="800"
-            data-aos-delay="200"
-            className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-foreground leading-[0.9] tracking-tighter"
-          >
-            Most Protein <br />
-            <span className="text-muted/20">Are Junk.</span>
+          </motion.span>
+          
+          <h2 className="text-headline text-foreground">
+            <AnimatedText text="Most Protein" delay={0.1} />
+            <br />
+            <span className="text-muted/20">
+              <AnimatedText text="Are Junk." delay={0.2} />
+            </span>
           </h2>
-          <p 
-            data-aos="fade-up" 
-            data-aos-duration="700"
-            data-aos-delay="300"
-            className="mt-12 text-xl text-muted/60 font-medium leading-relaxed max-w-md italic"
+          
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="mt-10 text-body-lg text-muted/60 max-w-md leading-relaxed"
           >
-            The industry is built on compromises. We chose a different path—prioritizing gut health and biological performance over cheap manufacturing.
-          </p>
+            The industry is built on compromises. We chose a different path—prioritizing 
+            gut health and biological performance over cheap manufacturing.
+          </motion.p>
         </div>
 
-        <div className="lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
+        {/* Right side - Problem cards */}
+        <div ref={cardsRef} className="lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
           {PROBLEMS.map((problem, i) => (
-            <div
-              key={problem}
-              data-aos="zoom-in-up"
-              data-aos-duration="600"
-              data-aos-delay={400 + i * 100}
-              className="bg-background/40 backdrop-blur-sm p-10 flex flex-col items-start justify-between min-h-[220px] rounded-[2.5rem] group hover:bg-background transition-all duration-700 hover:shadow-float"
+            <motion.div
+              key={problem.title}
+              initial={{ opacity: 0, y: 40 }}
+              animate={isCardsInView ? { opacity: 1, y: 0 } : {}}
+              transition={{
+                duration: 0.6,
+                delay: 0.1 + i * 0.1,
+                ease: [0.22, 1, 0.36, 1]
+              }}
+              className="group relative bg-background/60 backdrop-blur-sm p-8 lg:p-10 flex flex-col items-start justify-between min-h-[200px] rounded-[28px] hover:bg-background hover:shadow-float transition-all duration-500"
             >
-              <div className="w-10 h-10 rounded-xl bg-accent/5 flex items-center justify-center text-accent text-[10px] font-black tracking-widest group-hover:scale-110 transition-transform">
+              {/* Number indicator */}
+              <div className="w-10 h-10 rounded-xl bg-accent/5 flex items-center justify-center text-accent text-[10px] font-bold tracking-widest group-hover:bg-accent/10 group-hover:scale-110 transition-all duration-500">
                 0{i + 1}
               </div>
-              <div>
-                <h3 className="text-2xl font-black text-foreground tracking-tighter leading-tight group-hover:text-accent transition-colors">{problem}</h3>
-                <div className="h-[2px] w-0 bg-accent/20 mt-4 group-hover:w-full transition-all duration-700" />
+              
+              <div className="mt-auto">
+                <h3 className="text-xl font-semibold text-foreground tracking-tight group-hover:text-accent transition-colors duration-300">
+                  {problem.title}
+                </h3>
+                <p className="mt-2 text-sm text-muted/50 group-hover:text-muted/70 transition-colors duration-300">
+                  {problem.description}
+                </p>
+                
+                {/* Animated underline */}
+                <div className="h-[2px] w-0 bg-accent/30 mt-4 group-hover:w-full transition-all duration-500" />
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
 
-      <div className="relative mt-40">
-        {/* Atmosphere bridge - extreme soft gold bleed */}
-        <div className="absolute inset-x-0 -top-40 h-80 bg-[radial-gradient(circle_at_center,_#d7c5a3_0%,_transparent_70%)] opacity-[0.06] pointer-events-none blur-3xl" />
+      {/* Manifesto Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 60, scale: 0.95 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        className="relative mt-40"
+      >
+        {/* Glow effect */}
+        <div className="absolute inset-x-0 -top-20 h-40 bg-[radial-gradient(circle_at_center,_var(--accent)_0%,_transparent_70%)] opacity-[0.08] blur-3xl pointer-events-none" />
 
-        <div
-          data-aos="fade-up"
-          data-aos-duration="1000"
-          data-aos-delay="800"
-          className="p-24 md:p-48 rounded-[3.5rem] md:rounded-[6rem] cta-inverse text-center relative overflow-hidden shadow-[0_50px_100px_-30px_rgba(0,0,0,0.3)] dark:shadow-none"
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#d7c5a3_0%,_transparent_70%)] opacity-10 pointer-events-none blur-3xl" />
+        <div className="p-16 md:p-24 lg:p-32 rounded-[40px] md:rounded-[56px] cta-inverse text-center relative overflow-hidden">
+          {/* Internal glow */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--accent)_0%,_transparent_60%)] opacity-10 pointer-events-none" />
 
-          <span
-            data-aos="fade-down"
-            data-aos-duration="600"
-            data-aos-delay="1000"
-            className="text-[10px] font-black uppercase tracking-[0.6em] text-accent mb-10 block"
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="text-[10px] font-semibold uppercase tracking-[0.3em] text-accent mb-8 block"
           >
             Perspective
-          </span>
+          </motion.span>
 
-          <h3 
-            data-aos="zoom-in"
-            data-aos-duration="800"
-            data-aos-delay="1200"
-            className="relative z-10 text-4xl md:text-7xl font-black tracking-tighter mb-12 leading-[0.9]"
+          <motion.h3 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            className="relative z-10 text-title md:text-headline mb-10 leading-[0.95]"
           >
-            Your body deserves <br /> better fuel.
-          </h3>
+            Your body deserves
+            <br />
+            better fuel.
+          </motion.h3>
 
-          <div className="w-12 h-[2px] bg-accent/30 mx-auto mb-12" />
+          <motion.div
+            initial={{ scaleX: 0 }}
+            whileInView={{ scaleX: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+            className="w-12 h-[2px] bg-accent/40 mx-auto mb-10"
+          />
 
-          <p className="relative z-10 text-xl font-medium max-w-2xl mx-auto italic opacity-70">
-            "Don't build your foundation on sand. Choose a system <br className="hidden md:block" /> designed for longevity and power."
-          </p>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 0.6 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.6, duration: 0.6 }}
+            className="relative z-10 text-lg md:text-xl font-medium max-w-xl mx-auto leading-relaxed"
+          >
+            "Don't build your foundation on sand. Choose a system 
+            designed for longevity and power."
+          </motion.p>
         </div>
-      </div>
+      </motion.div>
     </SectionContainer>
   );
 }
-
