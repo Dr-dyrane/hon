@@ -46,12 +46,13 @@ export function IngredientSection() {
               data-aos="zoom-in-up"
               data-aos-duration="600"
               data-aos-delay={400 + i * 100}
-              className="group relative h-[350px] rounded-[2.5rem] overflow-hidden bg-white dark:bg-[#0d0f0d] shadow-soft hover:shadow-float transition-all duration-700"
+              className="relative h-[350px] rounded-[2.5rem] overflow-hidden bg-white dark:bg-[#0d0f0d] shadow-soft hover:shadow-float transition-all duration-700"
             >
               <motion.div
                 whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
                 transition={{ duration: 0.6, ease: "easeOut" }}
-                className="relative w-full h-full"
+                className="group relative w-full h-full"
               >
                 <Image
                   src={ing.image}
@@ -61,21 +62,15 @@ export function IngredientSection() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-white via-white/70 to-transparent dark:from-[#0d0f0d] dark:via-[#0d0f0d]/70 z-10" />
 
-                <div className="absolute inset-0 p-10 flex flex-col justify-end z-20">
+                <div className="absolute inset-0 p-10 flex flex-col justify-end z-20 group-hover:pointer-events-auto">
                   <motion.span 
-                    initial={{ opacity: 0, y: 10 }}
-                    whileHover={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700"
+                    className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-4 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-4 transition-all duration-500"
                   >
                     Essential Ingredient
                   </motion.span>
-                  <h3 className="text-3xl font-bold tracking-tighter text-foreground transition-transform duration-500 group-hover:-translate-y-2">{ing.name}</h3>
+                  <h3 className="text-3xl font-bold tracking-tighter text-foreground opacity-0 group-hover:opacity-100 group-hover:-translate-y-2 translate-y-4 transition-all duration-500">{ing.name}</h3>
                   <motion.p 
-                    initial={{ opacity: 0, y: 20 }}
-                    whileHover={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.1 }}
-                    className="mt-4 text-muted text-sm font-medium leading-relaxed max-w-[240px] translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700 delay-100"
+                    className="mt-4 text-muted text-sm font-medium leading-relaxed max-w-[240px] opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-4 transition-all duration-500 delay-200"
                   >
                     {ing.detail}
                   </motion.p>
