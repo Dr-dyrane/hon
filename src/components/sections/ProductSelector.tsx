@@ -24,17 +24,42 @@ export function ProductSelector({
   const [mounted, setMounted] = useState(false);
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
   const [selectedProduct, setSelectedProduct] = useState<keyof typeof PRODUCTS>("protein_chocolate");
+  const [debouncedProduct, setDebouncedProduct] = useState<keyof typeof PRODUCTS>("protein_chocolate");
 
   React.useEffect(() => {
     console.log(`🔄 [ProductSelector] Mounted`);
     setMounted(true);
   }, []);
 
+  // Track scrollActive changes
+  const scrollActive = isScrollingIntoSection("shop");
+  React.useEffect(() => {
+    console.log(`🎯 [ProductSelector] scrollActive changed to: ${scrollActive}`);
+  }, [scrollActive]);
+
+  // Debounce product changes to prevent WebGL context conflicts
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedProduct(selectedProduct);
+      console.log(`⏱️ [ProductSelector] Debounced product changed to: ${selectedProduct}`);
+    }, 300); // 300ms delay to allow previous 3D viewer to cleanup
+    
+    return () => clearTimeout(timer);
+  }, [selectedProduct]);
+
   // Refresh AOS to calculate correct scroll positions for the 3D viewer
   useEffect(() => {
     console.log(`🔄 [ProductSelector] Selected product changed to: ${selectedProduct}, refreshing AOS`);
     AOS.refresh();
   }, [selectedProduct]);
+
+  // Track Product3DViewer creation
+  React.useEffect(() => {
+    if ((PRODUCTS[debouncedProduct as keyof typeof PRODUCTS] as any).model) {
+      const uniqueSectionId = `shop-${debouncedProduct}`;
+      console.log(`🎨 [ProductSelector] Product3DViewer available for ${debouncedProduct}, sectionId: ${uniqueSectionId}, scrollActive: ${scrollActive}`);
+    }
+  }, [debouncedProduct, scrollActive]);
 
   const isDark = mounted && resolvedTheme === "dark";
 
@@ -119,25 +144,25 @@ export function ProductSelector({
              
              <AnimatePresence mode="wait">
                 <motion.div
-                  key={selectedProduct}
+                  key={debouncedProduct}
                   initial={{ opacity: 0, scale: 0.8, rotateY: -20, z: -100 }}
                   animate={{ opacity: 1, scale: 1, rotateY: 0, z: 0 }}
                   exit={{ opacity: 0, scale: 1.1, rotateY: 20, z: 100 }}
                   transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   className="product-frame relative z-10 w-full h-[450px] flex justify-center preserve-3d group/jar transition-transform"
                 >
-                  {(PRODUCTS[selectedProduct as keyof typeof PRODUCTS] as any).model ? (
+                  {(PRODUCTS[debouncedProduct as keyof typeof PRODUCTS] as any).model ? (
                     <Product3DViewer
-                      modelPath={(PRODUCTS[selectedProduct as keyof typeof PRODUCTS] as any).model}
+                      modelPath={(PRODUCTS[debouncedProduct as keyof typeof PRODUCTS] as any).model}
                       theme={isDark ? "dark" : "light"}
                       className="w-[85%] h-full max-w-[300px]"
-                      sectionId="shop"
-                      scrollActive={isScrollingIntoSection("shop")}
+                      sectionId={`shop-${debouncedProduct}`}
+                      scrollActive={scrollActive}
                     />
                   ) : (
                     <Image 
-                      src={PRODUCTS[selectedProduct as keyof typeof PRODUCTS].image} 
-                      alt={selectedProduct.toString()}
+                      src={PRODUCTS[debouncedProduct as keyof typeof PRODUCTS].image} 
+                      alt={debouncedProduct.toString()}
                       width={500}
                       height={650}
                       className="w-[85%] h-auto max-w-[300px] drop-shadow-2xl animate-float mask-radial"
@@ -151,7 +176,7 @@ export function ProductSelector({
           <div className="flex-1 order-3 text-center md:text-left">
             <AnimatePresence mode="wait">
               <motion.div
-                key={selectedProduct}
+                key={debouncedProduct}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -161,15 +186,15 @@ export function ProductSelector({
                   Premium Quality
                 </span>
                 <h3 className="text-4xl md:text-5xl font-headline font-bold text-foreground leading-tight tracking-display">
-                  {PRODUCTS[selectedProduct as keyof typeof PRODUCTS].name}
+                  {PRODUCTS[debouncedProduct as keyof typeof PRODUCTS].name}
                 </h3>
                 <p className="mt-6 text-secondary-label text-lg leading-normal tracking-body">
-                  {PRODUCTS[selectedProduct as keyof typeof PRODUCTS].description}
+                  {PRODUCTS[debouncedProduct as keyof typeof PRODUCTS].description}
                 </p>
                 
-                {(PRODUCTS[selectedProduct as keyof typeof PRODUCTS] as any).stats && (
+                {(PRODUCTS[debouncedProduct as keyof typeof PRODUCTS] as any).stats && (
                   <div className="mt-10 flex flex-wrap gap-4 justify-center md:justify-start">
-                    {Object.entries((PRODUCTS[selectedProduct as keyof typeof PRODUCTS] as any).stats).map(([statKey, val]: [string, any]) => (
+                    {Object.entries((PRODUCTS[debouncedProduct as keyof typeof PRODUCTS] as any).stats).map(([statKey, val]: [string, any]) => (
                       <div key={statKey} className="flex flex-col">
                         <span className="text-[8px] font-semibold uppercase tracking-headline text-secondary-label">{statKey}</span>
                         <span className="text-lg font-bold text-label tracking-tight">{val}</span>
@@ -180,14 +205,14 @@ export function ProductSelector({
 
                 <div className="mt-10 pt-10">
                   <div className="flex items-baseline gap-2 mb-6 justify-center md:justify-start">
-                    <span className="text-4xl font-bold text-label">${Math.floor(PRODUCTS[selectedProduct as keyof typeof PRODUCTS].price)}.</span>
-                    <span className="text-xl font-bold text-label">{(PRODUCTS[selectedProduct as keyof typeof PRODUCTS].price % 1).toFixed(2).split('.')[1]}</span>
+                    <span className="text-4xl font-bold text-label">${Math.floor(PRODUCTS[debouncedProduct as keyof typeof PRODUCTS].price)}.</span>
+                    <span className="text-xl font-bold text-label">{(PRODUCTS[debouncedProduct as keyof typeof PRODUCTS].price % 1).toFixed(2).split('.')[1]}</span>
                     <span className="text-xs font-semibold uppercase tracking-headline text-secondary-label ml-4 opacity-40">Per Unit</span>
                   </div>
                   <Button 
                     size="lg" 
                     className="w-full !h-16 squircle text-base font-semibold uppercase tracking-headline shadow-float hover:scale-[1.02] transition-transform duration-700 ease-smooth"
-                    onClick={() => handleCheckout(selectedProduct as any)}
+                    onClick={() => handleCheckout(debouncedProduct as any)}
                   >
                     Order via WhatsApp
                   </Button>

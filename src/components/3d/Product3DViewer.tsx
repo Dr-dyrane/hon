@@ -7,6 +7,11 @@ import * as THREE from "three";
 import { ProductFallback } from "./ProductFallback";
 import { cn } from "@/lib/utils";
 
+// Global WebGL context tracking
+let activeWebGLContexts: Set<string> = new Set();
+let globalCleanupTimer: NodeJS.Timeout | null = null;
+let globalSectionLock: string | null = null;
+
 interface Product3DViewerProps {
   modelPath: string;
   theme: "light" | "dark";
@@ -81,20 +86,63 @@ export function Product3DViewer({
   const [isReady, setIsReady] = useState(false);
 
   // Unique key for this instance to prevent Three.js conflicts
-  const instanceKey = `${sectionId}-${modelPath}`;
+  const instanceKey = `${sectionId || 'unknown'}-${modelPath}`;
 
   useEffect(() => {
     if (scrollActive) {
+      const safeSectionId = sectionId || 'unknown';
+      console.log(` [Product3DViewer] Section ${safeSectionId} becoming active, scheduling WebGL context creation`);
+      
+      // Clear any existing global cleanup timer
+      if (globalCleanupTimer) {
+        clearTimeout(globalCleanupTimer);
+        globalCleanupTimer = null;
+      }
+      
+      // BLOCK: If any other section is active, prevent WebGL context creation
+      if (globalSectionLock && globalSectionLock !== safeSectionId) {
+        console.log(` [Product3DViewer] BLOCKED: Section ${globalSectionLock} is active, preventing WebGL context for ${safeSectionId}`);
+        return; // Don't create WebGL context
+      }
+      
+      // Set global lock and proceed with cleanup
+      console.log(` [Product3DViewer] Force cleaning all other WebGL contexts before creating ${safeSectionId}`);
+      activeWebGLContexts.clear();
+      globalSectionLock = safeSectionId;
+      
       // Small delay to prevent WebGL context conflicts during transitions
       const timer = setTimeout(() => {
-        setIsReady(true);
-      }, 150);
+        // Check if this context is still needed and still has lock
+        if (scrollActive && !activeWebGLContexts.has(safeSectionId) && globalSectionLock === safeSectionId) {
+          console.log(` [Product3DViewer] Creating WebGL context for section ${safeSectionId}`);
+          activeWebGLContexts.add(safeSectionId);
+          setIsReady(true);
+        }
+      }, 300); // Increased delay for better cleanup
       return () => clearTimeout(timer);
     } else {
       // Clean up when section becomes inactive
+      const safeSectionId = sectionId || 'unknown';
+      console.log(` [Product3DViewer] Section ${safeSectionId} becoming inactive, cleaning up WebGL context`);
+      
+      // Release global lock if this section had it
+      if (globalSectionLock === safeSectionId) {
+        globalSectionLock = null;
+      }
+      
+      activeWebGLContexts.delete(safeSectionId);
       setIsReady(false);
     }
   }, [scrollActive, sectionId]);
+
+  // Enhanced cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Force cleanup when component unmounts
+      setIsReady(false);
+      setHasError(false);
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = document.createElement("canvas");

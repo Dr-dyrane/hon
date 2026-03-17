@@ -8,7 +8,7 @@ import Image from "next/image";
 import { useTheme } from "next-themes";
 import { PRODUCTS } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { Product3DViewer } from "@/components/3d/Product3DViewer";
+import { Product3DCarousel } from "@/components/3d/Product3DCarousel";
 import AOS from "aos";
 
 export function HeroSection({
@@ -35,19 +35,6 @@ export function HeroSection({
   }, [currentProduct]);
 
   const isDark = mounted && resolvedTheme === "dark";
-
-  const productData: any = {
-    protein_chocolate: {
-      model: "/models/products/protein_chocolate.glb",
-      bgGlow: "bg-[#4A2C2A]/20",
-      accent: "text-[#D7C5A3]",
-    },
-    soy_powder: {
-      model: "/models/products/soy_powder.glb",
-      bgGlow: "bg-accent/10",
-      accent: "text-accent",
-    }
-  };
 
   const revealVariants: any = {
     hidden: { opacity: 0, y: 30 },
@@ -110,7 +97,18 @@ export function HeroSection({
             className="font-headline text-5xl sm:text-6xl lg:text-7xl xl:text-8xl leading-tight tracking-display text-foreground"
           >
             Natural Energy
-            <span className="block mt-4 sm:mt-6 text-secondary-label italic font-headline tracking-headline opacity-80">Made for Performance</span>
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={currentProduct}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 0.8, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className="block mt-4 sm:mt-6 text-secondary-label italic font-headline tracking-headline"
+              >
+                {PRODUCTS[currentProduct].name}
+              </motion.span>
+            </AnimatePresence>
           </motion.h1>
 
           <motion.div
@@ -157,7 +155,7 @@ export function HeroSection({
         </div>
 
         {/* Product Layer */}
-        <div className="relative flex flex-col items-center justify-center h-auto min-h-[450px] lg:min-h-[550px]">
+        <div className="relative flex flex-col items-center justify-center h-auto min-h-[450px] lg:min-h-[550px] w-full">
           <div className="relative w-full max-w-[440px] lg:max-w-[500px] aspect-square flex items-center justify-center">
             {/* Ambient Shadow */}
             <div className="product-shadow-wrap absolute bottom-0 md:bottom-[-5%] w-full">
@@ -167,64 +165,12 @@ export function HeroSection({
               )} />
             </div>
 
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentProduct + (isDark ? "-dark" : "-light")}
-                initial={{ opacity: 0, scale: 0.85, y: 40 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 1.05, y: -20 }}
-                transition={{
-                  duration: 1.2,
-                  ease: [0.22, 1, 0.36, 1],
-                  opacity: { duration: 0.8 }
-                }}
-                className="relative z-10 w-full h-full squircle overflow-hidden"
-              >
-                <Product3DViewer
-                  modelPath={productData[currentProduct].model}
-                  theme={isDark ? "dark" : "light"}
-                  className="w-full h-full"
-                  sectionId="hero"
-                  scrollActive={isScrollingIntoSection("hero")}
-                />
-
-                {/* Floating elements to enhance 3D feel */}
-                <motion.div
-                  animate={{ y: [0, -20, 0], x: [0, 10, 0], rotate: [0, 15, 0] }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute -top-12 -right-12 w-24 h-24 bg-accent/10 rounded-full blur-2xl pointer-events-none"
-                />
-                <motion.div
-                  animate={{ y: [0, 30, 0], x: [0, -15, 0], rotate: [0, -10, 0] }}
-                  transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                  className="absolute -bottom-16 -left-16 w-32 h-32 bg-forest/5 rounded-full blur-3xl pointer-events-none"
-                />
-
-              </motion.div>
-            </AnimatePresence>
+            <Product3DCarousel
+              activeId={currentProduct}
+              onChange={(id) => setCurrentProduct(id as keyof typeof PRODUCTS)}
+              isDark={isDark}
+            />
           </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 1 }}
-            className="flex items-center gap-3 mt-8 bg-surface/50 backdrop-blur-md p-2 rounded-full shadow-soft"
-          >
-            {["protein_chocolate", "soy_powder"].map((prodKey) => (
-              <button
-                key={prodKey}
-                onClick={() => setCurrentProduct(prodKey as any)}
-                className={cn(
-                  "px-6 py-2.5 rounded-full text-[11px] font-semibold uppercase tracking-headline transition-all duration-500",
-                  currentProduct === prodKey
-                    ? "bg-label text-system-background shadow-lg scale-105"
-                    : "text-secondary-label hover:text-label hover:bg-system-fill"
-                )}
-              >
-                {PRODUCTS[prodKey as keyof typeof PRODUCTS].name}
-              </button>
-            ))}
-          </motion.div>
         </div>
       </div>
     </section>
