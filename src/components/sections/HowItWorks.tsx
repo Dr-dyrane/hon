@@ -3,6 +3,9 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
+import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
+import { Badge } from "@/components/ui/Badge";
+import { Cog } from "lucide-react";
 import { Plus, MoveRight } from "lucide-react";
 import Image from "next/image";
 
@@ -16,34 +19,35 @@ export function HowItWorks() {
 
   return (
     <SectionContainer variant="alt" id="how-it-works">
-      <div className="text-center mb-24">
-        <span 
-          data-aos="fade-down"
-          data-aos-duration="600"
-          data-aos-delay="100"
-          className="block text-[10px] font-black uppercase tracking-[0.5em] text-accent mb-12"
+      <div className="flex flex-col items-center justify-center gap-4 text-center mb-12">
+        <HeroEyebrow
+          position="center"
+          animated
+          className="bg-foreground text-background"
         >
+          <Cog className="w-3.5 h-3.5 mr-3" />
           The Ritual
-        </span>
-        <h2 
+        </HeroEyebrow>
+        <h2
           data-aos="fade-up"
           data-aos-duration="800"
           data-aos-delay="200"
-          className="mt-12 text-4xl md:text-5xl lg:text-6xl font-black text-foreground tracking-tighter"
+          className="my-12 text-4xl md:text-5xl lg:text-6xl font-bold text-foreground tracking-tighter"
         >
           Simple Daily Fuel.
         </h2>
+
         <p
           data-aos="fade-up"
           data-aos-duration="700"
           data-aos-delay="300"
-          className="mt-12 text-xl text-muted font-medium italic max-w-xl mx-auto"
+          className="text-xl text-muted font-medium italic w-full text-center"
         >
           A minimalist ritual designed for the maximalist life. Pure performance in under 30 seconds.
         </p>
       </div>
 
-      <div 
+      <div
         data-aos="zoom-in"
         data-aos-duration="800"
         data-aos-delay="400"
@@ -53,11 +57,11 @@ export function HowItWorks() {
           whileHover={{ scale: 1.02 }}
           transition={{ duration: 2, ease: "easeOut" }}
         >
-          <Image 
-            src="/images/how-it-works.png" 
-            alt="How it works ritual" 
-            width={1200} 
-            height={600} 
+          <Image
+            src="/images/how-it-works.png"
+            alt="How it works ritual"
+            width={1200}
+            height={600}
             className="w-full h-[300px] md:h-[500px] object-cover opacity-80 group-hover:scale-105 transition-transform duration-[3s] mask-soft-edge"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
@@ -73,19 +77,19 @@ export function HowItWorks() {
               data-aos-delay={600 + i * 100}
               className="flex flex-col items-center group"
             >
-              <motion.div 
+              <motion.div
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 transition={{ duration: 0.3 }}
                 className="w-20 h-20 rounded-2xl surface flex items-center justify-center mb-8 text-accent shadow-sm group-hover:scale-110 group-hover:shadow-float transition-all duration-700"
               >
-                <span className="text-[10px] font-black uppercase tracking-tighter text-accent/60">HOP</span>
+                <span className="text-[10px] font-bold uppercase tracking-tighter text-accent/60">HOP</span>
               </motion.div>
-              <h3 className="text-xl font-black text-foreground tracking-tight">{step.label}</h3>
-              <p className="text-[10px] text-accent font-black uppercase tracking-widest mt-3 opacity-60">{step.sub}</p>
+              <h3 className="text-xl font-bold text-foreground tracking-tight">{step.label}</h3>
+              <p className="text-[10px] text-accent font-bold uppercase tracking-widest mt-3 opacity-60">{step.sub}</p>
             </div>
-            
+
             {i < steps.length - 1 && (
-              <div 
+              <div
                 data-aos="fade-left"
                 data-aos-duration="600"
                 data-aos-delay={800 + i * 100}
@@ -103,16 +107,16 @@ export function HowItWorks() {
         ))}
       </div>
 
-      <div 
+      <div
         data-aos="fade-up"
         data-aos-duration="700"
         data-aos-delay="1200"
         className="mt-24 text-center"
       >
-        <motion.span 
+        <motion.span
           whileHover={{ scale: 1.05 }}
           transition={{ duration: 0.2 }}
-          className="surface px-8 py-4 rounded-full text-[11px] font-black uppercase tracking-widest text-muted shadow-sm"
+          className="surface px-8 py-4 rounded-full text-[11px] font-bold uppercase tracking-widest text-muted shadow-sm"
         >
           Total Prep Time: <span className="text-accent underline decoration-2 underline-offset-4">Under 30 Seconds</span>
         </motion.span>

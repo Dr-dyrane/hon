@@ -3,9 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
+import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
+import { BadgeList } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { useTheme } from "next-themes";
+import { Rocket } from "lucide-react";
 
 export function CTASection() {
   const { resolvedTheme } = useTheme();
@@ -24,9 +27,24 @@ export function CTASection() {
   };
 
   return (
-    <SectionContainer className="flex items-center justify-center px-4 pb-32 pt-20 relative">
-      {/* Atmosphere bridge - Extreme soft golden bleed */}
-      <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-transparent to-[#d7c5a3]/5 pointer-events-none" />
+    <SectionContainer id="cta" className="flex items-center justify-center px-4 pb-32 pt-20 relative w-full">
+      
+      <div className="text-center mb-24 w-full">
+        <HeroEyebrow 
+          position="center"
+          animated
+          className="bg-foreground text-background"
+        >
+          <Rocket className="w-3.5 h-3.5 mr-3" />
+          Get Started
+        </HeroEyebrow>
+        
+        <BadgeList 
+          items={["Premium Quality", "Fast Shipping", "24/7 Support", "Money Back Guarantee"]}
+          className="mt-16 justify-center"
+          animated
+        />
+      </div>
       
       <div 
         data-aos="zoom-in-up"
@@ -46,10 +64,10 @@ export function CTASection() {
             data-aos-duration="800"
             data-aos-delay="400"
           >
-            <span className="text-[10px] font-black uppercase tracking-[0.5em] text-accent mb-12 block">
+            <span className="text-[10px] font-bold uppercase tracking-[0.5em] text-accent mb-12 block">
               Join the House
             </span>
-            <h2 className="text-5xl md:text-7xl lg:text-8xl font-black leading-[0.9] tracking-tighter">
+            <h2 className="text-5xl md:text-7xl lg:text-8xl font-bold leading-[0.9] tracking-tighter">
               Upgrade Your <br /> Protein.
             </h2>
 
@@ -61,27 +79,17 @@ export function CTASection() {
                 <Button
                   size="lg"
                   variant="primary"
-                  className="px-12 md:px-20 !h-20 text-lg md:text-xl font-black uppercase tracking-widest !bg-accent !text-accent-foreground rounded-2xl shadow-float hover:scale-105 transition-all duration-700 ease-premium"
+                  className="px-12 md:px-20 !h-20 text-lg md:text-xl font-bold uppercase tracking-widest !bg-accent !text-accent-foreground rounded-2xl shadow-float hover:scale-105 transition-all duration-700 ease-premium"
                   onClick={handleFinalCheckout}
                 >
                   Checkout Now — $54.99
                 </Button>
               </motion.div>
-
-              <div className="flex flex-wrap justify-center gap-x-12 gap-y-6 text-[11px] font-black uppercase tracking-[0.4em] text-background/60">
-                <span className="flex items-center gap-3 transition-colors hover:text-accent">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#d7c5a3] shadow-[0_0_10px_rgba(215,197,163,0.5)]" /> 
-                  Plant-Based
-                </span>
-                <span className="flex items-center gap-3 transition-colors hover:text-accent">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#d7c5a3] shadow-[0_0_10px_rgba(215,197,163,0.5)]" /> 
-                  Zero Additives
-                </span>
-                <span className="flex items-center gap-3 transition-colors hover:text-accent">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#d7c5a3] shadow-[0_0_10px_rgba(215,197,163,0.5)]" /> 
-                  Clean Fuel
-                </span>
-              </div>
+<BadgeList 
+                items={["Plant-Based", "Zero Additives", "Clean Fuel"]}
+                className="mt-8"
+                animated
+              />
             </div>
           </div>
         </div>

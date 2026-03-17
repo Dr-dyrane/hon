@@ -57,7 +57,7 @@ export function ProductSelector({
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl lg:text-6xl font-black text-foreground"
+            className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground"
           >
             Choose Your Fuel.
           </motion.h2>
@@ -71,7 +71,7 @@ export function ProductSelector({
                   if (firstInCat) setSelectedProduct(firstInCat as any);
                 }}
                 className={cn(
-                  "px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                  "px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all",
                   activeCategory === cat.id 
                     ? "bg-accent text-white" 
                     : "bg-surface text-muted hover:text-foreground"
@@ -101,12 +101,12 @@ export function ProductSelector({
                   )}
                 >
                   <div className={cn(
-                    "text-[10px] font-black uppercase tracking-widest mb-1 opacity-50",
+                    "text-[10px] font-bold uppercase tracking-widest mb-1 opacity-50",
                     selectedProduct === key ? "text-background/60" : "text-muted"
                   )}>
                     {prod.category}
                   </div>
-                  <div className="text-xl font-black">{prod.flavor || prod.name}</div>
+                  <div className="text-xl font-bold">{prod.flavor || prod.name}</div>
                 </button>
               );
             })}
@@ -157,10 +157,10 @@ export function ProductSelector({
                 exit={{ opacity: 0, x: -20 }}
                 className="max-w-xs mx-auto md:mx-0"
               >
-                <span className="inline-block text-[10px] font-black uppercase tracking-[0.2em] text-accent px-4 py-2 bg-accent/10 rounded-full mb-10">
+                <span className="inline-block text-[10px] font-bold uppercase tracking-[0.2em] text-accent px-4 py-2 bg-accent/10 rounded-full mb-10">
                   Premium Quality
                 </span>
-                <h3 className="text-4xl md:text-5xl font-black text-foreground leading-[0.9] tracking-tighter">
+                <h3 className="text-4xl md:text-5xl font-bold text-foreground leading-[0.9] tracking-tighter">
                   {PRODUCTS[selectedProduct as keyof typeof PRODUCTS].name}
                 </h3>
                 <p className="mt-6 text-muted text-lg leading-relaxed font-medium">
@@ -171,8 +171,8 @@ export function ProductSelector({
                   <div className="mt-10 flex flex-wrap gap-4 justify-center md:justify-start">
                     {Object.entries((PRODUCTS[selectedProduct as keyof typeof PRODUCTS] as any).stats).map(([statKey, val]: [string, any]) => (
                       <div key={statKey} className="flex flex-col">
-                        <span className="text-[8px] font-black uppercase tracking-widest text-muted">{statKey}</span>
-                        <span className="text-lg font-black text-foreground">{val}</span>
+                        <span className="text-[8px] font-bold uppercase tracking-widest text-muted">{statKey}</span>
+                        <span className="text-lg font-bold text-foreground">{val}</span>
                       </div>
                     ))}
                   </div>
@@ -180,13 +180,13 @@ export function ProductSelector({
 
                 <div className="mt-10 pt-10">
                   <div className="flex items-baseline gap-2 mb-6 justify-center md:justify-start">
-                    <span className="text-4xl font-black text-foreground">${Math.floor(PRODUCTS[selectedProduct as keyof typeof PRODUCTS].price)}.</span>
+                    <span className="text-4xl font-bold text-foreground">${Math.floor(PRODUCTS[selectedProduct as keyof typeof PRODUCTS].price)}.</span>
                     <span className="text-xl font-bold text-foreground">{(PRODUCTS[selectedProduct as keyof typeof PRODUCTS].price % 1).toFixed(2).split('.')[1]}</span>
-                    <span className="text-xs font-black uppercase tracking-widest text-muted ml-4 opacity-40">Per Unit</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-muted ml-4 opacity-40">Per Unit</span>
                   </div>
                   <Button 
                     size="lg" 
-                    className="w-full !h-16 rounded-2xl text-base font-black uppercase tracking-widest shadow-float hover:scale-[1.02] transition-transform duration-700 ease-smooth"
+                    className="w-full !h-16 rounded-2xl text-base font-bold uppercase tracking-widest shadow-float hover:scale-[1.02] transition-transform duration-700 ease-smooth"
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleCheckout(selectedProduct as any)}
                   >

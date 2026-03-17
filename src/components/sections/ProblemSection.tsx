@@ -5,6 +5,9 @@ import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { SectionContainer } from "@/components/ui/SectionContainer";
+import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
+import { BadgeList } from "@/components/ui/Badge";
+import { AlertTriangle } from "lucide-react";
 
 const PROBLEMS = [
   "Artificial Sweeteners",
@@ -26,20 +29,20 @@ export function ProblemSection() {
   return (
     <SectionContainer variant="alt" id="problem" className="overflow-hidden">
       <div className="flex flex-col lg:flex-row items-center gap-20 py-12">
-        <div className="lg:w-1/2">
-          <span 
-            data-aos="fade-down" 
-            data-aos-duration="600"
-            data-aos-delay="100"
-            className="text-[10px] font-black uppercase tracking-[0.5em] text-accent/60 mb-12 block"
+        <div className="lg:w-1/2 flex flex-col gap-4">
+          <HeroEyebrow 
+            position="left"
+            animated
+            className="bg-foreground text-background"
           >
+            <AlertTriangle className="w-3.5 h-3.5 mr-3" />
             The Market Status
-          </span>
+          </HeroEyebrow>
           <h2 
             data-aos="fade-right" 
             data-aos-duration="800"
             data-aos-delay="200"
-            className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-foreground leading-[0.9] tracking-tighter"
+            className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-foreground leading-[0.9] tracking-tighter"
           >
             Most Protein <br />
             <span className="text-muted/20">Are Junk.</span>
@@ -52,6 +55,12 @@ export function ProblemSection() {
           >
             The industry is built on compromises. We chose a different path—prioritizing gut health and biological performance over cheap manufacturing.
           </p>
+
+          <BadgeList 
+            items={PROBLEMS}
+            className="mt-16"
+            animated
+          />
         </div>
 
         <div className="lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
@@ -63,11 +72,11 @@ export function ProblemSection() {
               data-aos-delay={400 + i * 100}
               className="bg-background/40 backdrop-blur-sm p-10 flex flex-col items-start justify-between min-h-[220px] rounded-[2.5rem] group hover:bg-background transition-all duration-700 hover:shadow-float"
             >
-              <div className="w-10 h-10 rounded-xl bg-accent/5 flex items-center justify-center text-accent text-[10px] font-black tracking-widest group-hover:scale-110 transition-transform">
+              <div className="w-10 h-10 rounded-xl bg-accent/5 flex items-center justify-center text-accent text-[10px] font-bold tracking-widest group-hover:scale-110 transition-transform">
                 0{i + 1}
               </div>
               <div>
-                <h3 className="text-2xl font-black text-foreground tracking-tighter leading-tight group-hover:text-accent transition-colors">{problem}</h3>
+                <h3 className="text-2xl font-bold text-foreground tracking-tighter leading-tight group-hover:text-accent transition-colors">{problem}</h3>
                 <div className="h-[2px] w-0 bg-accent/20 mt-4 group-hover:w-full transition-all duration-700" />
               </div>
             </div>
@@ -91,7 +100,7 @@ export function ProblemSection() {
             data-aos="fade-down"
             data-aos-duration="600"
             data-aos-delay="1000"
-            className="text-[10px] font-black uppercase tracking-[0.6em] text-accent mb-10 block"
+            className="text-[10px] font-bold uppercase tracking-[0.6em] text-accent mb-10 block"
           >
             Perspective
           </span>
@@ -100,7 +109,7 @@ export function ProblemSection() {
             data-aos="zoom-in"
             data-aos-duration="800"
             data-aos-delay="1200"
-            className="relative z-10 text-4xl md:text-7xl font-black tracking-tighter mb-12 leading-[0.9]"
+            className="relative z-10 text-4xl md:text-7xl font-bold tracking-tighter mb-12 leading-[0.9]"
           >
             Your body deserves <br /> better fuel.
           </h3>

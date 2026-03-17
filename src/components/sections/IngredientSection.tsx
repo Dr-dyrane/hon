@@ -3,6 +3,9 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
+import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
+import { Badge } from "@/components/ui/Badge";
+import { Leaf } from "lucide-react";
 import { INGREDIENTS } from "@/lib/data";
 import Image from "next/image";
 
@@ -10,20 +13,19 @@ export function IngredientSection() {
   return (
     <SectionContainer variant="white" id="ingredients">
       <div className="flex flex-col lg:flex-row items-start gap-20">
-        <div className="lg:w-1/3 sticky top-32">
-          <span 
-            data-aos="fade-right"
-            data-aos-duration="600"
-            data-aos-delay="100"
-            className="block text-[10px] font-black uppercase tracking-[0.5em] text-accent mb-12"
+        <div className="lg:w-1/3 sticky top-32 flex flex-col gap-4">
+          <HeroEyebrow 
+            position="left"
+            animated
           >
+            <Leaf className="w-3.5 h-3.5 mr-3 text-foreground" />
             Transparency
-          </span>
+          </HeroEyebrow>
           <h2 
             data-aos="fade-up"
             data-aos-duration="800"
             data-aos-delay="200"
-            className="mt-12 text-4xl md:text-5xl lg:text-6xl font-black text-foreground leading-[1.05] tracking-tight"
+            className="mt-12 text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-[1.05] tracking-tight"
           >
             Nothing Hidden. <br /> Nothing Fake.
           </h2>
@@ -64,11 +66,11 @@ export function IngredientSection() {
                     initial={{ opacity: 0, y: 10 }}
                     whileHover={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="text-[10px] font-black uppercase tracking-[0.3em] text-accent mb-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700"
+                    className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700"
                   >
                     Essential Ingredient
                   </motion.span>
-                  <h3 className="text-3xl font-black tracking-tighter text-foreground transition-transform duration-500 group-hover:-translate-y-2">{ing.name}</h3>
+                  <h3 className="text-3xl font-bold tracking-tighter text-foreground transition-transform duration-500 group-hover:-translate-y-2">{ing.name}</h3>
                   <motion.p 
                     initial={{ opacity: 0, y: 20 }}
                     whileHover={{ opacity: 1, y: 0 }}

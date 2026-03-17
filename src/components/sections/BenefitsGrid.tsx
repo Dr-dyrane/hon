@@ -3,8 +3,10 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
+import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
+import { Badge } from "@/components/ui/Badge";
 import { BENEFITS } from "@/lib/data";
-import { Zap, Wind, Activity, Leaf } from "lucide-react";
+import { Zap, Wind, Activity, Leaf, Sparkles } from "lucide-react";
 
 const ICON_MAP = {
   Zap: Zap,
@@ -18,19 +20,19 @@ export function BenefitsGrid() {
     <SectionContainer variant="alt" id="benefits">
       <div className="flex flex-col lg:flex-row items-start justify-between mb-32 gap-y-12 gap-x-20">
         <div className="max-w-4xl">
-          <span 
-            data-aos="fade-right"
-            data-aos-duration="600"
-            data-aos-delay="100"
-            className="block text-[11px] font-black uppercase tracking-[0.5em] text-accent mb-12"
+          <HeroEyebrow 
+            position="left"
+            animated
+            className="bg-foreground text-background"
           >
+            <Sparkles className="w-3.5 h-3.5 mr-3" />
             Capabilities
-          </span>
+          </HeroEyebrow>
           <h2 
             data-aos="fade-up"
             data-aos-duration="800"
             data-aos-delay="200"
-            className="text-5xl md:text-8xl lg:text-9xl font-black text-foreground tracking-tighter leading-[0.85] text-balance"
+            className="text-5xl md:text-8xl lg:text-9xl font-bold text-foreground tracking-tighter leading-[0.85] text-balance"
           >
             Built for <br /> <span className="text-muted/20">Real Performance.</span>
           </h2>
@@ -55,7 +57,7 @@ export function BenefitsGrid() {
               data-aos="zoom-in-up"
               data-aos-duration="600"
               data-aos-delay={400 + i * 100}
-              className="group relative min-h-[380px] rounded-[2.5rem] bg-background p-10 flex flex-col justify-between overflow-hidden hover:shadow-float shadow-soft transition-all duration-700"
+              className="group relative min-h-[320px] rounded-[2.5rem] bg-background p-10 flex flex-col justify-between overflow-hidden hover:shadow-float shadow-soft transition-all duration-700"
             >
               {/* Subtle background texture/glow */}
               <div className="absolute -right-20 -bottom-20 w-40 h-40 bg-accent/5 rounded-full blur-3xl group-hover:bg-accent/10 transition-colors" />
@@ -64,7 +66,7 @@ export function BenefitsGrid() {
                 <div className="w-14 h-14 rounded-2xl surface flex items-center justify-center mb-10 text-accent shadow-sm group-hover:scale-110 group-hover:shadow-soft transition-all duration-700">
                   <Icon size={24} strokeWidth={1.5} />
                 </div>
-                <h3 className="text-2xl font-black text-foreground mb-6 tracking-tighter">{benefit.title}</h3>
+                <h3 className="text-2xl font-bold text-foreground mb-6 tracking-tighter">{benefit.title}</h3>
                 <p className="text-muted/60 text-sm font-medium leading-relaxed">
                   {benefit.description}
                 </p>
@@ -72,7 +74,7 @@ export function BenefitsGrid() {
               
               <div className="relative z-10 flex items-center gap-2 overflow-hidden">
                 <div className="h-[1px] w-8 bg-accent/30 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-accent opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-700">Measured Result</span>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-accent opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-700">Measured Result</span>
               </div>
             </div>
           );

@@ -3,8 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
+import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
+import { Badge } from "@/components/ui/Badge";
 import { BRAND, PRODUCTS } from "@/lib/data";
 import { CleanIcon, PlantIcon, DigestionIcon } from "@/components/ui/Icons";
+import { Lightbulb } from "lucide-react";
 import Image from "next/image";
 import { Product3DViewer } from "@/components/3d/Product3DViewer";
 import { useTheme } from "next-themes";
@@ -61,19 +64,18 @@ export function SolutionSection({
     <SectionContainer variant="white" id="solution">
       <div className="flex flex-col items-center text-center">
         <div className="mb-12">
-          <span 
-            data-aos="fade-down"
-            data-aos-duration="600"
-            data-aos-delay="100"
-            className="block text-[10px] font-black uppercase tracking-[0.5em] text-accent mb-12"
+          <HeroEyebrow 
+            position="center"
+            animated
           >
+            <Lightbulb className="w-3.5 h-3.5 mr-3 text-foreground" />
             The System
-          </span>
+          </HeroEyebrow>
           <h2 
             data-aos="fade-up"
             data-aos-duration="800"
             data-aos-delay="200"
-            className="mt-12 text-5xl md:text-6xl lg:text-7xl font-black text-foreground tracking-tight leading-none"
+            className="mt-12 text-5xl md:text-6xl lg:text-7xl font-bold text-foreground tracking-tight leading-none"
           >
             Meet {BRAND.name}
           </h2>
@@ -106,7 +108,7 @@ export function SolutionSection({
                 >
                    <Icon size={28} className="text-accent" />
                 </motion.div>
-                <span className="text-[11px] font-black text-foreground tracking-widest uppercase max-w-[120px] leading-tight opacity-70 group-hover:opacity-100 transition-opacity">
+                <span className="text-[11px] font-bold text-foreground tracking-widest uppercase max-w-[120px] leading-tight opacity-70 group-hover:opacity-100 transition-opacity">
                   {indicator.label}
                 </span>
               </div>

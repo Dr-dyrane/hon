@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
+import { BadgeList } from "@/components/ui/Badge";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { PRODUCTS } from "@/lib/data";
@@ -159,26 +160,11 @@ export function HeroSection({
             </Button>
           </motion.div>
 
-          <motion.div
-            custom={3}
-            initial="hidden"
-            animate="visible"
-            variants={revealVariants}
-            className="mt-16 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-[10px] font-black tracking-[0.25em] text-muted uppercase opacity-60"
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-1 rounded-full bg-accent" />
-              <span>Plant-Based</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-1 rounded-full bg-accent" />
-              <span>Clean Ingredients</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-1 rounded-full bg-accent" />
-              <span>Easy Digestion</span>
-            </div>
-          </motion.div>
+          <BadgeList 
+            items={["Plant-Based", "Clean Ingredients", "Easy Digestion"]}
+            className="mt-16"
+            animated
+          />
         </div>
 
         {/* Product Layer */}
@@ -240,7 +226,7 @@ export function HeroSection({
                 key={prodKey}
                 onClick={() => setCurrentProduct(prodKey as any)}
                 className={cn(
-                  "px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all duration-500",
+                  "px-6 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-widest transition-all duration-500",
                   currentProduct === prodKey
                     ? "bg-foreground text-background shadow-lg scale-105"
                     : "text-muted hover:text-foreground hover:bg-surface"

@@ -62,6 +62,7 @@ export const viewport: Viewport = {
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { AOSProvider } from "@/components/providers/AOSProvider";
 import { ThreeJSSuppressor } from "@/components/providers/ThreeJSSuppressor";
+import { UIProvider } from "@/components/providers/UIProvider";
 
 export default function RootLayout({
   children,
@@ -79,7 +80,9 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <UIProvider>
+              {children}
+            </UIProvider>
           </ThemeProvider>
         </AOSProvider>
         <Analytics />

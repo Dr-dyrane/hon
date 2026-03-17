@@ -8,10 +8,11 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { useUI } from "@/components/providers/UIProvider";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isMobileMenuOpen, setIsMobileMenuOpen } = useUI();
   const { scrollY } = useScroll();
 
   useEffect(() => {
@@ -28,7 +29,7 @@ export function Navbar() {
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [setIsMobileMenuOpen]);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -97,7 +98,7 @@ export function Navbar() {
                 >
                   <Link
                     href="#shop"
-                    className="hidden md:inline-flex items-center justify-center button-primary !h-[32px] !min-h-[32px] px-6 text-[9px] font-black uppercase tracking-[0.2em] rounded-full whitespace-nowrap shadow-float hover:scale-105 transition-transform"
+                    className="hidden md:inline-flex items-center justify-center button-primary !h-[32px] !min-h-[32px] px-6 text-[9px] font-bold uppercase tracking-[0.2em] rounded-full whitespace-nowrap shadow-float hover:scale-105 transition-transform"
                   >
                     Start Order
                   </Link>

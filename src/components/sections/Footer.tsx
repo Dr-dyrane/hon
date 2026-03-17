@@ -15,7 +15,7 @@ export function Footer() {
   ];
 
   return (
-    <footer className="relative surface py-32 px-6">
+    <footer className="relative surface py-32 px-6" id="footer">
       <div className="container-shell flex flex-col items-center">
         <div className="mb-16">
           <Logo />
@@ -26,7 +26,7 @@ export function Footer() {
             <Link 
               key={link.name} 
               href={link.href}
-              className="text-[10px] font-black uppercase tracking-[0.2em] text-muted/60 hover:text-accent transition-colors"
+              className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted/60 hover:text-accent transition-colors"
             >
               {link.name}
             </Link>
@@ -34,10 +34,10 @@ export function Footer() {
         </div>
 
         <div className="flex flex-col items-center gap-4">
-          <div className="text-[9px] font-black uppercase tracking-[0.4em] text-muted/20">
+          <div className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted/20">
             © {new Date().getFullYear()} {BRAND.name}. Designed for Performance.
           </div>
-          <div className="text-[9px] font-black uppercase tracking-[0.4em] text-accent/40">
+          <div className="text-[9px] font-bold uppercase tracking-[0.4em] text-accent/40">
             Premium Plant-Based Nutrition
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { useScrollAware3D } from "@/hooks/useScrollAware3D";
 import { Navbar } from "@/components/sections/Navbar";
+import { ScrollNav } from "@/components/ui/ScrollNav";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { ProblemSection } from "@/components/sections/ProblemSection";
 import { SolutionSection } from "@/components/sections/SolutionSection";
@@ -23,6 +24,7 @@ export function HomeClient() {
   return (
     <main className="relative max-w-screen overflow-clip">
       <Navbar />
+      <ScrollNav />
       <HeroSection 
         activeSection={activeSection}
         isScrollingIntoSection={isScrollingIntoSection}
