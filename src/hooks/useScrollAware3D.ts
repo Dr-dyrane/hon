@@ -1,107 +1,82 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
-interface ScrollAwareOptions {
+interface ScrollAware3DOptions {
   sectionIds: string[];
-  onSectionChange?: (sectionId: string) => void;
+  threshold?: number; // 0 to 1, how much of section is visible
 }
 
-export function useScrollAware3D({ sectionIds, onSectionChange }: ScrollAwareOptions) {
-  const [activeSection, setActiveSection] = useState<string>("");
-  const [scrollDirection, setScrollDirection] = useState<"up" | "down">("down");
-  const lastScrollY = useRef(0);
-  const tickingRef = useRef(false);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+// Global singleton to prevent multiple Intersection Observer instances
+let globalObserver: IntersectionObserver | null = null;
+let globalCallbacks: Array<(activeSection: string | null) => void> = [];
 
-  const checkActiveSection = useCallback(() => {
-    const viewportHeight = window.innerHeight;
-    const currentScrollY = window.scrollY;
-    const viewportCenter = currentScrollY + viewportHeight / 2;
-
-    let currentSection = "";
-    let maxVisibility = 0;
-
-    sectionIds.forEach((sectionId) => {
-      const element = document.getElementById(sectionId);
-      if (element) {
-        const rect = element.getBoundingClientRect();
-        const elementTop = rect.top + currentScrollY;
-        const elementBottom = rect.bottom + currentScrollY;
-        const elementHeight = elementBottom - elementTop;
-
-        // Calculate how much of the element is visible in the viewport center
-        const visibleTop = Math.max(elementTop, currentScrollY);
-        const visibleBottom = Math.min(elementBottom, currentScrollY + viewportHeight);
-        const visibleHeight = Math.max(0, visibleBottom - visibleTop);
-        
-        // Bonus for elements that contain the viewport center
-        const centerBonus = viewportCenter >= elementTop && viewportCenter <= elementBottom ? 0.5 : 0;
-        
-        const visibility = (visibleHeight / elementHeight) + centerBonus;
-
-        if (visibility > maxVisibility) {
-          maxVisibility = visibility;
-          currentSection = sectionId;
-        }
-      }
-    });
-
-    return currentSection;
-  }, [sectionIds]);
-
-  const handleScroll = useCallback(() => {
-    if (tickingRef.current) return;
-    tickingRef.current = true;
-
-    const currentScrollY = window.scrollY;
-    const direction = currentScrollY > lastScrollY.current ? "down" : "up";
-    setScrollDirection(direction);
-    lastScrollY.current = currentScrollY;
-
-    // Debounce section changes to reduce updates
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    debounceTimerRef.current = setTimeout(() => {
-      const currentSection = checkActiveSection();
-      if (currentSection && currentSection !== activeSection) {
-        setActiveSection(currentSection);
-        onSectionChange?.(currentSection);
-      }
-      tickingRef.current = false;
-      debounceTimerRef.current = null;
-    }, 100); // 100ms debounce
-  }, [checkActiveSection, activeSection, onSectionChange]);
+export function useScrollAware3D({ sectionIds, threshold = 0.15 }: ScrollAware3DOptions) {
+  const [activeSection, setActiveSection] = useState<string | null>(null);
 
   useEffect(() => {
-    // Initial check
-    const initialSection = checkActiveSection();
-    if (initialSection) {
-      setActiveSection(initialSection);
+    // Add this component's callback to the global list
+    globalCallbacks.push(setActiveSection);
+    
+    // If observer already exists, just use it
+    if (globalObserver) {
+      return;
     }
 
-    // Add scroll listener
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    
+    // Create the singleton observer
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Notify all subscribed components
+            globalCallbacks.forEach(callback => callback(entry.target.id));
+          }
+        });
+      },
+      {
+        threshold: threshold,
+        rootMargin: "-5% 0px -5% 0px",
+      }
+    );
+
+    globalObserver = observer;
+
+    // Wait for DOM to be ready
+    const timer = setTimeout(() => {
+      sectionIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+          observer.observe(el);
+        }
+      });
+    }, 100);
+
     return () => {
-      window.removeEventListener("scroll", handleScroll);
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
+      clearTimeout(timer);
+      // Remove this component's callback
+      globalCallbacks = globalCallbacks.filter(cb => cb !== setActiveSection);
+      
+      // Only disconnect if no more callbacks
+      if (globalCallbacks.length === 0 && globalObserver) {
+        globalObserver.disconnect();
+        globalObserver = null;
       }
     };
-  }, [handleScroll, checkActiveSection]);
+  }, [sectionIds, threshold]);
+
+  const isScrollingIntoSection = useCallback(
+    (id: string) => activeSection === id,
+    [activeSection]
+  );
+
+  const isScrollingOutOfSection = useCallback(
+    (id: string) => activeSection !== id,
+    [activeSection]
+  );
 
   return {
     activeSection,
-    scrollDirection,
-    isInSection: (sectionId: string) => activeSection === sectionId,
-    isScrollingIntoSection: (sectionId: string) => {
-      return activeSection === sectionId && scrollDirection === "down";
-    },
-    isScrollingOutOfSection: (sectionId: string) => {
-      return activeSection === sectionId && scrollDirection === "up";
-    },
+    isScrollingIntoSection,
+    isScrollingOutOfSection,
   };
 }

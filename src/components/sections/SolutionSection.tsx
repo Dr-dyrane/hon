@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { BRAND, PRODUCTS } from "@/lib/data";
 import { CleanIcon, PlantIcon, DigestionIcon } from "@/components/ui/Icons";
 import Image from "next/image";
 import { Product3DViewer } from "@/components/3d/Product3DViewer";
-import { useScrollAware3D } from "@/hooks/useScrollAware3D";
 import { useTheme } from "next-themes";
+import AOS from "aos";
 
 const TRUST_INDICATORS = [
   { label: "Clean Ingredients", icon: CleanIcon },
@@ -17,23 +17,30 @@ const TRUST_INDICATORS = [
   { label: "Zero Additives", icon: CleanIcon }
 ];
 
-export function SolutionSection() {
+export function SolutionSection({ 
+  activeSection, 
+  isScrollingIntoSection, 
+  isScrollingOutOfSection 
+}: {
+  activeSection: string | null;
+  isScrollingIntoSection: (sectionId: string) => boolean;
+  isScrollingOutOfSection: (sectionId: string) => boolean;
+}) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<keyof typeof PRODUCTS>("protein_chocolate");
 
-  // Scroll-aware 3D animation
-  const { isScrollingIntoSection } = useScrollAware3D({
-    sectionIds: ["hero", "solution", "shop"],
-  });
-
-  const toggleProduct = () => {
-    setCurrentProduct(prev => prev === "protein_chocolate" ? "soy_powder" : "protein_chocolate");
-  };
 
   React.useEffect(() => {
+    console.log(`🔄 [Solution] Mounted`);
     setMounted(true);
   }, []);
+
+  // Refresh AOS to calculate correct scroll positions for the 3D viewer
+  useEffect(() => {
+    console.log(`🔄 [Solution] Product changed to: ${currentProduct}, refreshing AOS`);
+    AOS.refresh();
+  }, [currentProduct]);
 
   const isDark = mounted && resolvedTheme === "dark";
 
@@ -126,7 +133,6 @@ export function SolutionSection() {
             modelPath={productData[currentProduct].model}
             theme="light"
             className="relative z-10 mx-auto w-64 md:w-80 h-96 md:h-[450px]"
-            onClick={toggleProduct}
             sectionId="solution"
             scrollActive={isScrollingIntoSection("solution")}
           />

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { CATEGORIES, PRODUCTS } from "@/lib/data";
@@ -9,22 +9,32 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { Product3DViewer } from "@/components/3d/Product3DViewer";
-import { useScrollAware3D } from "@/hooks/useScrollAware3D";
+import AOS from "aos";
 
-export function ProductSelector() {
+export function ProductSelector({ 
+  activeSection, 
+  isScrollingIntoSection, 
+  isScrollingOutOfSection 
+}: {
+  activeSection: string | null;
+  isScrollingIntoSection: (sectionId: string) => boolean;
+  isScrollingOutOfSection: (sectionId: string) => boolean;
+}) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
   const [selectedProduct, setSelectedProduct] = useState<keyof typeof PRODUCTS>("protein_chocolate");
 
-  // Scroll-aware 3D animation
-  const { isScrollingIntoSection } = useScrollAware3D({
-    sectionIds: ["hero", "solution", "shop"],
-  });
-
   React.useEffect(() => {
+    console.log(`🔄 [ProductSelector] Mounted`);
     setMounted(true);
   }, []);
+
+  // Refresh AOS to calculate correct scroll positions for the 3D viewer
+  useEffect(() => {
+    console.log(`🔄 [ProductSelector] Selected product changed to: ${selectedProduct}, refreshing AOS`);
+    AOS.refresh();
+  }, [selectedProduct]);
 
   const isDark = mounted && resolvedTheme === "dark";
 

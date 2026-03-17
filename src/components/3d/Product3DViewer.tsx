@@ -5,12 +5,12 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment, PresentationControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { ProductFallback } from "./ProductFallback";
+import { cn } from "@/lib/utils";
 
 interface Product3DViewerProps {
   modelPath: string;
   theme: "light" | "dark";
   className?: string;
-  onClick?: () => void;
   sectionId?: string;
   scrollActive?: boolean;
 }
@@ -49,12 +49,6 @@ function Model({ url, isReady, scrollActive }: { url: string; isReady: boolean; 
       const newScale = currentScale + (targetScale.current - currentScale) * 0.05;
       modelRef.current.scale.set(newScale, newScale, newScale);
     }
-
-    // Subtle scale pulse when scrolling into section (reduced frequency)
-    if (scrollActive && isReady) {
-      const pulseScale = 0.78 + Math.sin(now * 0.001) * 0.015; // Reduced frequency and amplitude
-      modelRef.current.scale.set(pulseScale, pulseScale, pulseScale);
-    }
   });
 
   return (
@@ -79,15 +73,28 @@ export function Product3DViewer({
   modelPath,
   theme,
   className,
-  onClick,
   sectionId,
   scrollActive,
 }: Product3DViewerProps) {
-  const [isLoading, setIsLoading] = useState(true);
   const [isWebGLSupported, setIsWebGLSupported] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isReady, setIsReady] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Unique key for this instance to prevent Three.js conflicts
+  const instanceKey = `${sectionId}-${modelPath}`;
+
+  useEffect(() => {
+    if (scrollActive) {
+      // Small delay to prevent WebGL context conflicts during transitions
+      const timer = setTimeout(() => {
+        setIsReady(true);
+      }, 150);
+      return () => clearTimeout(timer);
+    } else {
+      // Clean up when section becomes inactive
+      setIsReady(false);
+    }
+  }, [scrollActive, sectionId]);
 
   useEffect(() => {
     const canvas = document.createElement("canvas");
@@ -95,18 +102,6 @@ export function Product3DViewer({
       canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
 
     setIsWebGLSupported(!!gl);
-  }, []);
-
-  // Cleanup WebGL context on unmount
-  useEffect(() => {
-    return () => {
-      if (canvasRef.current) {
-        const gl = canvasRef.current.getContext("webgl");
-        if (gl) {
-          gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        }
-      }
-    };
   }, []);
 
   const lightingConfig =
@@ -124,7 +119,6 @@ export function Product3DViewer({
           environment: "studio" as const,
         };
 
-  // Fallback to 2D if WebGL is not supported or there's an error
   if (!isWebGLSupported || hasError) {
     const fallbackImagePath = modelPath
       .replace("/models/products/", "/images/products/")
@@ -134,77 +128,76 @@ export function Product3DViewer({
       <ProductFallback
         imagePath={fallbackImagePath}
         className={className}
-        onClick={onClick}
       />
     );
   }
 
   return (
-    <div className={`relative ${className ?? ""}`} onClick={onClick}>
-      {/* Show 2D image while 3D model loads */}
-      <div 
-        className={`absolute inset-0 transition-all duration-1000 ease-[var(--ease-apple)] ${
-          isReady ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-        }`}
-      >
+    <div className={`relative ${className ?? ""}`}>
+      {/* Fallback Layer: Only hide when Three.js is confirmed ready */}
+      <div className={cn(
+        "absolute inset-0 transition-all duration-1000",
+        isReady ? "opacity-0 scale-95" : "opacity-100 scale-100"
+      )}>
         <ProductFallback
-          imagePath={modelPath
-            .replace("/models/products/", "/images/products/")
-            .replace(".glb", ".png")}
+          imagePath={modelPath.replace("/models/products/", "/images/products/").replace(".glb", ".png")}
           className="w-full h-full"
         />
       </div>
-      
-      <Canvas
-        ref={canvasRef}
-        camera={{ position: [0, 0.75, 4.15], fov: 32 }}
-        className={`h-full w-full rounded-[2rem] transition-all duration-1000 ease-[var(--ease-apple)] ${
-          isReady ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
-        }`}
-        gl={{
-          antialias: true,
-          alpha: true,
-          toneMapping: THREE.ACESFilmicToneMapping,
-          outputColorSpace: THREE.SRGBColorSpace,
-          powerPreference: "high-performance",
-          preserveDrawingBuffer: false,
-          failIfMajorPerformanceCaveat: false,
-        }}
-        dpr={[1, 1.5]} // Reduced DPR for performance
-        onCreated={({ gl }) => {
-          gl.setClearColor(0x000000, 0);
-          setIsLoading(false);
-          // Small delay for smooth transition
-          setTimeout(() => setIsReady(true), 100);
-        }}
-        onError={(error) => {
-          console.warn('WebGL Error:', error);
-          setHasError(true);
-        }}
-      >
+
+      {/* Only render Canvas when section is active to prevent WebGL context conflicts */}
+      {scrollActive && (
+        <Canvas
+          key={instanceKey} // Unique key prevents Three.js context conflicts
+          camera={{ position: [0, 0.75, 4.15], fov: 32 }}
+          frameloop="always"
+          className={cn(
+            "h-full w-full rounded-[2rem] transition-all duration-1000",
+            isReady ? "opacity-100 scale-100" : "opacity-0 scale-105"
+          )}
+          gl={{
+            antialias: true,
+            alpha: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            outputColorSpace: THREE.SRGBColorSpace,
+            powerPreference: "high-performance",
+            preserveDrawingBuffer: true,
+            failIfMajorPerformanceCaveat: false,
+          }}
+          dpr={[1, 1.5]} // Reduced DPR for performance
+          onCreated={() => {
+            setTimeout(() => {
+              setIsReady(true);
+            }, 200);
+          }}
+          onError={(error) => {
+            setHasError(true);
+          }}
+        >
           <ambientLight intensity={lightingConfig.ambient} />
 
-        <directionalLight
-          position={lightingConfig.directionalPosition}
-          intensity={lightingConfig.directional}
-        />
+          <directionalLight
+            position={lightingConfig.directionalPosition}
+            intensity={lightingConfig.directional}
+          />
 
-        <Suspense fallback={null}>
-          <Environment preset={lightingConfig.environment} />
+          <Suspense fallback={null}>
+            <Environment preset={lightingConfig.environment} />
 
-          <PresentationControls
-            global
-            cursor={false}
-            speed={1.2}
-            rotation={[0, -0.08, 0]}
-            polar={[-0.12, 0.18]}
-            azimuth={[-0.28, 0.28]}
-            snap={true}
-          >
-            <Model url={modelPath} isReady={isReady} scrollActive={scrollActive} />
-          </PresentationControls>
-        </Suspense>
-      </Canvas>
+            <PresentationControls
+              global
+              cursor={false}
+              speed={1.2}
+              rotation={[0, -0.08, 0]}
+              polar={[-0.12, 0.18]}
+              azimuth={[-0.28, 0.28]}
+              snap={true}
+            >
+              <Model url={modelPath} isReady={isReady} scrollActive={scrollActive} />
+            </PresentationControls>
+          </Suspense>
+        </Canvas>
+      )}
     </div>
   );
 }
