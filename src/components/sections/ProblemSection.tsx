@@ -33,7 +33,7 @@ export function ProblemSection() {
           <HeroEyebrow 
             position="left"
             animated
-            className="bg-foreground text-background"
+            className="bg-label text-system-background"
           >
             <AlertTriangle className="w-3.5 h-3.5 mr-3" />
             The Market Status
@@ -42,16 +42,16 @@ export function ProblemSection() {
             data-aos="fade-right" 
             data-aos-duration="800"
             data-aos-delay="200"
-            className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-foreground leading-[0.9] tracking-tighter"
+            className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-headline font-bold text-label leading-tight tracking-display"
           >
             Most Protein <br />
-            <span className="text-muted/20">Are Junk.</span>
+            <span className="text-secondary-label opacity-20 tracking-tight">Are Junk.</span>
           </h2>
           <p 
             data-aos="fade-up" 
             data-aos-duration="700"
             data-aos-delay="300"
-            className="mt-12 text-xl text-muted/60 font-medium leading-relaxed max-w-md italic"
+            className="mt-12 text-xl text-secondary-label opacity-60 leading-normal tracking-body max-w-md italic"
           >
             The industry is built on compromises. We chose a different path—prioritizing gut health and biological performance over cheap manufacturing.
           </p>
@@ -70,13 +70,13 @@ export function ProblemSection() {
               data-aos="zoom-in-up"
               data-aos-duration="600"
               data-aos-delay={400 + i * 100}
-              className="bg-background/40 backdrop-blur-sm p-10 flex flex-col items-start justify-between min-h-[220px] rounded-[2.5rem] group hover:bg-background transition-all duration-700 hover:shadow-float"
+              className="card-premium p-10 flex flex-col items-start justify-between min-h-[220px] group hover:bg-system-background transition-all duration-700 hover:shadow-float squircle"
             >
-              <div className="w-10 h-10 rounded-xl bg-accent/5 flex items-center justify-center text-accent text-[10px] font-bold tracking-widest group-hover:scale-110 transition-transform">
+              <div className="w-10 h-10 rounded-xl bg-accent/5 flex items-center justify-center text-accent text-[10px] font-semibold tracking-headline group-hover:scale-110 transition-transform">
                 0{i + 1}
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-foreground tracking-tighter leading-tight group-hover:text-accent transition-colors">{problem}</h3>
+                <h3 className="text-2xl font-headline font-bold text-label tracking-headline leading-tight group-hover:text-accent transition-colors">{problem}</h3>
                 <div className="h-[2px] w-0 bg-accent/20 mt-4 group-hover:w-full transition-all duration-700" />
               </div>
             </div>
@@ -92,7 +92,7 @@ export function ProblemSection() {
           data-aos="fade-up"
           data-aos-duration="1000"
           data-aos-delay="800"
-          className="p-24 md:p-48 rounded-[3.5rem] md:rounded-[6rem] cta-inverse text-center relative overflow-hidden shadow-[0_50px_100px_-30px_rgba(0,0,0,0.3)] dark:shadow-none"
+          className="p-24 md:p-48 squircle cta-inverse text-center relative overflow-hidden shadow-[0_50px_100px_-30px_rgba(0,0,0,0.3)] dark:shadow-none"
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#d7c5a3_0%,_transparent_70%)] opacity-10 pointer-events-none blur-3xl" />
 
@@ -109,14 +109,14 @@ export function ProblemSection() {
             data-aos="zoom-in"
             data-aos-duration="800"
             data-aos-delay="1200"
-            className="relative z-10 text-4xl md:text-7xl font-bold tracking-tighter mb-12 leading-[0.9]"
+            className="relative z-10 text-4xl md:text-7xl font-headline font-bold tracking-display mb-12 leading-tight"
           >
             Your body deserves <br /> better fuel.
           </h3>
 
           <div className="w-12 h-[2px] bg-accent/30 mx-auto mb-12" />
 
-          <p className="relative z-10 text-xl font-medium max-w-2xl mx-auto italic opacity-70">
+          <p className="relative z-10 text-xl leading-normal tracking-body mx-auto italic opacity-70">
             "Don't build your foundation on sand. Choose a system <br className="hidden md:block" /> designed for longevity and power."
           </p>
         </div>

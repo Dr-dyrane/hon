@@ -57,7 +57,7 @@ export function ProductSelector({
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground"
+            className="text-4xl md:text-5xl lg:text-6xl font-headline font-bold text-foreground tracking-display"
           >
             Choose Your Fuel.
           </motion.h2>
@@ -71,10 +71,10 @@ export function ProductSelector({
                   if (firstInCat) setSelectedProduct(firstInCat as any);
                 }}
                 className={cn(
-                  "px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all",
+                  "px-6 py-2 rounded-full text-[10px] font-semibold uppercase tracking-headline transition-all",
                   activeCategory === cat.id 
-                    ? "bg-accent text-white" 
-                    : "bg-surface text-muted hover:text-foreground"
+                    ? "bg-accent text-accent-label shadow-sm" 
+                    : "bg-system-fill text-secondary-label hover:text-label"
                 )}
               >
                 {cat.name}
@@ -96,17 +96,17 @@ export function ProductSelector({
                   className={cn(
                     "flex-1 px-6 py-4 rounded-3xl transition-all duration-500 text-left",
                     selectedProduct === key 
-                      ? "bg-foreground text-background shadow-float" 
-                      : "bg-surface opacity-60 hover:opacity-100 hover:shadow-md"
+                      ? "bg-label text-system-background shadow-float" 
+                      : "bg-system-fill opacity-60 hover:opacity-100 hover:shadow-md"
                   )}
                 >
                   <div className={cn(
-                    "text-[10px] font-bold uppercase tracking-widest mb-1 opacity-50",
-                    selectedProduct === key ? "text-background/60" : "text-muted"
+                    "text-[10px] font-semibold uppercase tracking-headline mb-1 opacity-50",
+                    selectedProduct === key ? "text-system-background/60" : "text-secondary-label"
                   )}>
                     {prod.category}
                   </div>
-                  <div className="text-xl font-bold">{prod.flavor || prod.name}</div>
+                  <div className="text-xl font-headline font-bold">{prod.flavor || prod.name}</div>
                 </button>
               );
             })}
@@ -115,7 +115,7 @@ export function ProductSelector({
 
           {/* Product Image Stage */}
           <div className="relative w-full max-w-sm h-[450px] flex items-center justify-center order-1 md:order-2 perspective-2000">
-             <div className="absolute inset-0 bg-gradient-radial from-accent/10 to-transparent blur-3xl pointer-events-none opacity-50" />
+             <div className="stage-light !scale-75 !opacity-40" />
              
              <AnimatePresence mode="wait">
                 <motion.div
@@ -157,13 +157,13 @@ export function ProductSelector({
                 exit={{ opacity: 0, x: -20 }}
                 className="max-w-xs mx-auto md:mx-0"
               >
-                <span className="inline-block text-[10px] font-bold uppercase tracking-[0.2em] text-accent px-4 py-2 bg-accent/10 rounded-full mb-10">
+                <span className="inline-block text-[10px] font-semibold uppercase tracking-headline text-accent px-4 py-2 bg-accent/10 rounded-full mb-10">
                   Premium Quality
                 </span>
-                <h3 className="text-4xl md:text-5xl font-bold text-foreground leading-[0.9] tracking-tighter">
+                <h3 className="text-4xl md:text-5xl font-headline font-bold text-foreground leading-tight tracking-display">
                   {PRODUCTS[selectedProduct as keyof typeof PRODUCTS].name}
                 </h3>
-                <p className="mt-6 text-muted text-lg leading-relaxed font-medium">
+                <p className="mt-6 text-secondary-label text-lg leading-normal tracking-body">
                   {PRODUCTS[selectedProduct as keyof typeof PRODUCTS].description}
                 </p>
                 
@@ -171,8 +171,8 @@ export function ProductSelector({
                   <div className="mt-10 flex flex-wrap gap-4 justify-center md:justify-start">
                     {Object.entries((PRODUCTS[selectedProduct as keyof typeof PRODUCTS] as any).stats).map(([statKey, val]: [string, any]) => (
                       <div key={statKey} className="flex flex-col">
-                        <span className="text-[8px] font-bold uppercase tracking-widest text-muted">{statKey}</span>
-                        <span className="text-lg font-bold text-foreground">{val}</span>
+                        <span className="text-[8px] font-semibold uppercase tracking-headline text-secondary-label">{statKey}</span>
+                        <span className="text-lg font-bold text-label tracking-tight">{val}</span>
                       </div>
                     ))}
                   </div>
@@ -180,14 +180,13 @@ export function ProductSelector({
 
                 <div className="mt-10 pt-10">
                   <div className="flex items-baseline gap-2 mb-6 justify-center md:justify-start">
-                    <span className="text-4xl font-bold text-foreground">${Math.floor(PRODUCTS[selectedProduct as keyof typeof PRODUCTS].price)}.</span>
-                    <span className="text-xl font-bold text-foreground">{(PRODUCTS[selectedProduct as keyof typeof PRODUCTS].price % 1).toFixed(2).split('.')[1]}</span>
-                    <span className="text-xs font-bold uppercase tracking-widest text-muted ml-4 opacity-40">Per Unit</span>
+                    <span className="text-4xl font-bold text-label">${Math.floor(PRODUCTS[selectedProduct as keyof typeof PRODUCTS].price)}.</span>
+                    <span className="text-xl font-bold text-label">{(PRODUCTS[selectedProduct as keyof typeof PRODUCTS].price % 1).toFixed(2).split('.')[1]}</span>
+                    <span className="text-xs font-semibold uppercase tracking-headline text-secondary-label ml-4 opacity-40">Per Unit</span>
                   </div>
                   <Button 
                     size="lg" 
-                    className="w-full !h-16 rounded-2xl text-base font-bold uppercase tracking-widest shadow-float hover:scale-[1.02] transition-transform duration-700 ease-smooth"
-                    whileTap={{ scale: 0.98 }}
+                    className="w-full !h-16 squircle text-base font-semibold uppercase tracking-headline shadow-float hover:scale-[1.02] transition-transform duration-700 ease-smooth"
                     onClick={() => handleCheckout(selectedProduct as any)}
                   >
                     Order via WhatsApp

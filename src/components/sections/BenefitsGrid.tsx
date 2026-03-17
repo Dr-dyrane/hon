@@ -23,7 +23,7 @@ export function BenefitsGrid() {
           <HeroEyebrow 
             position="left"
             animated
-            className="bg-foreground text-background"
+            className="bg-label text-system-background"
           >
             <Sparkles className="w-3.5 h-3.5 mr-3" />
             Capabilities
@@ -32,9 +32,9 @@ export function BenefitsGrid() {
             data-aos="fade-up"
             data-aos-duration="800"
             data-aos-delay="200"
-            className="text-5xl md:text-8xl lg:text-9xl font-bold text-foreground tracking-tighter leading-[0.85] text-balance"
+            className="text-5xl md:text-8xl lg:text-9xl font-headline font-bold text-label tracking-display leading-[0.85] text-balance"
           >
-            Built for <br /> <span className="text-muted/20">Real Performance.</span>
+            Built for <br /> <span className="text-secondary-label opacity-20 tracking-tight">Real Performance.</span>
           </h2>
         </div>
         
@@ -42,7 +42,7 @@ export function BenefitsGrid() {
           data-aos="fade-left"
           data-aos-duration="700"
           data-aos-delay="300"
-          className="text-muted/60 text-lg md:text-xl font-medium max-w-md lg:text-right leading-relaxed mt-12 lg:mt-48 italic"
+          className="text-secondary-label opacity-60 text-lg md:text-xl font-medium tracking-body max-w-md lg:text-right leading-normal mt-12 lg:mt-48 italic"
         >
           Each benefit is a result of meticulous engineering and plant-powered science.
         </p>
@@ -57,24 +57,24 @@ export function BenefitsGrid() {
               data-aos="zoom-in-up"
               data-aos-duration="600"
               data-aos-delay={400 + i * 100}
-              className="group relative min-h-[320px] rounded-[2.5rem] bg-background p-10 flex flex-col justify-between overflow-hidden hover:shadow-float shadow-soft transition-all duration-700"
+              className="group relative min-h-[320px] squircle card-premium p-10 flex flex-col justify-between overflow-hidden hover:shadow-float transition-all duration-700"
             >
               {/* Subtle background texture/glow */}
               <div className="absolute -right-20 -bottom-20 w-40 h-40 bg-accent/5 rounded-full blur-3xl group-hover:bg-accent/10 transition-colors" />
               
               <div className="relative z-10">
-                <div className="w-14 h-14 rounded-2xl surface flex items-center justify-center mb-10 text-accent shadow-sm group-hover:scale-110 group-hover:shadow-soft transition-all duration-700">
+                <div className="w-14 h-14 bg-system-fill rounded-2xl flex items-center justify-center mb-10 text-accent shadow-sm group-hover:scale-110 group-hover:shadow-soft transition-all duration-700 squircle">
                   <Icon size={24} strokeWidth={1.5} />
                 </div>
-                <h3 className="text-2xl font-bold text-foreground mb-6 tracking-tighter">{benefit.title}</h3>
-                <p className="text-muted/60 text-sm font-medium leading-relaxed">
+                <h3 className="text-2xl font-headline font-bold text-label mb-6 tracking-headline">{benefit.title}</h3>
+                <p className="text-secondary-label opacity-60 text-sm leading-normal tracking-body">
                   {benefit.description}
                 </p>
               </div>
               
               <div className="relative z-10 flex items-center gap-2 overflow-hidden">
                 <div className="h-[1px] w-8 bg-accent/30 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
-                <span className="text-[9px] font-bold uppercase tracking-widest text-accent opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-700">Measured Result</span>
+                <span className="text-[9px] font-semibold uppercase tracking-headline text-accent opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-700">Measured Result</span>
               </div>
             </div>
           );

@@ -32,7 +32,7 @@ export function SocialProof() {
             data-aos="fade-up"
             data-aos-duration="800"
             data-aos-delay="200"
-            className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground tracking-tighter leading-[0.9]"
+            className="text-4xl md:text-6xl lg:text-7xl font-headline font-bold text-label tracking-display leading-tight"
           >
             Trusted by the Driven.
           </h2>
@@ -42,7 +42,7 @@ export function SocialProof() {
           data-aos="fade-up"
           data-aos-duration="700"
           data-aos-delay="300"
-          className="text-xl text-muted font-medium italic max-w-xl mx-auto text-center"
+          className="text-xl text-secondary-label leading-normal tracking-body max-w-xl mx-auto text-center italic"
         >
           Powering thousands of sessions daily. Join a community built on uncompromising standards.
         </p>
@@ -59,7 +59,7 @@ export function SocialProof() {
               <motion.div 
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.3 }}
-                className="text-5xl md:text-8xl font-bold text-foreground mb-6 tracking-tighter italic group-hover:scale-110 transition-transform duration-700"
+                className="text-5xl md:text-8xl font-headline font-bold text-label mb-6 tracking-display italic group-hover:scale-110 transition-transform duration-700"
               >
                 {stat.value}
               </motion.div>
@@ -68,12 +68,12 @@ export function SocialProof() {
                 variant="accent" 
                 size="sm" 
                 animated={true}
-                className="mb-3"
+                className="mb-3 font-semibold tracking-headline"
               >
                 {stat.label}
               </Badge>
               <div className="w-1.5 h-1.5 rounded-full bg-accent/20 mx-auto my-8" />
-              <div className="text-muted/40 text-[10px] font-bold uppercase tracking-widest">{stat.sub}</div>
+              <div className="text-secondary-label opacity-40 text-[10px] font-semibold uppercase tracking-headline">{stat.sub}</div>
             </div>
           ))}
         </div>
@@ -89,7 +89,7 @@ export function SocialProof() {
             transition={{ duration: 0.5 }}
           >
             {/* Subtle separator or secondary social proof */}
-            <div className="text-[9px] font-bold uppercase tracking-[0.5em] text-muted">
+            <div className="text-[9px] font-semibold uppercase tracking-headline text-secondary-label">
               Designed for Performance — Refined for Life
             </div>
           </motion.div>

@@ -33,7 +33,7 @@ export function CTASection() {
         <HeroEyebrow 
           position="center"
           animated
-          className="bg-foreground text-background"
+          className="bg-label text-system-background"
         >
           <Rocket className="w-3.5 h-3.5 mr-3" />
           Get Started
@@ -50,7 +50,7 @@ export function CTASection() {
         data-aos="zoom-in-up"
         data-aos-duration="1000"
         data-aos-delay="200"
-        className="relative overflow-hidden w-full cta-inverse rounded-[3.5rem] md:rounded-[5rem] shadow-float max-w-6xl mx-auto"
+        className="relative overflow-hidden w-full cta-inverse squircle shadow-float max-w-6xl mx-auto"
       >
         {/* Abstract background elements - Vibrant Gold Depth */}
         <div className="absolute inset-0 pointer-events-none">
@@ -64,10 +64,10 @@ export function CTASection() {
             data-aos-duration="800"
             data-aos-delay="400"
           >
-            <span className="text-[10px] font-bold uppercase tracking-[0.5em] text-accent mb-12 block">
+            <span className="text-[10px] font-semibold uppercase tracking-headline text-accent mb-12 block">
               Join the House
             </span>
-            <h2 className="text-5xl md:text-7xl lg:text-8xl font-bold leading-[0.9] tracking-tighter">
+            <h2 className="text-5xl md:text-7xl lg:text-8xl font-bold font-headline leading-tight tracking-display">
               Upgrade Your <br /> Protein.
             </h2>
 
@@ -79,7 +79,7 @@ export function CTASection() {
                 <Button
                   size="lg"
                   variant="primary"
-                  className="px-12 md:px-20 !h-20 text-lg md:text-xl font-bold uppercase tracking-widest !bg-accent !text-accent-foreground rounded-2xl shadow-float hover:scale-105 transition-all duration-700 ease-premium"
+                  className="px-12 md:px-20 !h-20 text-lg md:text-xl font-semibold uppercase tracking-headline !bg-accent !text-accent-label squircle shadow-float hover:scale-105 transition-all duration-700 ease-premium ring-offset-system-background hover:ring-2 hover:ring-accent/20"
                   onClick={handleFinalCheckout}
                 >
                   Checkout Now — $54.99

@@ -20,10 +20,10 @@ const TRUST_INDICATORS = [
   { label: "Zero Additives", icon: CleanIcon }
 ];
 
-export function SolutionSection({ 
-  activeSection, 
-  isScrollingIntoSection, 
-  isScrollingOutOfSection 
+export function SolutionSection({
+  activeSection,
+  isScrollingIntoSection,
+  isScrollingOutOfSection
 }: {
   activeSection: string | null;
   isScrollingIntoSection: (sectionId: string) => boolean;
@@ -64,28 +64,28 @@ export function SolutionSection({
     <SectionContainer variant="white" id="solution">
       <div className="flex flex-col items-center text-center">
         <div className="mb-12">
-          <HeroEyebrow 
+          <HeroEyebrow
             position="center"
             animated
           >
-            <Lightbulb className="w-3.5 h-3.5 mr-3 text-foreground" />
+            <Lightbulb className="w-3.5 h-3.5 mr-3 text-label" />
             The System
           </HeroEyebrow>
-          <h2 
+          <h2
             data-aos="fade-up"
             data-aos-duration="800"
             data-aos-delay="200"
-            className="mt-12 text-5xl md:text-6xl lg:text-7xl font-bold text-foreground tracking-tight leading-none"
+            className="mt-12 text-5xl md:text-6xl lg:text-7xl font-headline font-bold text-label tracking-display leading-tight"
           >
             Meet {BRAND.name}
           </h2>
         </div>
 
-        <p 
+        <p
           data-aos="fade-up"
           data-aos-duration="700"
           data-aos-delay="300"
-          className="text-xl text-muted max-w-2xl font-medium leading-relaxed italic"
+          className="text-xl text-secondary-label max-w-2xl leading-normal tracking-body italic"
         >
           "Protein redesigned for the modern athlete. No fillers, no excuses. Just pure, plant-powered performance."
         </p>
@@ -101,14 +101,14 @@ export function SolutionSection({
                 data-aos-delay={400 + i * 100}
                 className="flex flex-col items-center group"
               >
-                <motion.div 
+                <motion.div
                   whileHover={{ scale: 1.1 }}
                   transition={{ duration: 0.3 }}
-                  className="w-16 h-16 rounded-2xl surface flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 group-hover:shadow-float transition-all duration-700"
+                  className="w-16 h-16 rounded-2xl bg-system-fill flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 group-hover:shadow-float transition-all duration-700 squircle"
                 >
-                   <Icon size={28} className="text-accent" />
+                  <Icon size={28} className="text-accent" />
                 </motion.div>
-                <span className="text-[11px] font-bold text-foreground tracking-widest uppercase max-w-[120px] leading-tight opacity-70 group-hover:opacity-100 transition-opacity">
+                <span className="text-[11px] font-semibold text-label tracking-headline uppercase max-w-[120px] leading-tight opacity-70 group-hover:opacity-100 transition-opacity">
                   {indicator.label}
                 </span>
               </div>
@@ -118,17 +118,17 @@ export function SolutionSection({
 
         <div className="mt-32 relative group perspective-2000">
           <div className="absolute inset-0 bg-accent/5 rounded-full blur-[100px] group-hover:bg-accent/10 transition-colors duration-1000" />
-          
+
           {/* Floating background markers to use whitespace */}
-          <motion.div 
+          <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-accent/[0.02] rounded-full pointer-events-none"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-accent/[0.015] rounded-full pointer-events-none"
           />
-          <motion.div 
+          <motion.div
             animate={{ rotate: -360 }}
             transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-accent/[0.03] rounded-full pointer-events-none"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-accent/[0.02] rounded-full pointer-events-none"
           />
 
           <Product3DViewer

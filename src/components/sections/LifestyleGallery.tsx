@@ -24,14 +24,14 @@ export function LifestyleGallery() {
           position="center"
           animated
         >
-          <Camera className="w-3.5 h-3.5 mr-3 text-foreground" />
+          <Camera className="w-3.5 h-3.5 mr-3 text-label" />
           Life in HOP
         </HeroEyebrow>
         <h2 
           data-aos="fade-up"
           data-aos-duration="800"
           data-aos-delay="200"
-          className="mt-12 text-4xl md:text-5xl lg:text-6xl font-bold text-foreground tracking-tight"
+          className="mt-12 text-4xl md:text-5xl lg:text-6xl font-headline font-bold text-label tracking-display leading-tight"
         >
           Fuel Your Training.
         </h2>
@@ -44,7 +44,7 @@ export function LifestyleGallery() {
           data-aos="fade-up"
           data-aos-duration="700"
           data-aos-delay="300"
-          className="mt-12 text-xl text-muted font-medium italic max-w-xl"
+          className="mt-12 text-xl text-secondary-label leading-normal tracking-body font-medium italic max-w-xl"
         >
           Designed for the athlete, refined for the everyday. Witness House of Prax in action.
         </p>
@@ -58,7 +58,7 @@ export function LifestyleGallery() {
             data-aos-duration="600"
             data-aos-delay={400 + i * 100}
             className={cn(
-              "relative rounded-[2rem] md:rounded-[3rem] overflow-hidden group shadow-soft",
+              "relative squircle overflow-hidden group shadow-card",
               img.span
             )}
           >
@@ -81,7 +81,7 @@ export function LifestyleGallery() {
                 transition={{ duration: 0.3 }}
                 className="absolute bottom-8 left-10 z-30 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700"
               >
-                 <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white bg-black/20 backdrop-blur-md px-4 py-2 rounded-full">
+                 <span className="text-[11px] font-semibold uppercase tracking-headline text-white bg-black/20 backdrop-blur-md px-4 py-2 rounded-full">
                    {img.alt}
                  </span>
                 </motion.div>

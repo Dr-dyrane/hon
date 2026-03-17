@@ -22,9 +22,9 @@ export function Badge({
   animated = false
 }: BadgeProps) {
   const variants = {
-    default: "text-foreground",
+    default: "text-label",
     accent: "text-accent", 
-    muted: "text-muted opacity-60"
+    muted: "text-secondary-label opacity-60"
   };
 
   const sizes = {
@@ -98,9 +98,9 @@ export function BadgeList({
       })}
     >
       {items.map((item, index) => (
-        <div key={index} className="flex items-center gap-2 bg-surface/40 backdrop-blur-sm px-3 py-1 rounded-full">
+        <div key={index} className="flex items-center gap-2 bg-system-fill backdrop-blur-sm px-3 py-1 squircle">
           <div className="w-1 h-1 rounded-full bg-accent" />
-          <span className="text-[10px] tracking-[0.25em] text-muted uppercase opacity-60">
+          <span className="text-[10px] tracking-[0.25em] text-secondary-label uppercase opacity-60">
             {item}
           </span>
         </div>

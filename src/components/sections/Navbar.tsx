@@ -54,7 +54,7 @@ export function Navbar() {
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
           isScrolled
-            ? "py-3 bg-background/80 backdrop-blur-xl"
+            ? "py-3 glass-morphism"
             : "py-6 bg-transparent"
         )}
       >
@@ -72,7 +72,7 @@ export function Navbar() {
               <Link
                 key={item.label}
                 href={item.href}
-                className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted hover:text-foreground transition-colors duration-300"
+                className="text-[12px] font-semibold uppercase tracking-headline text-secondary-label opacity-80 hover:text-label transition-colors duration-300 vibrancy-label"
               >
                 {item.label}
               </Link>
@@ -84,7 +84,7 @@ export function Navbar() {
             <motion.div layout className="hidden md:flex">
               <ThemeToggle />
             </motion.div>
-            
+
             <AnimatePresence>
               {isScrolled && (
                 <motion.div
@@ -98,7 +98,7 @@ export function Navbar() {
                 >
                   <Link
                     href="#shop"
-                    className="hidden md:inline-flex items-center justify-center button-primary !h-[32px] !min-h-[32px] px-6 text-[9px] font-bold uppercase tracking-[0.2em] rounded-full whitespace-nowrap transition-transform shadow-none"
+                    className="hidden md:inline-flex items-center justify-center button-primary !h-[32px] !min-h-[32px] px-6 text-[9px] font-semibold uppercase tracking-headline rounded-full whitespace-nowrap transition-transform shadow-none"
                   >
                     Start Order
                   </Link>
@@ -124,9 +124,9 @@ export function Navbar() {
                   transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {isMobileMenuOpen ? (
-                    <X className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                    <X className="w-5 h-5 text-label" strokeWidth={1.5} />
                   ) : (
-                    <Equal className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                    <Equal className="w-5 h-5 text-label" strokeWidth={1.5} />
                   )}
                 </motion.div>
               </AnimatePresence>
@@ -149,7 +149,7 @@ export function Navbar() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-background"
+              className="absolute inset-0 bg-system-background"
             />
 
             <motion.div
@@ -177,7 +177,7 @@ export function Navbar() {
                       onClick={closeMobileMenu}
                       className="group flex items-center py-5"
                     >
-                      <span className="text-4xl font-semibold tracking-tight text-foreground group-hover:text-accent transition-colors duration-300">
+                      <span className="text-4xl font-semibold tracking-tight text-label group-hover:text-accent transition-colors duration-300">
                         {item.label}
                       </span>
                     </Link>
@@ -197,14 +197,14 @@ export function Navbar() {
                 className="mt-12 flex flex-col gap-8"
               >
                 <div className="flex items-center justify-between px-2">
-                  <span className="text-xl font-medium text-muted">Appearance</span>
+                   <span className="text-xl font-medium text-secondary-label vibrancy-label">Appearance</span>
                   <ThemeToggle />
                 </div>
 
                 <Link
                   href="#shop"
                   onClick={closeMobileMenu}
-                  className="button-primary w-full justify-center min-h-[56px] text-xs font-semibold uppercase tracking-[0.15em]"
+                  className="button-primary w-full justify-center min-h-[56px] text-xs font-semibold uppercase tracking-headline"
                 >
                   Choose Your Flavor
                 </Link>

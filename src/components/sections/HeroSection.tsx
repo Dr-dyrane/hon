@@ -11,10 +11,10 @@ import { cn } from "@/lib/utils";
 import { Product3DViewer } from "@/components/3d/Product3DViewer";
 import AOS from "aos";
 
-export function HeroSection({ 
-  activeSection, 
-  isScrollingIntoSection, 
-  isScrollingOutOfSection 
+export function HeroSection({
+  activeSection,
+  isScrollingIntoSection,
+  isScrollingOutOfSection
 }: {
   activeSection: string | null;
   isScrollingIntoSection: (sectionId: string) => boolean;
@@ -64,11 +64,10 @@ export function HeroSection({
 
   return (
     <section id="hero" className="hero-shell relative flex flex-col items-center justify-center overflow-hidden bg-background">
-      {/* Atmosphere Layer */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-x-0 bottom-0 h-full pointer-events-none">
         <div className="hero-grain-layer" />
 
-        {/* Dynamic Glow based on flavor */}
+        {/* High-Fidelity Stage Lighting */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentProduct + (isDark ? "-dark" : "-light")}
@@ -76,17 +75,8 @@ export function HeroSection({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1.5 }}
-            className="absolute inset-0"
-          >
-            <div className={cn(
-              "absolute inset-0 blur-[120px] opacity-30 transition-colors duration-1000",
-              currentProduct === "protein_chocolate" ? "bg-[#4A2C2A]/20" : "bg-accent/10"
-            )} />
-
-            {/* Custom glows for depth */}
-            <div className="absolute top-1/4 -left-1/4 w-1/2 h-1/2 bg-forest/10 rounded-full blur-[150px]" />
-            <div className="absolute bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-beige/10 rounded-full blur-[150px]" />
-          </motion.div>
+            className="stage-light"
+          />
         </AnimatePresence>
       </div>
 
@@ -105,7 +95,7 @@ export function HeroSection({
             height={14}
             className="mr-2 dark:invert"
           />
-          Plant-Based Performance
+          <span className="vibrancy-label uppercase">Plant-Based Performance</span>
         </span>
       </motion.div>
 
@@ -117,10 +107,10 @@ export function HeroSection({
             initial="hidden"
             animate="visible"
             variants={revealVariants}
-            className="font-headline text-5xl sm:text-6xl lg:text-7xl xl:text-8xl leading-[0.92] tracking-[-0.03em] text-foreground"
+            className="font-headline text-5xl sm:text-6xl lg:text-7xl xl:text-8xl leading-tight tracking-display text-foreground"
           >
             Natural Energy
-            <span className="block mt-4 sm:mt-6 text-muted italic">Made for Performance</span>
+            <span className="block mt-4 sm:mt-6 text-secondary-label italic font-headline tracking-headline opacity-80">Made for Performance</span>
           </motion.h1>
 
           <motion.div
@@ -128,12 +118,12 @@ export function HeroSection({
             initial="hidden"
             animate="visible"
             variants={revealVariants}
-            className="mt-16 flex flex-wrap gap-3 justify-center lg:justify-start"
+            className="mt-16 flex flex-row gap-4 justify-center lg:justify-start items-center"
           >
             <Button
               size="lg"
               variant="primary"
-              className="px-10"
+              className="px-10 sm:min-w-[240px] shadow-float"
               whileTap={{ scale: 0.98 }}
               onClick={() => {
                 const el = document.getElementById("shop");
@@ -147,8 +137,7 @@ export function HeroSection({
             <Button
               size="lg"
               variant="secondary"
-              className="px-10"
-              whileTap={{ scale: 0.98 }}
+              className="px-10 glass-morphism !border-none text-label font-bold shadow-soft"
               onClick={() => {
                 const el = document.getElementById("ingredients");
                 if (el) {
@@ -160,7 +149,7 @@ export function HeroSection({
             </Button>
           </motion.div>
 
-          <BadgeList 
+          <BadgeList
             items={["Plant-Based", "Clean Ingredients", "Easy Digestion"]}
             className="mt-16"
             animated
@@ -189,7 +178,7 @@ export function HeroSection({
                   ease: [0.22, 1, 0.36, 1],
                   opacity: { duration: 0.8 }
                 }}
-                className="relative z-10 w-full h-full rounded-[2rem] overflow-hidden"
+                className="relative z-10 w-full h-full squircle overflow-hidden"
               >
                 <Product3DViewer
                   modelPath={productData[currentProduct].model}
@@ -226,10 +215,10 @@ export function HeroSection({
                 key={prodKey}
                 onClick={() => setCurrentProduct(prodKey as any)}
                 className={cn(
-                  "px-6 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-widest transition-all duration-500",
+                  "px-6 py-2.5 rounded-full text-[11px] font-semibold uppercase tracking-headline transition-all duration-500",
                   currentProduct === prodKey
-                    ? "bg-foreground text-background shadow-lg scale-105"
-                    : "text-muted hover:text-foreground hover:bg-surface"
+                    ? "bg-label text-system-background shadow-lg scale-105"
+                    : "text-secondary-label hover:text-label hover:bg-system-fill"
                 )}
               >
                 {PRODUCTS[prodKey as keyof typeof PRODUCTS].name}

@@ -18,14 +18,14 @@ export function IngredientSection() {
             position="left"
             animated
           >
-            <Leaf className="w-3.5 h-3.5 mr-3 text-foreground" />
+            <Leaf className="w-3.5 h-3.5 mr-3 text-label" />
             Transparency
           </HeroEyebrow>
           <h2 
             data-aos="fade-up"
             data-aos-duration="800"
             data-aos-delay="200"
-            className="mt-12 text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-[1.05] tracking-tight"
+            className="mt-12 text-4xl md:text-5xl lg:text-6xl font-headline font-bold text-label leading-tight tracking-display"
           >
             Nothing Hidden. <br /> Nothing Fake.
           </h2>
@@ -33,7 +33,7 @@ export function IngredientSection() {
             data-aos="fade-up"
             data-aos-duration="700"
             data-aos-delay="300"
-            className="mt-12 text-xl text-muted leading-relaxed font-medium italic"
+            className="mt-12 text-xl text-secondary-label leading-normal tracking-body italic"
           >
             We believe in complete transparency. Every ingredient in House of Prax is meticulously selected for its purity and performance benefits.
           </p>
@@ -46,7 +46,7 @@ export function IngredientSection() {
               data-aos="zoom-in-up"
               data-aos-duration="600"
               data-aos-delay={400 + i * 100}
-              className="relative h-[350px] rounded-[2.5rem] overflow-hidden bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-[#0d0f0d]/80 dark:to-[#1a1a1a]/80 shadow-soft hover:shadow-float transition-all duration-700"
+              className="relative h-[350px] squircle overflow-hidden card-premium hover:shadow-float transition-all duration-700"
             >
               <motion.div
                 whileHover={{ scale: 1.05 }}
@@ -64,13 +64,13 @@ export function IngredientSection() {
 
                 <div className="absolute inset-0 p-10 flex flex-col justify-end z-20 group-hover:pointer-events-auto">
                   <motion.span 
-                    className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-4 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-4 transition-all duration-500"
+                    className="text-[10px] font-semibold uppercase tracking-headline text-accent mb-4 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-4 transition-all duration-500"
                   >
                     Essential Ingredient
                   </motion.span>
-                  <h3 className="text-3xl font-bold tracking-tighter text-foreground opacity-0 group-hover:opacity-100 group-hover:-translate-y-2 translate-y-4 transition-all duration-500">{ing.name}</h3>
+                  <h3 className="text-3xl font-headline font-bold tracking-headline text-label opacity-0 group-hover:opacity-100 group-hover:-translate-y-2 translate-y-4 transition-all duration-500">{ing.name}</h3>
                   <motion.p 
-                    className="mt-4 text-muted text-sm font-medium leading-relaxed max-w-[240px] opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-4 transition-all duration-500 delay-200"
+                    className="mt-4 text-secondary-label text-sm leading-normal tracking-body max-w-[240px] opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-4 transition-all duration-500 delay-200"
                   >
                     {ing.detail}
                   </motion.p>

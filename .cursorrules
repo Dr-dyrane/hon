@@ -1,0 +1,23 @@
+# Project Rules: House of Prax
+
+## UI/UX Principles (Apple HIG + Alexander UI Canon)
+
+1. **Typography Consistency**
+   - Headings MUST use `font-headline` and `tracking-display`.
+   - Primary labels/buttons MUST use `font-semibold` and `tracking-headline`.
+   - Paragraphs MUST use `leading-normal` and `tracking-body`.
+   - Base font size is **17px**.
+
+2. **Material Standards**
+   - NEVER use flat background opacities for cards. ALWAYS use `.card-premium` (Thin Material).
+   - Navbars MUST use `.glass-morphism` (Ultra Thin Material).
+   - Secondary buttons MUST use HIG Regular blur.
+
+3. **Interaction Design**
+   - Follow **Rule #4**: One dominant action per view.
+   - Use `ease-premium` (`cubic-bezier(0.22, 1, 0.36, 1)`) for all motion.
+   - Reveal metadata on hover only (Rule #16).
+
+4. **Code Standards**
+   - No hardcoded tracking or leading values. Use theme tokens (`tracking-display`, `tracking-headline`, etc.).
+   - No "temporary" styles. Every component must earn its existence through the token system.

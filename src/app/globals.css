@@ -9,22 +9,37 @@
   --color-graphite: #1c1c1c;
   --color-white: #ffffff;
 
-  /* Semantic tokens: theme-aware */
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-surface: var(--surface);
-  --color-surface-alt: var(--surface-alt);
-  --color-muted: var(--muted);
-  --color-border-soft: var(--border-soft);
-  --color-border-strong: var(--border-strong);
+  /* Semantic tokens: Apple HIG Naming */
+  --color-system-background: var(--system-background);
+  --color-label: var(--label);
+  --color-secondary-label: var(--secondary-label);
+  --color-tertiary-label: var(--tertiary-label);
+  --color-quaternary-label: var(--quaternary-label);
+
+  --color-system-fill: var(--system-fill);
+  --color-secondary-system-fill: var(--secondary-system-fill);
+
   --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-label: var(--accent-label);
   --color-selection: var(--selection);
   --color-ring: var(--ring);
+  --color-separator: var(--separator);
 
-  /* Typography */
-  --font-sans: var(--font-inter), "Inter", sans-serif;
-  --font-headline: var(--font-satoshi), "Satoshi", "Inter", sans-serif;
+  /* Typography - HIG Optimized */
+  --font-sans: var(--font-sf-pro), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-headline: var(--font-sf-pro), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+
+  /* HIG Dynamic Tracking */
+  --tracking-display: -0.03em;
+  --tracking-title: -0.022em;
+  --tracking-headline: -0.015em;
+  --tracking-body: -0.011em;
+  --tracking-tightest: -0.04em;
+
+  /* Leading */
+  --leading-tight: 1.1;
+  --leading-normal: 1.3;
+  --leading-loose: 1.5;
 
   /* Layout */
   --spacing-section: 120px;
@@ -34,7 +49,7 @@
   --container-max: 1200px;
 
   /* Radius */
-  --radius-card: 24px;
+  --radius-card: 999px;
   --radius-button: 999px;
 
   /* Shadows */
@@ -54,19 +69,23 @@
 :root {
   color-scheme: light;
 
-  --background: #ffffff;
-  --foreground: #1c1c1c;
-  --surface: rgba(255, 255, 255, 0.82);
-  --surface-alt: #f4f2ea;
-  --muted: rgba(28, 28, 28, 0.66);
+  --system-background: #ffffff;
+  --label: #1c1c1c;
+  --secondary-label: rgba(28, 28, 28, 0.64);
+  --tertiary-label: rgba(28, 28, 28, 0.38);
+  --quaternary-label: rgba(28, 28, 28, 0.12);
 
-  --border-soft: rgba(28, 28, 28, 0.08);
-  --border-strong: rgba(28, 28, 28, 0.14);
+  --system-fill: rgba(28, 28, 28, 0.08);
+  --secondary-system-fill: rgba(15, 61, 46, 0.08);
+
+  --separator: rgba(28, 28, 28, 0.08);
 
   --accent: #0f3d2e;
-  --accent-foreground: #ffffff;
+  --accent-label: #ffffff;
   --selection: rgba(15, 61, 46, 0.12);
   --ring: rgba(15, 61, 46, 0.22);
+  --surface: rgba(255, 255, 255, 0.82);
+  --surface-alt: #f4f2ea;
 
   --shadow-soft-token: 0 10px 30px rgba(0, 0, 0, 0.05);
   --shadow-card-token: 0 12px 40px rgba(0, 0, 0, 0.06);
@@ -78,19 +97,23 @@
 .dark {
   color-scheme: dark;
 
-  --background: #0d0f0d;
-  --foreground: #f4f2ea;
-  --surface: rgba(20, 23, 20, 0.72);
-  --surface-alt: #151915;
-  --muted: rgba(244, 242, 234, 0.68);
+  --system-background: #0d0f0d;
+  --label: #f4f2ea;
+  --secondary-label: rgba(244, 242, 234, 0.64);
+  --tertiary-label: rgba(244, 242, 234, 0.38);
+  --quaternary-label: rgba(244, 242, 234, 0.12);
 
-  --border-soft: rgba(244, 242, 234, 0.08);
-  --border-strong: rgba(244, 242, 234, 0.14);
+  --system-fill: rgba(244, 242, 234, 0.08);
+  --secondary-system-fill: rgba(215, 197, 163, 0.08);
+
+  --separator: rgba(244, 242, 234, 0.08);
 
   --accent: #d7c5a3;
-  --accent-foreground: #0f1110;
+  --accent-label: #0f1110;
   --selection: rgba(215, 197, 163, 0.16);
   --ring: rgba(215, 197, 163, 0.28);
+  --surface: rgba(20, 23, 20, 0.72);
+  --surface-alt: #151915;
 
   --shadow-soft-token: 0 10px 30px rgba(0, 0, 0, 0.32);
   --shadow-card-token: 0 12px 40px rgba(0, 0, 0, 0.38);
@@ -103,17 +126,16 @@
   :root:not(.light) {
     color-scheme: dark;
 
-    --background: #0d0f0d;
-    --foreground: #f4f2ea;
+    --system-background: #000000;
+    --label: #f4f2ea;
     --surface: rgba(20, 23, 20, 0.72);
-    --surface-alt: #151915;
-    --muted: rgba(244, 242, 234, 0.68);
+    --surface-alt: #050505;
+    --secondary-label: rgba(244, 242, 234, 0.68);
 
-    --border-soft: rgba(244, 242, 234, 0.08);
-    --border-strong: rgba(244, 242, 234, 0.14);
+    --separator: rgba(244, 242, 234, 0.08);
 
     --accent: #d7c5a3;
-    --accent-foreground: #0f1110;
+    --accent-label: #0f1110;
     --selection: rgba(215, 197, 163, 0.16);
     --ring: rgba(215, 197, 163, 0.28);
 
@@ -131,7 +153,7 @@
 }
 
 * {
-  border-color: var(--border-soft);
+  border-color: var(--separator);
 }
 
 html {
@@ -146,11 +168,14 @@ body {
   margin: 0;
   min-width: 320px;
   overflow-x: hidden;
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--system-background);
+  color: var(--label);
   font-family: var(--font-sans);
-  font-feature-settings: "ss01", "ss02", "cv01", "cv02";
-  line-height: 1.5;
+  font-size: 17px;
+  /* HIG Body Standard */
+  font-feature-settings: "tnum", "cv08", "cv09", "cv10";
+  /* SF Pro specific features */
+  line-height: var(--leading-normal);
   transition:
     background-color var(--duration-base) var(--ease-premium),
     color var(--duration-base) var(--ease-premium);
@@ -170,8 +195,8 @@ h6 {
   color: var(--foreground);
   font-family: var(--font-headline);
   font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: 0.95;
+  letter-spacing: var(--tracking-headline);
+  line-height: var(--leading-tight);
   text-wrap: balance;
 }
 
@@ -248,8 +273,11 @@ canvas {
   border-radius: var(--radius-card);
   background: var(--surface);
   box-shadow: var(--shadow-card);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px) saturate(140%) brightness(1.02);
+  /* HIG Thin + Brightness bump for vibrancy */
+  -webkit-backdrop-filter: blur(14px) saturate(140%) brightness(1.02);
+  corner-shape: squircle;
+  /* Native Squircle Support */
   transition:
     background-color var(--duration-base) var(--ease-premium),
     box-shadow var(--duration-base) var(--ease-premium),
@@ -258,12 +286,15 @@ canvas {
 
 .card-premium:hover {
   transform: translateY(-4px);
+  box-shadow: var(--shadow-float);
 }
 
 .card-soft {
   border-radius: var(--radius-card);
   background: var(--surface);
   box-shadow: var(--shadow-soft);
+  corner-shape: squircle;
+  /* HIG Continuous Corner */
   transition:
     background-color var(--duration-base) var(--ease-premium),
     box-shadow var(--duration-base) var(--ease-premium),
@@ -279,8 +310,10 @@ canvas {
   padding-inline: 1.5rem;
   border-radius: var(--radius-button);
   background: var(--accent);
-  color: var(--accent-foreground);
+  color: var(--accent-label);
   font-weight: 500;
+  corner-shape: squircle;
+  /* Apple-style button geometry */
   box-shadow: var(--shadow-button);
   transition:
     transform var(--duration-fast) var(--ease-premium),
@@ -297,10 +330,13 @@ canvas {
   min-height: 48px;
   padding-inline: 1.5rem;
   border-radius: var(--radius-button);
-  background: var(--surface-alt);
-  color: var(--foreground);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: transparent;
+  color: var(--secondary-label);
+  backdrop-filter: blur(10px) saturate(120%);
+  /* HIG Regular */
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  font-weight: 500;
+  corner-shape: squircle;
   transition:
     transform var(--duration-fast) var(--ease-premium),
     background-color var(--duration-base) var(--ease-premium),
@@ -379,12 +415,12 @@ canvas {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
+  background: var(--separator);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted);
+  background: var(--secondary-label);
 }
 
 /* Scroll Snap Optimizations */
@@ -393,7 +429,7 @@ canvas {
     scroll-behavior: smooth;
     scroll-snap-type: y proximity;
   }
-  
+
   .section-shell,
   .hero-shell {
     scroll-snap-align: start;
@@ -404,9 +440,10 @@ canvas {
 /* Mobile scroll snap adjustments */
 @media (max-width: 768px) {
   html {
-    scroll-snap-type: y proximity; /* Less aggressive on mobile */
+    scroll-snap-type: y proximity;
+    /* Less aggressive on mobile */
   }
-  
+
   .section-shell,
   .hero-shell {
     scroll-snap-align: center;
@@ -425,12 +462,19 @@ canvas {
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
+
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
     transform: translateX(-50%) translateY(0);
   }
+
   40% {
     transform: translateX(-50%) translateY(-10px);
   }
+
   60% {
     transform: translateX(-50%) translateY(-5px);
   }
@@ -449,7 +493,7 @@ canvas {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  
+
   .section-shell,
   .hero-shell {
     scroll-snap-align: none;
@@ -494,7 +538,7 @@ canvas {
   font-size: 0.65rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--tracking-headline);
 }
 
 .hero-grain-layer {
@@ -546,7 +590,7 @@ canvas {
   font-size: 0.65rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--tracking-headline);
   transition: all var(--duration-fast) var(--ease-premium);
 }
 
@@ -554,14 +598,29 @@ canvas {
   color: var(--foreground);
   transform: translateY(-1px);
 }
+
 @keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0); }
-  50% { transform: translateY(-20px) rotate(2deg); }
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+
+  50% {
+    transform: translateY(-20px) rotate(2deg);
+  }
 }
 
 @keyframes float-slow {
-  0%, 100% { transform: translateY(0) rotate(0); }
-  50% { transform: translateY(-10px) rotate(1deg); }
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+
+  50% {
+    transform: translateY(-10px) rotate(1deg);
+  }
 }
 
 .animate-float {
@@ -597,8 +656,46 @@ canvas {
 
 .glass-morphism {
   background: var(--surface);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px) saturate(180%) brightness(1.05);
+  /* HIG Ultra Thin + Contrast Adjust */
+  -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.05);
+}
+
+.squircle {
+  corner-shape: squircle;
+  border-radius: var(--radius-card);
+  /* Fallback */
+}
+
+.vibrancy-label {
+  mix-blend-mode: multiply;
+  /* Subtle burn in light mode */
+  opacity: 0.85;
+}
+
+.dark .vibrancy-label {
+  mix-blend-mode: plus-lighter;
+  filter: brightness(1.2) contrast(1.1);
+  opacity: 1;
+}
+
+.stage-light {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle at center, var(--accent) 0%, transparent 70%);
+  opacity: 0.15;
+  filter: blur(140px);
+}
+
+.dark .stage-light {
+  opacity: 0.12;
+  filter: blur(180px);
 }
 
 .cta-inverse {
@@ -608,9 +705,9 @@ canvas {
   transition: transform var(--duration-base) var(--ease-premium);
 }
 
-.cta-inverse h2, 
-.cta-inverse h3, 
-.cta-inverse p, 
+.cta-inverse h2,
+.cta-inverse h3,
+.cta-inverse p,
 .cta-inverse span {
   color: #f4f2ea !important;
 }

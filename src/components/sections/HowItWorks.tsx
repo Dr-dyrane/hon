@@ -23,7 +23,7 @@ export function HowItWorks() {
         <HeroEyebrow
           position="center"
           animated
-          className="bg-foreground text-background"
+          className="bg-label text-system-background"
         >
           <Cog className="w-3.5 h-3.5 mr-3" />
           The Ritual
@@ -32,7 +32,7 @@ export function HowItWorks() {
           data-aos="fade-up"
           data-aos-duration="800"
           data-aos-delay="200"
-          className="my-12 text-4xl md:text-5xl lg:text-6xl font-bold text-foreground tracking-tighter"
+          className="my-12 text-4xl md:text-5xl lg:text-6xl font-headline font-bold text-label tracking-display leading-tight"
         >
           Simple Daily Fuel.
         </h2>
@@ -41,7 +41,7 @@ export function HowItWorks() {
           data-aos="fade-up"
           data-aos-duration="700"
           data-aos-delay="300"
-          className="text-xl text-muted font-medium italic w-full text-center"
+          className="text-xl text-secondary-label leading-normal tracking-body w-full text-center italic"
         >
           A minimalist ritual designed for the maximalist life. Pure performance in under 30 seconds.
         </p>
@@ -51,7 +51,7 @@ export function HowItWorks() {
         data-aos="zoom-in"
         data-aos-duration="800"
         data-aos-delay="400"
-        className="relative max-w-6xl mx-auto rounded-[3rem] md:rounded-[4rem] overflow-hidden bg-background shadow-float mb-20 group"
+        className="relative max-w-6xl mx-auto squircle overflow-hidden bg-system-background shadow-float mb-20 group"
       >
         <motion.div
           whileHover={{ scale: 1.02 }}
@@ -64,7 +64,7 @@ export function HowItWorks() {
             height={600}
             className="w-full h-[300px] md:h-[500px] object-cover opacity-80 group-hover:scale-105 transition-transform duration-[3s] mask-soft-edge"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-system-background via-transparent to-transparent" />
         </motion.div>
       </div>
 
@@ -80,12 +80,12 @@ export function HowItWorks() {
               <motion.div
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 transition={{ duration: 0.3 }}
-                className="w-20 h-20 rounded-2xl surface flex items-center justify-center mb-8 text-accent shadow-sm group-hover:scale-110 group-hover:shadow-float transition-all duration-700"
+                className="w-20 h-20 bg-system-fill rounded-2xl flex items-center justify-center mb-8 text-accent shadow-sm group-hover:scale-110 group-hover:shadow-float transition-all duration-700 squircle"
               >
-                <span className="text-[10px] font-bold uppercase tracking-tighter text-accent/60">HOP</span>
+                <span className="text-[10px] font-semibold uppercase tracking-headline text-accent/60">HOP</span>
               </motion.div>
-              <h3 className="text-xl font-bold text-foreground tracking-tight">{step.label}</h3>
-              <p className="text-[10px] text-accent font-bold uppercase tracking-widest mt-3 opacity-60">{step.sub}</p>
+              <h3 className="text-xl font-headline font-bold text-label tracking-headline">{step.label}</h3>
+              <p className="text-[10px] text-accent font-semibold uppercase tracking-headline mt-3 opacity-60">{step.sub}</p>
             </div>
 
             {i < steps.length - 1 && (
@@ -116,9 +116,9 @@ export function HowItWorks() {
         <motion.span
           whileHover={{ scale: 1.05 }}
           transition={{ duration: 0.2 }}
-          className="surface px-8 py-4 rounded-full text-[11px] font-bold uppercase tracking-widest text-muted shadow-sm"
+          className="bg-system-fill px-8 py-4 rounded-full text-[11px] font-semibold uppercase tracking-headline text-secondary-label shadow-sm squircle"
         >
-          Total Prep Time: <span className="text-accent underline decoration-2 underline-offset-4">Under 30 Seconds</span>
+          Total Prep Time: <span className="text-accent underline decoration-2 underline-offset-4 tracking-tight">Under 30 Seconds</span>
         </motion.span>
       </div>
     </SectionContainer>
