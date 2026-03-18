@@ -11,10 +11,10 @@ import { useTheme } from "next-themes";
 import { Product3DViewer } from "@/components/3d/Product3DViewer";
 import AOS from "aos";
 
-export function ProductSelector({ 
-  activeSection, 
-  isScrollingIntoSection, 
-  isScrollingOutOfSection 
+export function ProductSelector({
+  activeSection,
+  isScrollingIntoSection,
+  isScrollingOutOfSection
 }: {
   activeSection: string | null;
   isScrollingIntoSection: (sectionId: string) => boolean;
@@ -43,7 +43,7 @@ export function ProductSelector({
       setDebouncedProduct(selectedProduct);
       console.log(`⏱️ [ProductSelector] Debounced product changed to: ${selectedProduct}`);
     }, 300); // 300ms delay to allow previous 3D viewer to cleanup
-    
+
     return () => clearTimeout(timer);
   }, [selectedProduct]);
 
@@ -78,7 +78,7 @@ export function ProductSelector({
     <SectionContainer variant="white" id="shop">
       <div className="flex flex-col items-center">
         <div className="text-center mb-16">
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
@@ -97,8 +97,8 @@ export function ProductSelector({
                 }}
                 className={cn(
                   "px-6 py-2 rounded-full text-[10px] font-semibold uppercase tracking-headline transition-all",
-                  activeCategory === cat.id 
-                    ? "bg-accent text-accent-label shadow-sm" 
+                  activeCategory === cat.id
+                    ? "bg-accent text-accent-label shadow-sm"
                     : "bg-system-fill text-secondary-label hover:text-label"
                 )}
               >
@@ -113,63 +113,63 @@ export function ProductSelector({
           <div className="flex flex-col md:flex-row gap-4 order-2 md:order-1 w-full md:w-auto">
             <div className="flex flex-row md:flex-col gap-4 w-full md:w-auto overflow-scroll md:overflow-hidden scrollbar-hide">
               {filteredProducts.map((key) => {
-              const prod = PRODUCTS[key as keyof typeof PRODUCTS] as any;
-              return (
-                <button
-                  key={key}
-                  onClick={() => setSelectedProduct(key as any)}
-                  className={cn(
-                    "flex-1 px-6 py-4 rounded-3xl transition-all duration-500 text-left",
-                    selectedProduct === key 
-                      ? "bg-label text-system-background shadow-float" 
-                      : "bg-system-fill opacity-60 hover:opacity-100 hover:shadow-md"
-                  )}
-                >
-                  <div className={cn(
-                    "text-[10px] font-semibold uppercase tracking-headline mb-1 opacity-50",
-                    selectedProduct === key ? "text-system-background/60" : "text-secondary-label"
-                  )}>
-                    {prod.category}
-                  </div>
-                  <div className="text-xl font-headline font-bold">{prod.flavor || prod.name}</div>
-                </button>
-              );
-            })}
+                const prod = PRODUCTS[key as keyof typeof PRODUCTS] as any;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setSelectedProduct(key as any)}
+                    className={cn(
+                      "flex-1 px-6 py-4 rounded-3xl transition-all duration-500 text-left",
+                      selectedProduct === key
+                        ? "bg-label text-system-background shadow-float"
+                        : "bg-system-fill opacity-60 hover:opacity-100 hover:shadow-md"
+                    )}
+                  >
+                    <div className={cn(
+                      "text-[10px] font-semibold uppercase tracking-headline mb-1 opacity-50",
+                      selectedProduct === key ? "text-system-background/60" : "text-secondary-label"
+                    )}>
+                      {prod.category}
+                    </div>
+                    <div className="text-xl font-headline font-bold">{prod.flavor || prod.name}</div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Product Image Stage */}
           <div className="relative w-full max-w-sm h-[450px] flex items-center justify-center order-1 md:order-2 perspective-2000">
-             <div className="stage-light !scale-75 !opacity-40" />
-             
-             <AnimatePresence mode="wait">
-                <motion.div
-                  key={debouncedProduct}
-                  initial={{ opacity: 0, scale: 0.8, rotateY: -20, z: -100 }}
-                  animate={{ opacity: 1, scale: 1, rotateY: 0, z: 0 }}
-                  exit={{ opacity: 0, scale: 1.1, rotateY: 20, z: 100 }}
-                  transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                  className="product-frame relative z-10 w-full h-[450px] flex justify-center preserve-3d group/jar transition-transform"
-                >
-                  {(PRODUCTS[debouncedProduct as keyof typeof PRODUCTS] as any).model ? (
-                    <Product3DViewer
-                      modelPath={(PRODUCTS[debouncedProduct as keyof typeof PRODUCTS] as any).model}
-                      theme={isDark ? "dark" : "light"}
-                      className="w-[85%] h-full max-w-[300px]"
-                      sectionId={`shop-${debouncedProduct}`}
-                      scrollActive={scrollActive}
-                    />
-                  ) : (
-                    <Image 
-                      src={PRODUCTS[debouncedProduct as keyof typeof PRODUCTS].image} 
-                      alt={debouncedProduct.toString()}
-                      width={500}
-                      height={650}
-                      className="w-[85%] h-auto max-w-[300px] drop-shadow-2xl animate-float mask-radial"
-                    />
-                  )}
-                </motion.div>
-             </AnimatePresence>
+            <div className="stage-light !scale-75 !opacity-40" />
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={debouncedProduct}
+                initial={{ opacity: 0, scale: 0.8, rotateY: -20, z: -100 }}
+                animate={{ opacity: 1, scale: 1, rotateY: 0, z: 0 }}
+                exit={{ opacity: 0, scale: 1.1, rotateY: 20, z: 100 }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                className="product-frame relative z-10 w-full h-[450px] flex justify-center preserve-3d group/jar transition-transform"
+              >
+                {(PRODUCTS[debouncedProduct as keyof typeof PRODUCTS] as any).model ? (
+                  <Product3DViewer
+                    modelPath={(PRODUCTS[debouncedProduct as keyof typeof PRODUCTS] as any).model}
+                    theme={isDark ? "dark" : "light"}
+                    className="w-[85%] h-full max-w-[300px]"
+                    sectionId={`shop-${debouncedProduct}`}
+                    scrollActive={scrollActive}
+                  />
+                ) : (
+                  <Image
+                    src={PRODUCTS[debouncedProduct as keyof typeof PRODUCTS].image}
+                    alt={debouncedProduct.toString()}
+                    width={500}
+                    height={650}
+                    className="w-[85%] h-auto max-w-[300px] drop-shadow-2xl animate-float mask-radial"
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
 
           {/* Detail Side */}
@@ -185,13 +185,14 @@ export function ProductSelector({
                 <span className="inline-block text-[10px] font-semibold uppercase tracking-headline text-accent px-4 py-2 bg-accent/10 rounded-full mb-10">
                   Premium Quality
                 </span>
-                <h3 className="text-4xl md:text-5xl font-headline font-bold text-foreground leading-tight tracking-display">
-                  {PRODUCTS[debouncedProduct as keyof typeof PRODUCTS].name}
-                </h3>
-                <p className="mt-6 text-secondary-label text-lg leading-normal tracking-body">
-                  {PRODUCTS[debouncedProduct as keyof typeof PRODUCTS].description}
-                </p>
-                
+                <div className="flex flex-col gap-4">
+                  <h3 className="text-4xl md:text-5xl font-headline font-bold text-foreground leading-tight tracking-display">
+                    {PRODUCTS[debouncedProduct as keyof typeof PRODUCTS].name}
+                  </h3>
+                  <p className="mt-6 text-secondary-label text-lg leading-normal tracking-body">
+                    {PRODUCTS[debouncedProduct as keyof typeof PRODUCTS].description}
+                  </p>
+                </div>
                 {(PRODUCTS[debouncedProduct as keyof typeof PRODUCTS] as any).stats && (
                   <div className="mt-10 flex flex-wrap gap-4 justify-center md:justify-start">
                     {Object.entries((PRODUCTS[debouncedProduct as keyof typeof PRODUCTS] as any).stats).map(([statKey, val]: [string, any]) => (
@@ -209,8 +210,8 @@ export function ProductSelector({
                     <span className="text-xl font-bold text-label">{(PRODUCTS[debouncedProduct as keyof typeof PRODUCTS].price % 1).toFixed(2).split('.')[1]}</span>
                     <span className="text-xs font-semibold uppercase tracking-headline text-secondary-label ml-4 opacity-40">Per Unit</span>
                   </div>
-                  <Button 
-                    size="lg" 
+                  <Button
+                    size="lg"
                     className="w-full !h-16 squircle text-base font-semibold uppercase tracking-headline shadow-float hover:scale-[1.02] transition-transform duration-700 ease-smooth"
                     onClick={() => handleCheckout(debouncedProduct as any)}
                   >

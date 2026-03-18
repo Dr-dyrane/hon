@@ -37,7 +37,7 @@ export const PRODUCTS = {
   },
   soy_powder: {
     category: "specialty",
-    name: "Organic Soybean Powder",
+    name: "Soybean",
     description: "Pure, natural nourishment. 100% organic soybean powder for daily vitality.",
     price: 24.99,
     stats: { weight: "200g", organic: "100%" },
@@ -56,7 +56,7 @@ export const PRODUCTS = {
   },
   shot_immunity: {
     category: "shots",
-    name: "Immunity / Detox",
+    name: "Immunity",
     description: "Antimicrobial boost to flush out toxins and empower your immune system.",
     price: 5.99,
     ingredients: ["Turmeric", "Ginger", "Cinnamon", "Garlic", "Clove", "Honey", "ACV"],
