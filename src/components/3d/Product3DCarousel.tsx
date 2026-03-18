@@ -311,60 +311,68 @@ export function Product3DCarousel({
           }}
           onError={handleWebGLError}
         >
-        <ResponsiveCamera />
+          <ResponsiveCamera />
 
-        <ambientLight intensity={isDark ? 0.8 : 0.95} />
+          <ambientLight intensity={isDark ? 0.8 : 0.95} />
 
-        <directionalLight
-          position={[0, 3.5, 5]}
-          intensity={isDark ? 2.2 : 2.7}
-        />
-
-        <spotLight
-          position={[0, 4.5, 5.6]}
-          angle={0.3}
-          penumbra={1}
-          intensity={isDark ? 3.2 : 3.6}
-          distance={12}
-        />
-
-        <pointLight position={[-2.6, 1.2, 2]} intensity={0.45} />
-        <pointLight position={[2.6, 1.2, 2]} intensity={0.45} />
-        <pointLight position={[0, -0.4, 2.4]} intensity={0.22} />
-
-        <Suspense fallback={null}>
-          <Environment preset={isDark ? "city" : "studio"} />
-
-          {/* Only render active model and immediate neighbors to prevent WebGL context overload */}
-          <group position={[0, -0.02, 0]}>
-            {PRODUCT_KEYS.map((key, index) => {
-              const relativeIndex = getRelativeIndex(index, activeIndex, PRODUCT_KEYS.length);
-              // Only render active model and immediate neighbors
-              if (Math.abs(relativeIndex) > 1) return null;
-              
-              return (
-                <StageModel
-                  key={key}
-                  modelPath={PRODUCTS[key].model}
-                  index={index}
-                  activeIndex={activeIndex}
-                  totalProducts={PRODUCT_KEYS.length}
-                  onSelect={(idx) => onChange(PRODUCT_KEYS[idx])}
-                />
-              );
-            })}
-          </group>
-
-          <ContactShadows
-            position={[0, -1.02, 0]}
-            opacity={isDark ? 0.22 : 0.14}
-            scale={8}
-            blur={2.2}
-            far={2}
-            resolution={512}
+          <directionalLight
+            position={[0, 3.5, 5]}
+            intensity={isDark ? 2.2 : 2.7}
           />
-        </Suspense>
-      </Canvas>
+
+          <spotLight
+            position={[0, 4.5, 5.6]}
+            angle={0.3}
+            penumbra={1}
+            intensity={isDark ? 3.2 : 3.6}
+            distance={12}
+          />
+
+          <pointLight position={[-2.6, 1.2, 2]} intensity={0.45} />
+          <pointLight position={[2.6, 1.2, 2]} intensity={0.45} />
+          <pointLight position={[0, -0.4, 2.4]} intensity={0.22} />
+
+          <Suspense fallback={null}>
+            <Environment preset={isDark ? "city" : "studio"} />
+
+            {/* Only render active model and immediate neighbors to prevent WebGL context overload */}
+            <group position={[0, -0.02, 0]}>
+              {PRODUCT_KEYS.map((key, index) => {
+                const relativeIndex = getRelativeIndex(index, activeIndex, PRODUCT_KEYS.length);
+                // Only render active model and immediate neighbors
+                if (Math.abs(relativeIndex) > 1) return null;
+
+                return (
+                  <StageModel
+                    key={key}
+                    modelPath={PRODUCTS[key].model}
+                    index={index}
+                    activeIndex={activeIndex}
+                    totalProducts={PRODUCT_KEYS.length}
+                    onSelect={(idx) => onChange(PRODUCT_KEYS[idx])}
+                  />
+                );
+              })}
+            </group>
+
+            <ContactShadows
+              position={[0, -0.95, 0]}
+              opacity={isDark ? 0.38 : 0.28}
+              scale={5.5}
+              blur={1.4}
+              far={1.6}
+              resolution={1024}
+            />
+            <ContactShadows
+              position={[0, -1.05, 0]}
+              opacity={isDark ? 0.18 : 0.12}
+              scale={7.5}
+              blur={2.4}
+              far={1.6}
+              resolution={512}
+            />
+          </Suspense>
+        </Canvas>
       ) : hasWebGLError ? (
         <div className="flex items-center justify-center h-full">
           <div className="text-center">

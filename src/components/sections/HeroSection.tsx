@@ -155,8 +155,8 @@ export function HeroSection({
         </div>
 
         {/* Product Layer */}
-        <div className="relative flex flex-col items-center justify-center h-auto min-h-[450px] lg:min-h-[550px] w-full">
-          <div className="relative w-full max-w-[440px] lg:max-w-[500px] aspect-square flex items-center justify-center">
+        <div className="relative flex w-full items-center justify-center min-h-[420px] sm:min-h-[480px] lg:min-h-[560px] xl:min-h-[620px]">
+          <div className="relative w-full min-w-0 max-w-[440px] sm:max-w-[520px] lg:max-w-[580px] xl:max-w-[640px] aspect-[5/4] lg:aspect-[4/3] flex items-center justify-center">
             {/* Ambient Shadow */}
             <div className="product-shadow-wrap absolute bottom-0 md:bottom-[-5%] w-full">
               <div className={cn(
