@@ -25,6 +25,11 @@
   --color-ring: var(--ring);
   --color-separator: var(--separator);
 
+  /* Additional semantic colors for UI components */
+  --color-foreground: var(--label);
+  --color-muted: var(--secondary-label);
+  --color-border-soft: var(--separator);
+
   /* Typography - HIG Optimized */
   --font-sans: var(--font-sf-pro), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   --font-headline: var(--font-sf-pro), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
