@@ -1,5 +1,39 @@
 "use client";
 
+/* 
+  CHANGES DOCUMENTATION:
+  
+  ORIGINAL TRUST INDICATOR IMPLEMENTATION (for rollback reference):
+  <div
+    key={indicator.label}
+    data-aos="zoom-in-up"
+    data-aos-duration="600"
+    data-aos-delay={400 + i * 100}
+    className="flex flex-col items-center group"
+  >
+    <motion.div
+      whileHover={{ scale: 1.1 }}
+      transition={{ duration: 0.3 }}
+      className="w-16 h-16 rounded-2xl bg-system-fill flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 group-hover:shadow-float transition-all duration-700 squircle"
+    >
+      <Icon size={28} className="text-accent" />
+    </motion.div>
+    <span className="text-[11px] font-semibold text-label tracking-headline uppercase max-w-[120px] leading-tight opacity-70 group-hover:opacity-100 transition-opacity">
+      {indicator.label}
+    </span>
+  </div>
+  
+  CHANGES MADE:
+  REMOVED: bg-system-fill class and basic shadow effects
+  ADDED: LiquidGlassCard wrapper component for trust indicators
+  ADDED: variant="default" intensity="subtle" interactive={true}
+  ADDED: squircle class for Apple-style corners
+  ADDED: proper z-index layering for content
+  MAINTAINED: All original AOS animations and delays
+  MAINTAINED: Original hover states and transitions
+  MAINTAINED: Icon scaling and text opacity changes
+*/
+
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
@@ -12,6 +46,7 @@ import Image from "next/image";
 import { Product3DViewer } from "@/components/3d/Product3DViewer";
 import { useTheme } from "next-themes";
 import AOS from "aos";
+import { LiquidGlassCard } from "@/components/ui/LiquidGlassCard";
 
 const TRUST_INDICATORS = [
   { label: "Clean Ingredients", icon: CleanIcon },
@@ -94,24 +129,30 @@ export function SolutionSection({
           {TRUST_INDICATORS.map((indicator, i) => {
             const Icon = indicator.icon;
             return (
-              <div
+              <LiquidGlassCard
                 key={indicator.label}
+                variant="default"
+                intensity="subtle"
+                interactive={true}
+                className="flex flex-col items-center justify-center p-8 min-h-[120px] squircle"
                 data-aos="zoom-in-up"
                 data-aos-duration="600"
                 data-aos-delay={400 + i * 100}
-                className="flex flex-col items-center group"
               >
-                <motion.div
-                  whileHover={{ scale: 1.1 }}
-                  transition={{ duration: 0.3 }}
-                  className="w-16 h-16 rounded-2xl bg-system-fill flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 group-hover:shadow-float transition-all duration-700 squircle"
-                >
-                  <Icon size={28} className="text-accent" />
-                </motion.div>
-                <span className="text-[11px] font-semibold text-label tracking-headline uppercase max-w-[120px] leading-tight opacity-70 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center justify-center">
+                  <motion.div
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ duration: 0.3 }}
+                    className="w-16 h-16 rounded-2xl bg-accent/5 flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 group-hover:shadow-float transition-all duration-700"
+                  >
+                    <Icon size={28} className="text-accent group-hover:scale-110 transition-transform duration-700 justify-center items-center" />
+                  </motion.div>
+                </div>
+
+                <div className="text-[11px] text-center font-semibold text-label tracking-headline uppercase max-w-[120px] leading-tight opacity-70 group-hover:opacity-100 transition-opacity">
                   {indicator.label}
-                </span>
-              </div>
+                </div>
+              </LiquidGlassCard>
             );
           })}
         </div>

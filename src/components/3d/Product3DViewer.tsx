@@ -239,7 +239,7 @@ export function Product3DViewer({
               rotation={[0, -0.08, 0]}
               polar={[-0.12, 0.18]}
               azimuth={[-0.28, 0.28]}
-              snap={true}
+              snap={false}
             >
               <Model url={modelPath} isReady={isReady} scrollActive={scrollActive} />
             </PresentationControls>

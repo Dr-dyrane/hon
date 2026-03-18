@@ -3,7 +3,12 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { useUI } from '@/components/providers/UIProvider'
 
+/**
+ * Props for the LiquidGlassCard component
+ * @interface LiquidGlassCardProps
+ */
 interface LiquidGlassCardProps {
   children: React.ReactNode
   className?: string
@@ -12,6 +17,22 @@ interface LiquidGlassCardProps {
   interactive?: boolean
 }
 
+/**
+ * LiquidGlassCard - Premium glass morphism component with dynamic effects
+ * 
+ * Features:
+ * - Mouse-responsive lighting effects
+ * - Scroll-based blur intensity changes
+ * - Hardware-accelerated performance optimizations
+ * - Mobile-optimized backdrop filters
+ * - Intersection Observer for visibility-based rendering
+ * 
+ * Performance:
+ * - Uses global UI provider to prevent duplicate event listeners
+ * - SVG filters only render when card is visible
+ * - 60fps throttled updates for smooth animations
+ * - Mobile-specific optimizations for iOS/Android
+ */
 export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
   children,
   className,
@@ -19,58 +40,26 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
   intensity = 'medium',
   interactive = true
 }) => {
-  const cardRef = useRef<HTMLDivElement>(null)
-  const [mousePosition, setMousePosition] = useState({ x: 30, y: 40 })
-  const [scrollVelocity, setScrollVelocity] = useState(0)
-  const lastScrollY = useRef(0)
-
-  // Mouse tracking for dynamic light refraction
-  useEffect(() => {
-    if (!interactive) return
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!cardRef.current) return
-      
-      const rect = cardRef.current.getBoundingClientRect()
-      const x = ((e.clientX - rect.left) / rect.width) * 100
-      const y = ((e.clientY - rect.top) / rect.height) * 100
-      
-      setMousePosition({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) })
-    }
-
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY
-      const velocity = Math.abs(currentScrollY - lastScrollY.current)
-      setScrollVelocity(velocity)
-      lastScrollY.current = currentScrollY
-      
-      // Reset velocity after scroll stops
-      setTimeout(() => setScrollVelocity(0), 150)
-    }
-
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('scroll', handleScroll, { passive: true })
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('scroll', handleScroll)
-    }
-  }, [interactive])
-
-  // Dynamic CSS variables for mouse position
-  useEffect(() => {
-    if (!cardRef.current) return
-    
-    cardRef.current.style.setProperty('--mouse-x', `${mousePosition.x}%`)
-    cardRef.current.style.setProperty('--mouse-y', `${mousePosition.y}%`)
-  }, [mousePosition])
-
-  // Velocity-based blur intensity
-  const getBlurClass = () => {
-    if (scrollVelocity > 20) return 'scrolling-fast'
-    if (scrollVelocity > 5) return 'scrolling-slow'
-    return ''
-  }
+  /**
+   * Generate unique ID for this card instance
+   * Used for global state management and visibility tracking
+   */
+  const cardId = useRef(`liquid-glass-${Math.random().toString(36).substr(2, 9)}`)
+  
+  /**
+   * Connect to global performance manager from UI provider
+   * This ensures single event listeners for all liquid glass cards
+   */
+  const { 
+    registerLiquidGlassCard 
+  } = useUI()
+  
+  const { 
+    cardRef, 
+    getCSSVariables, 
+    getBlurClass, 
+    isVisible 
+  } = registerLiquidGlassCard(cardId.current, interactive)
 
   const variantStyles = {
     default: 'liquid-glass',
@@ -86,38 +75,40 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
 
   return (
     <>
-      {/* SVG Filter for Liquid Distortion */}
-      <svg style={{ position: 'absolute', width: 0, height: 0 }}>
-        <filter id="liquid-distortion">
-          <feTurbulence 
-            baseFrequency="0.02" 
-            numOctaves="3" 
-            result="turbulence"
-            seed={interactive ? mousePosition.x + mousePosition.y : 0}
-          >
-            <animate 
-              attributeName="baseFrequency" 
-              values="0.02;0.025;0.02" 
-              dur="8s" 
-              repeatCount="indefinite" 
+      {/* SVG Filter for Liquid Distortion - only render if visible */}
+      {isVisible && (
+        <svg style={{ position: 'absolute', width: 0, height: 0 }}>
+          <filter id="liquid-distortion">
+            <feTurbulence 
+              baseFrequency="0.02" 
+              numOctaves="3" 
+              result="turbulence"
+              seed={interactive ? 0 : 0}
+            >
+              <animate 
+                attributeName="baseFrequency" 
+                values="0.02;0.025;0.02" 
+                dur="8s" 
+                repeatCount="indefinite" 
+              />
+            </feTurbulence>
+            <feDisplacementMap 
+              in="SourceGraphic" 
+              in2="turbulence" 
+              scale="3" 
+              xChannelSelector="R" 
+              yChannelSelector="G"
             />
-          </feTurbulence>
-          <feDisplacementMap 
-            in="SourceGraphic" 
-            in2="turbulence" 
-            scale="3" 
-            xChannelSelector="R" 
-            yChannelSelector="G"
-          />
-          <feGaussianBlur stdDeviation="0.5" />
-          <feColorMatrix 
-            values="1 0 0 0 0
-                    0 1 0 0 0  
-                    0 0 1 0 0
-                    0 0 0 0.95 0" 
-          />
-        </filter>
-      </svg>
+            <feGaussianBlur stdDeviation="0.5" />
+            <feColorMatrix 
+              values="1 0 0 0 0
+                      0 1 0 0 0  
+                      0 0 1 0 0
+                      0 0 0 0.95 0" 
+            />
+          </filter>
+        </svg>
+      )}
 
       <motion.div
         ref={cardRef}
@@ -128,6 +119,7 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
           'group relative overflow-hidden',
           className
         )}
+        style={getCSSVariables() as any}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -136,8 +128,8 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
           transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
         } : undefined}
       >
-        {/* Iridescent overlay for soap bubble effect */}
-        <div className="iridescent-overlay" />
+        {/* Iridescent overlay for soap bubble effect - only render if visible */}
+        {isVisible && <div className="iridescent-overlay" />}
         
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-between h-full">

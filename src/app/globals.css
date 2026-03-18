@@ -163,7 +163,7 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-snap-type: y proximity;
+  scroll-snap-type: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -245,8 +245,8 @@ canvas {
 
 .section-shell {
   min-height: 100svh;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
+  /* scroll-snap-align: start; */
+  /* scroll-snap-stop: always; */
   padding-top: var(--spacing-section);
   padding-bottom: var(--spacing-section);
 }
@@ -258,8 +258,8 @@ canvas {
 
 .hero-shell {
   min-height: 100svh;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
+  /* scroll-snap-align: start; */
+  /* scroll-snap-stop: always; */
   padding-top: var(--spacing-hero);
   padding-bottom: var(--spacing-hero);
 }
@@ -317,6 +317,9 @@ canvas {
     box-shadow var(--duration-base) var(--ease-premium),
     transform var(--duration-fast) var(--ease-premium),
     border-radius var(--duration-slow) var(--ease-premium);
+  /* Mobile optimizations */
+  will-change: transform, opacity;
+  transform: translateZ(0); /* Hardware acceleration */
 }
 
 /* Highlight layer - light casting */
@@ -417,6 +420,30 @@ canvas {
     inset 0 0 30px rgba(255,255,255,0.1);
 }
 
+/* Mobile liquid glass optimizations */
+@media (max-width: 768px) {
+  .liquid-glass {
+    backdrop-filter: 
+      blur(16px) 
+      saturate(150%) 
+      brightness(1.08) 
+      contrast(0.95);
+    -webkit-backdrop-filter: 
+      blur(16px) 
+      saturate(150%) 
+      brightness(1.08) 
+      contrast(0.95);
+  }
+  
+  .liquid-glass::before {
+    animation-duration: 15s; /* Slower animation on mobile */
+  }
+  
+  .iridescent-overlay {
+    animation-duration: 25s; /* Slower animation on mobile */
+  }
+}
+
 /* Velocity-based blur intensity */
 .liquid-glass.scrolling-fast {
   backdrop-filter: 
@@ -432,6 +459,25 @@ canvas {
     saturate(180%) 
     brightness(1.08) 
     contrast(0.95);
+}
+
+/* Mobile velocity-based optimizations */
+@media (max-width: 768px) {
+  .liquid-glass.scrolling-fast {
+    backdrop-filter: 
+      blur(20px) 
+      saturate(170%) 
+      brightness(1.10) 
+      contrast(0.92);
+  }
+  
+  .liquid-glass.scrolling-slow {
+    backdrop-filter: 
+      blur(12px) 
+      saturate(140%) 
+      brightness(1.05) 
+      contrast(0.98);
+  }
 }
 
 /* Content layer positioning */
@@ -494,6 +540,9 @@ canvas {
     saturate(160%) 
     brightness(1.08) 
     contrast(0.96);
+  /* Mobile optimizations */
+  will-change: transform, opacity;
+  transform: translateZ(0);
 }
 
 .liquid-glass-medium {
@@ -502,6 +551,9 @@ canvas {
     saturate(200%) 
     brightness(1.12) 
     contrast(0.92);
+  /* Mobile optimizations */
+  will-change: transform, opacity;
+  transform: translateZ(0);
 }
 
 .liquid-glass-strong {
@@ -510,6 +562,20 @@ canvas {
     saturate(240%) 
     brightness(1.16) 
     contrast(0.88);
+  /* Mobile optimizations */
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* Mobile intensity optimizations */
+@media (max-width: 768px) {
+  .liquid-glass-strong {
+    backdrop-filter: 
+      blur(20px) 
+      saturate(180%) 
+      brightness(1.10) 
+      contrast(0.92);
+  }
 }
 
 /* Reduced motion support */
@@ -698,81 +764,9 @@ canvas {
   background: var(--secondary-label);
 }
 
-/* Scroll Snap Optimizations */
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
-    scroll-snap-type: y proximity;
-  }
-
-  .section-shell,
-  .hero-shell {
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-  }
-}
-
-/* Mobile scroll snap adjustments */
-@media (max-width: 768px) {
-  html {
-    scroll-snap-type: y proximity;
-    /* Less aggressive on mobile */
-  }
-
-  .section-shell,
-  .hero-shell {
-    scroll-snap-align: center;
-    scroll-snap-stop: normal;
-  }
-}
-
-/* Enhanced scroll indicators */
-.scroll-indicator {
-  position: fixed;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 50;
-  animation: bounce 2s infinite;
-}
-
-@keyframes bounce {
-
-  0%,
-  20%,
-  50%,
-  80%,
-  100% {
-    transform: translateX(-50%) translateY(0);
-  }
-
-  40% {
-    transform: translateX(-50%) translateY(-10px);
-  }
-
-  60% {
-    transform: translateX(-50%) translateY(-5px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-    scroll-snap-type: none;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-
-  .section-shell,
-  .hero-shell {
-    scroll-snap-align: none;
-    scroll-snap-stop: normal;
   }
 }
 
@@ -833,6 +827,8 @@ canvas {
   filter: blur(120px);
   pointer-events: none;
   opacity: 0.15;
+  will-change: transform, opacity;
+  transform: translateZ(0); /* Hardware acceleration */
 }
 
 .hero-glow-primary {
@@ -843,12 +839,32 @@ canvas {
   background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
 }
 
+/* Mobile optimized glows */
+@media (max-width: 768px) {
+  .hero-glow-primary {
+    width: 80vw;
+    height: 80vw;
+    filter: blur(80px); /* Reduced blur for mobile */
+    opacity: 0.08; /* Reduced opacity for performance */
+  }
+}
+
 .hero-glow-secondary {
   width: 50vw;
   height: 50vw;
   bottom: -10vw;
   left: -10vw;
   background: radial-gradient(circle, var(--color-beige) 0%, transparent 70%);
+}
+
+/* Mobile optimized secondary glow */
+@media (max-width: 768px) {
+  .hero-glow-secondary {
+    width: 70vw;
+    height: 70vw;
+    filter: blur(60px); /* Reduced blur for mobile */
+    opacity: 0.06; /* Reduced opacity for performance */
+  }
 }
 
 .flavor-pills {
@@ -966,11 +982,26 @@ canvas {
   background: radial-gradient(circle at center, var(--accent) 0%, transparent 70%);
   opacity: 0.15;
   filter: blur(140px);
+  will-change: transform, opacity;
+  transform: translate(-50%, -50%) translateZ(0); /* Hardware acceleration */
 }
 
 .dark .stage-light {
   opacity: 0.12;
   filter: blur(180px);
+}
+
+/* Mobile optimized stage light */
+@media (max-width: 768px) {
+  .stage-light {
+    filter: blur(100px); /* Reduced blur for mobile */
+    opacity: 0.08; /* Reduced opacity for performance */
+  }
+  
+  .dark .stage-light {
+    filter: blur(120px); /* Reduced blur for mobile */
+    opacity: 0.06; /* Further reduced for dark mode */
+  }
 }
 
 .cta-inverse {
