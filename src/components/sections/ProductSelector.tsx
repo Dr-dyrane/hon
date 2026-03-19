@@ -1,13 +1,20 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useDeferredValue, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { SectionContainer } from "@/components/ui/SectionContainer";
-import { CATEGORIES, PRODUCTS } from "@/lib/data";
+import { CATEGORIES, PRODUCTS, type ProductId } from "@/lib/data";
+import {
+  SHOT_BUNDLE,
+  formatNgn,
+  getProductPriceSnapshot,
+  isShotProduct,
+} from "@/lib/commerce";
 import { Button } from "@/components/ui/Button";
+import { useCommerce } from "@/components/providers/CommerceProvider";
 import { cn } from "@/lib/utils";
 
 const Product3DViewer = dynamic(
@@ -16,10 +23,9 @@ const Product3DViewer = dynamic(
   { ssr: false }
 );
 
-type ProductKey = keyof typeof PRODUCTS;
-type Product = (typeof PRODUCTS)[ProductKey];
+type Product = (typeof PRODUCTS)[ProductId];
 
-const PRODUCT_KEYS = Object.keys(PRODUCTS) as ProductKey[];
+const PRODUCT_KEYS = Object.keys(PRODUCTS) as ProductId[];
 
 function getProductFlavor(product: Product) {
   return "flavor" in product ? product.flavor : undefined;
@@ -27,6 +33,10 @@ function getProductFlavor(product: Product) {
 
 function getProductStats(product: Product) {
   return "stats" in product ? Object.entries(product.stats) : [];
+}
+
+function getCategoryLabel(categoryId: string) {
+  return CATEGORIES.find((category) => category.id === categoryId)?.name ?? categoryId;
 }
 
 export function ProductSelector({
@@ -37,42 +47,23 @@ export function ProductSelector({
   isScrollingOutOfSection: (sectionId: string) => boolean;
 }) {
   const { resolvedTheme } = useTheme();
+  const { addItem } = useCommerce();
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
   const [selectedProduct, setSelectedProduct] =
-    useState<ProductKey>("protein_chocolate");
-  const [debouncedProduct, setDebouncedProduct] =
-    useState<ProductKey>("protein_chocolate");
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedProduct(selectedProduct);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [selectedProduct]);
+    useState<ProductId>("protein_chocolate");
+  const deferredProduct = useDeferredValue(selectedProduct);
 
   const scrollActive = isScrollingIntoSection("shop");
   const isDark = resolvedTheme === "dark";
 
-  const handleCheckout = (prodKey: ProductKey) => {
-    const product = PRODUCTS[prodKey];
-    const flavor = getProductFlavor(product);
-    const phoneNumber = "+2348060785487";
-    const text = `Hello House of Prax, I'd like to order the ${product.name}${
-      flavor ? ` (${flavor})` : ""
-    } ($${product.price}). Please let me know the next steps.`;
-
-    window.open(
-      `https://wa.me/${phoneNumber.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(text)}`,
-      "_blank"
-    );
-  };
-
   const filteredProducts = PRODUCT_KEYS.filter(
     (key) => PRODUCTS[key].category === activeCategory
   );
-  const activeProduct = PRODUCTS[debouncedProduct];
+  const activeProduct = PRODUCTS[selectedProduct];
+  const activeIsShot = isShotProduct(selectedProduct);
   const statEntries = getProductStats(activeProduct);
+  const pricing = getProductPriceSnapshot(selectedProduct);
+  const stageProduct = PRODUCTS[deferredProduct];
 
   return (
     <SectionContainer variant="white" id="shop">
@@ -126,18 +117,19 @@ export function ProductSelector({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
-            className="relative mt-14 w-full overflow-hidden rounded-[40px] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,242,234,0.92)_100%)] p-4 shadow-[0_40px_120px_rgba(15,23,42,0.10),inset_0_1px_0_rgba(255,255,255,0.84)] dark:bg-[linear-gradient(180deg,rgba(20,23,20,0.96)_0%,rgba(9,11,9,0.94)_100%)] dark:shadow-[0_40px_120px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-6 lg:p-8"
+            className="relative mt-14 w-full overflow-hidden rounded-[40px] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,242,234,0.92)_100%)] p-2 sm:px-4 shadow-[0_40px_120px_rgba(15,23,42,0.10),inset_0_1px_0_rgba(255,255,255,0.84)] dark:bg-[linear-gradient(180deg,rgba(20,23,20,0.96)_0%,rgba(9,11,9,0.94)_100%)] dark:shadow-[0_40px_120px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-6 lg:p-8"
           >
             <div className="absolute -left-10 top-16 h-44 w-44 rounded-full bg-accent/12 blur-3xl dark:bg-accent/10" />
             <div className="absolute -right-8 bottom-16 h-52 w-52 rounded-full bg-black/6 blur-3xl dark:bg-white/6" />
 
-            <div className="relative grid gap-4 xl:grid-cols-[310px_minmax(0,1fr)_360px] xl:items-stretch">
+            <div className="relative grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_380px] xl:items-start">
               <div className="order-2 xl:order-1">
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                   {filteredProducts.map((key) => {
                     const product = PRODUCTS[key];
                     const productFlavor = getProductFlavor(product);
                     const isSelected = selectedProduct === key;
+                    const cardPricing = getProductPriceSnapshot(key);
 
                     return (
                       <button
@@ -164,9 +156,9 @@ export function ProductSelector({
                         <div className="relative flex items-center gap-4">
                           <div
                             className={cn(
-                              "flex h-20 w-20 shrink-0 items-center justify-center rounded-[22px] p-3",
+                              "flex h-20 w-20 shrink-0 items-center justify-center rounded-[22px] p-2",
                               isSelected
-                                ? "bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                                ? "bg-white/8 dark:bg-black/8  shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                                 : "bg-system-fill shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
                             )}
                           >
@@ -188,7 +180,7 @@ export function ProductSelector({
                                   : "text-secondary-label"
                               )}
                             >
-                              {product.category}
+                              {getCategoryLabel(product.category)}
                             </div>
 
                             <div className="mt-1 text-xl font-headline font-semibold tracking-title">
@@ -207,6 +199,19 @@ export function ProductSelector({
                                 {product.name}
                               </div>
                             ) : null}
+
+                            <div
+                              className={cn(
+                                "mt-3 flex flex-wrap items-center gap-2 text-sm tracking-tight",
+                                isSelected
+                                  ? "text-system-background"
+                                  : "text-label"
+                              )}
+                            >
+                              <span className="font-semibold">
+                                {formatNgn(cardPricing.currentNgn)}
+                              </span>
+                            </div>
                           </div>
 
                           <div
@@ -226,7 +231,7 @@ export function ProductSelector({
               </div>
 
               <div className="order-1 xl:order-2">
-                <div className="relative isolate h-[440px] overflow-hidden rounded-[34px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),rgba(241,236,226,0.84)_58%,rgba(229,222,208,0.68)_100%)] shadow-[0_24px_80px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.84)] dark:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),rgba(14,17,14,0.92)_58%,rgba(8,10,8,0.98)_100%)] dark:shadow-[0_28px_90px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)] sm:h-[520px]">
+                <div className="relative isolate h-[460px] overflow-hidden rounded-[34px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),rgba(241,236,226,0.84)_58%,rgba(229,222,208,0.68)_100%)] shadow-[0_24px_80px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.84)] dark:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),rgba(14,17,14,0.92)_58%,rgba(8,10,8,0.98)_100%)] dark:shadow-[0_28px_90px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)] sm:h-[540px]">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(15,61,46,0.10),transparent_65%)] dark:bg-[radial-gradient(circle_at_center,rgba(215,197,163,0.12),transparent_70%)]" />
                   <div className="absolute left-1/2 top-14 h-48 w-48 -translate-x-1/2 rounded-full bg-white/80 blur-3xl dark:bg-white/10" />
                   <div className="absolute inset-x-8 bottom-5 h-12 rounded-full bg-black/10 blur-2xl dark:bg-black/50" />
@@ -234,25 +239,25 @@ export function ProductSelector({
 
                   <AnimatePresence mode="wait">
                     <motion.div
-                      key={debouncedProduct}
+                      key={deferredProduct}
                       initial={{ opacity: 0, scale: 0.92, y: 16, rotateY: -10 }}
                       animate={{ opacity: 1, scale: 1, y: 0, rotateY: 0 }}
                       exit={{ opacity: 0, scale: 1.04, y: -8, rotateY: 10 }}
                       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                      className="product-frame relative z-10 flex h-full items-center justify-center px-4 sm:px-10"
+                      className="product-frame relative z-10 flex h-full items-center justify-center px-2 sm:px-5"
                     >
-                      {activeProduct.model && scrollActive ? (
+                      {stageProduct.model && scrollActive ? (
                         <Product3DViewer
-                          modelPath={activeProduct.model}
+                          modelPath={stageProduct.model}
                           theme={isDark ? "dark" : "light"}
                           className="h-full w-full max-w-[360px]"
-                          sectionId={`shop-${debouncedProduct}`}
+                          sectionId={`shop-${deferredProduct}`}
                           scrollActive={scrollActive}
                         />
                       ) : (
                         <Image
-                          src={activeProduct.image}
-                          alt={activeProduct.name}
+                          src={stageProduct.image}
+                          alt={stageProduct.name}
                           width={560}
                           height={720}
                           className="h-auto w-full max-w-[360px] drop-shadow-[0_28px_80px_rgba(0,0,0,0.24)] animate-float"
@@ -260,22 +265,51 @@ export function ProductSelector({
                       )}
                     </motion.div>
                   </AnimatePresence>
+
+                  <div className="pointer-events-none absolute inset-x-4 bottom-4 z-20 sm:inset-x-6 sm:bottom-6">
+                    <div className="pointer-events-auto glass-morphism squircle flex flex-col gap-4 bg-system-background/74 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.12)] dark:bg-[rgba(12,14,12,0.72)] sm:flex-row sm:items-center sm:justify-between sm:p-4">
+                      <div className="min-w-0">
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span className="text-lg font-semibold tracking-tight text-label sm:text-xl">
+                            {formatNgn(pricing.currentNgn)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex sm:justify-end">
+                        <Button
+                          size="md"
+                          className="!h-[44px] px-5 text-[10px] font-semibold uppercase tracking-headline"
+                          onClick={() => addItem(selectedProduct)}
+                        >
+                          Add to Cart
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <div className="order-3">
                 <AnimatePresence mode="wait">
                   <motion.div
-                    key={debouncedProduct}
+                    key={selectedProduct}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                    className="flex h-full flex-col rounded-[32px] bg-system-background/60 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.78)] backdrop-blur-2xl dark:bg-white/[0.04] dark:shadow-[0_28px_90px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-8"
+                    className="flex flex-col rounded-[32px] bg-system-background/60 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.78)] backdrop-blur-2xl dark:bg-white/[0.04] dark:shadow-[0_28px_90px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-7"
                   >
-                    <span className="inline-flex w-fit rounded-full bg-accent/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-accent dark:bg-accent/15">
-                      Premium Quality
-                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="inline-flex w-fit rounded-full bg-accent/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-accent dark:bg-accent/15">
+                        {getCategoryLabel(activeProduct.category)}
+                      </span>
+                      {activeIsShot ? (
+                        <span className="inline-flex w-fit rounded-full bg-system-fill px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                          {SHOT_BUNDLE.shortLabel}
+                        </span>
+                      ) : null}
+                    </div>
 
                     <div className="mt-6 space-y-4">
                       <h3 className="text-4xl font-headline font-bold tracking-display text-foreground md:text-5xl xl:text-[3.25rem]">
@@ -285,6 +319,36 @@ export function ProductSelector({
                       <p className="text-base leading-relaxed tracking-body text-secondary-label sm:text-lg">
                         {activeProduct.description}
                       </p>
+                    </div>
+
+                    <div className="mt-8 rounded-[28px] bg-system-fill/72 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] dark:bg-white/[0.03] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                            Price
+                          </p>
+                          <div className="mt-3 text-4xl font-bold tracking-tight text-label">
+                            {formatNgn(pricing.currentNgn)}
+                          </div>
+                        </div>
+
+                        {activeIsShot ? (
+                          <div className="rounded-full bg-accent/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-accent dark:bg-accent/15">
+                            {SHOT_BUNDLE.shortLabel}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      {activeIsShot ? (
+                        <p className="mt-4 text-sm leading-relaxed tracking-body text-secondary-label">
+                          {SHOT_BUNDLE.unitCount} shots, {formatNgn(SHOT_BUNDLE.bundlePriceNgn)}.
+                        </p>
+                      ) : (
+                        <p className="mt-4 text-sm leading-relaxed tracking-body text-secondary-label">
+                          Single unit.
+                        </p>
+                      )}
+
                     </div>
 
                     {statEntries.length > 0 ? (
@@ -310,27 +374,7 @@ export function ProductSelector({
                       </div>
                     ) : null}
 
-                    <div className={cn("mt-auto", statEntries.length > 0 ? "pt-10" : "pt-16")}>
-                      <div className="flex items-end gap-2 pt-6">
-                        <span className="text-4xl font-bold tracking-tight text-label">
-                          ${Math.floor(activeProduct.price)}.
-                        </span>
-                        <span className="pb-0.5 text-xl font-bold tracking-tight text-label">
-                          {(activeProduct.price % 1).toFixed(2).split(".")[1]}
-                        </span>
-                        <span className="mb-1 ml-3 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                          Per Unit
-                        </span>
-                      </div>
-
-                      <Button
-                        size="lg"
-                        className="mt-6 w-full !h-16 rounded-full text-base font-semibold uppercase tracking-headline shadow-[0_22px_60px_rgba(15,61,46,0.18)] transition-transform duration-700 ease-premium hover:scale-[1.01]"
-                        onClick={() => handleCheckout(debouncedProduct)}
-                      >
-                        Order via WhatsApp
-                      </Button>
-                    </div>
+                    <div className={cn("mt-auto", statEntries.length > 0 ? "pt-6" : "pt-8")} />
                   </motion.div>
                 </AnimatePresence>
               </div>

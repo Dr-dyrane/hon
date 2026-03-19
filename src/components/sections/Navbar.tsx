@@ -2,17 +2,19 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, useScroll, AnimatePresence } from "framer-motion";
-import { Equal, X } from "lucide-react";
+import { Equal, ShoppingBag, X } from "lucide-react";
 import { NAVIGATION } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useUI } from "@/components/providers/UIProvider";
+import { useCommerce } from "@/components/providers/CommerceProvider";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useUI();
+  const { itemCount, openCart } = useCommerce();
   const { scrollY } = useScroll();
 
   useEffect(() => {
@@ -44,6 +46,10 @@ export function Navbar() {
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
+  const handleOpenCart = () => {
+    setIsMobileMenuOpen(false);
+    openCart();
+  };
 
   return (
     <>
@@ -80,10 +86,27 @@ export function Navbar() {
           </div>
 
           {/* Right Actions */}
-          <div className="flex items-center justify-end gap-3 md:gap-4 w-auto md:w-1/4">
+          <div className="flex items-center justify-end gap-2 md:gap-3 w-auto md:w-1/4">
             <motion.div layout className="hidden md:flex">
               <ThemeToggle />
             </motion.div>
+
+            <button
+              type="button"
+              onClick={handleOpenCart}
+              className="group relative hidden md:inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
+              aria-label={`Open cart${itemCount > 0 ? ` with ${itemCount} items` : ""}`}
+            >
+              <ShoppingBag
+                className="h-[16px] w-[16px] transition-transform duration-300 group-hover:-translate-y-px"
+                strokeWidth={1.7}
+              />
+              {itemCount > 0 ? (
+                <span className="text-label">
+                  {itemCount}
+                </span>
+              ) : null}
+            </button>
 
             <AnimatePresence>
               {isScrolled && (
@@ -100,12 +123,25 @@ export function Navbar() {
                     href="#shop"
                     className="hidden md:inline-flex items-center justify-center button-primary !h-[32px] !min-h-[32px] px-6 text-[9px] font-semibold uppercase tracking-headline rounded-full whitespace-nowrap transition-transform shadow-none"
                   >
-                    Start Order
+                    Shop Products
                   </Link>
                 </motion.div>
               )}
             </AnimatePresence>
 
+            <button
+              type="button"
+              onClick={handleOpenCart}
+              className="relative mr-1 flex h-10 items-center justify-center text-label md:hidden"
+              aria-label={`Open cart${itemCount > 0 ? ` with ${itemCount} items` : ""}`}
+            >
+              <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1.7} />
+              {itemCount > 0 ? (
+                <span className="absolute -right-1 -top-1 text-[10px] font-semibold text-label">
+                  {itemCount}
+                </span>
+              ) : null}
+            </button>
 
             {/* Mobile Menu Toggle */}
             <button
@@ -197,17 +233,29 @@ export function Navbar() {
                 className="mt-12 flex flex-col gap-8"
               >
                 <div className="flex items-center justify-between px-2">
-                   <span className="text-xl font-medium text-secondary-label vibrancy-label">Appearance</span>
+                  <span className="text-xl font-medium text-secondary-label vibrancy-label">
+                    Appearance
+                  </span>
                   <ThemeToggle />
                 </div>
 
-                <Link
-                  href="#shop"
-                  onClick={closeMobileMenu}
-                  className="button-primary w-full justify-center min-h-[56px] text-xs font-semibold uppercase tracking-headline"
-                >
-                  Choose Your Flavor
-                </Link>
+                <div className="flex flex-col gap-3">
+                  <Link
+                    href="#shop"
+                    onClick={closeMobileMenu}
+                    className="button-primary w-full justify-center min-h-[56px] text-xs font-semibold uppercase tracking-headline"
+                  >
+                    Shop Products
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenCart}
+                    className="button-secondary w-full justify-center min-h-[56px] text-xs font-semibold uppercase tracking-headline"
+                  >
+                    Cart {itemCount > 0 ? `(${itemCount})` : ""}
+                  </button>
+                </div>
               </motion.div>
             </motion.div>
           </motion.div>

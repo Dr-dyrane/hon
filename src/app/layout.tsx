@@ -37,16 +37,16 @@ export const metadata: Metadata = {
   authors: [{ name: "House of Prax" }],
   metadataBase: new URL("https://houseofprax.shop"),
   openGraph: {
-    title: "House of Prax | Pure Performance Nutriton",
+    title: "House of Prax | Pure Performance Nutrition",
     description: "Upgrade your foundation. Clean, plant-powered fuel for real training.",
     url: "https://houseofprax.shop",
     siteName: "House of Prax",
     images: [
       {
-        url: "/images/prax_brand.png",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "House of Prax - Elite Nutrition",
+        alt: "House of Prax - Clean plant fuel for real training",
       },
     ],
     locale: "en_US",
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "House of Prax | Elite Plant Protein",
     description: "The standard for modern athletic nutrition. Zero compromises.",
-    images: ["/images/prax_brand.png"],
+    images: ["/opengraph-image"],
   },
   robots: {
     index: true,
@@ -84,6 +84,8 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { AOSProvider } from "@/components/providers/AOSProvider";
 import { ThreeJSSuppressor } from "@/components/providers/ThreeJSSuppressor";
 import { UIProvider } from "@/components/providers/UIProvider";
+import { CommerceProvider } from "@/components/providers/CommerceProvider";
+import { CartDrawer } from "@/components/commerce/CartDrawer";
 
 export default function RootLayout({
   children,
@@ -102,7 +104,10 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <UIProvider>
-              {children}
+              <CommerceProvider>
+                {children}
+                <CartDrawer />
+              </CommerceProvider>
             </UIProvider>
           </ThemeProvider>
         </AOSProvider>
