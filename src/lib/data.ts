@@ -18,14 +18,13 @@ export const NAVIGATION = [
 ];
 
 export const CATEGORIES = [
-  { id: "protein", name: "Protein Powders" },
+  { id: "powders", name: "Powders" },
   { id: "shots", name: "Health Shots" },
-  { id: "specialty", name: "Specialty" }
 ];
 
 export const PRODUCTS = {
   protein_chocolate: {
-    category: "protein",
+    category: "powders",
     name: "Prax Protein",
     flavor: "Chocolate",
     description: "Multi-source plant protein with 18g protein and 0g sugar per serving.",
@@ -36,7 +35,7 @@ export const PRODUCTS = {
     model: "/models/products/protein_chocolate.glb"
   },
   soy_powder: {
-    category: "specialty",
+    category: "powders",
     name: "Soybean",
     description: "Pure, natural nourishment. 100% organic soybean powder for daily vitality.",
     price: 24.99,

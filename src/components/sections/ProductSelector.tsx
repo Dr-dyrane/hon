@@ -3,12 +3,12 @@
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
+import { useTheme } from "next-themes";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { CATEGORIES, PRODUCTS } from "@/lib/data";
 import { Button } from "@/components/ui/Button";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { useTheme } from "next-themes";
 
 const Product3DViewer = dynamic(
   () =>
@@ -16,28 +16,32 @@ const Product3DViewer = dynamic(
   { ssr: false }
 );
 
+type ProductKey = keyof typeof PRODUCTS;
+type Product = (typeof PRODUCTS)[ProductKey];
+
+const PRODUCT_KEYS = Object.keys(PRODUCTS) as ProductKey[];
+
+function getProductFlavor(product: Product) {
+  return "flavor" in product ? product.flavor : undefined;
+}
+
+function getProductStats(product: Product) {
+  return "stats" in product ? Object.entries(product.stats) : [];
+}
+
 export function ProductSelector({
-  activeSection,
   isScrollingIntoSection,
-  isScrollingOutOfSection,
 }: {
   activeSection: string | null;
   isScrollingIntoSection: (sectionId: string) => boolean;
   isScrollingOutOfSection: (sectionId: string) => boolean;
 }) {
   const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
   const [selectedProduct, setSelectedProduct] =
-    useState<keyof typeof PRODUCTS>("protein_chocolate");
+    useState<ProductKey>("protein_chocolate");
   const [debouncedProduct, setDebouncedProduct] =
-    useState<keyof typeof PRODUCTS>("protein_chocolate");
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const scrollActive = isScrollingIntoSection("shop");
+    useState<ProductKey>("protein_chocolate");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -47,189 +51,291 @@ export function ProductSelector({
     return () => clearTimeout(timer);
   }, [selectedProduct]);
 
-  const isDark = mounted && resolvedTheme === "dark";
+  const scrollActive = isScrollingIntoSection("shop");
+  const isDark = resolvedTheme === "dark";
 
-  const handleCheckout = (prodKey: keyof typeof PRODUCTS) => {
-    const product = PRODUCTS[prodKey] as any;
+  const handleCheckout = (prodKey: ProductKey) => {
+    const product = PRODUCTS[prodKey];
+    const flavor = getProductFlavor(product);
     const phoneNumber = "+2348060785487";
     const text = `Hello House of Prax, I'd like to order the ${product.name}${
-      product.flavor ? ` (${product.flavor})` : ""
+      flavor ? ` (${flavor})` : ""
     } ($${product.price}). Please let me know the next steps.`;
+
     window.open(
       `https://wa.me/${phoneNumber.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(text)}`,
       "_blank"
     );
   };
 
-  const filteredProducts = Object.keys(PRODUCTS).filter(
-    (key) => PRODUCTS[key as keyof typeof PRODUCTS].category === activeCategory
+  const filteredProducts = PRODUCT_KEYS.filter(
+    (key) => PRODUCTS[key].category === activeCategory
   );
+  const activeProduct = PRODUCTS[debouncedProduct];
+  const statEntries = getProductStats(activeProduct);
 
   return (
     <SectionContainer variant="white" id="shop">
-      <div className="flex flex-col items-center">
-        <div className="text-center mb-16">
-          <motion.h2
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="text-4xl md:text-5xl lg:text-6xl font-headline font-bold text-foreground tracking-display"
-          >
-            Choose Your Fuel.
-          </motion.h2>
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => {
-                  setActiveCategory(cat.id);
-                  const firstInCat = Object.keys(PRODUCTS).find(
-                    (key) =>
-                      PRODUCTS[key as keyof typeof PRODUCTS].category === cat.id
-                  );
-                  if (firstInCat) setSelectedProduct(firstInCat as keyof typeof PRODUCTS);
-                }}
-                className={cn(
-                  "px-6 py-2 rounded-full text-[10px] font-semibold uppercase tracking-headline transition-all",
-                  activeCategory === cat.id
-                    ? "bg-accent text-accent-label shadow-sm"
-                    : "bg-system-fill text-secondary-label hover:text-label"
-                )}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="relative">
+        <div className="absolute left-[8%] top-24 -z-10 h-56 w-56 rounded-full bg-accent/10 blur-3xl" />
+        <div className="absolute bottom-0 right-[8%] -z-10 h-72 w-72 rounded-full bg-accent/6 blur-3xl" />
 
-        <div className="flex flex-col md:flex-row items-center justify-center gap-12 lg:gap-24 w-full">
-          <div className="flex flex-col md:flex-row gap-4 order-2 md:order-1 w-full md:w-auto">
-            <div className="flex flex-row md:flex-col gap-4 w-full md:w-auto overflow-scroll md:overflow-hidden scrollbar-hide">
-              {filteredProducts.map((key) => {
-                const product = PRODUCTS[key as keyof typeof PRODUCTS] as any;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setSelectedProduct(key as keyof typeof PRODUCTS)}
-                    className={cn(
-                      "flex-1 px-6 py-4 rounded-3xl transition-all duration-500 text-left",
-                      selectedProduct === key
-                        ? "bg-label text-system-background shadow-float"
-                        : "bg-system-fill opacity-60 hover:opacity-100 hover:shadow-md"
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "text-[10px] font-semibold uppercase tracking-headline mb-1 opacity-50",
-                        selectedProduct === key
-                          ? "text-system-background/60"
-                          : "text-secondary-label"
-                      )}
-                    >
-                      {product.category}
-                    </div>
-                    <div className="text-xl font-headline font-bold">
-                      {product.flavor || product.name}
-                    </div>
-                  </button>
-                );
-              })}
+        <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center">
+          <div className="max-w-3xl text-center">
+            <motion.h2
+              initial={{ opacity: 0, scale: 0.96, y: 16 }}
+              whileInView={{ opacity: 1, scale: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="text-4xl font-headline font-bold tracking-display text-foreground md:text-5xl lg:text-6xl"
+            >
+              Choose Your Fuel.
+            </motion.h2>
+
+            <div className="mt-8 inline-flex flex-wrap items-center justify-center gap-2 rounded-full bg-system-background/75 p-2 shadow-[0_20px_60px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-2xl dark:bg-[rgba(18,20,18,0.78)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)]">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory(cat.id);
+
+                    const firstInCategory = PRODUCT_KEYS.find(
+                      (key) => PRODUCTS[key].category === cat.id
+                    );
+
+                    if (firstInCategory) {
+                      setSelectedProduct(firstInCategory);
+                    }
+                  }}
+                  className={cn(
+                    "rounded-full px-5 py-3 text-[10px] font-semibold uppercase tracking-headline transition-all duration-500 sm:px-6",
+                    activeCategory === cat.id
+                      ? "bg-label text-system-background shadow-[0_18px_40px_rgba(15,23,42,0.18)]"
+                      : "text-secondary-label hover:bg-system-fill hover:text-label"
+                  )}
+                >
+                  {cat.name}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="relative w-full max-w-sm h-[450px] flex items-center justify-center order-1 md:order-2 perspective-2000">
-            <div className="stage-light !scale-75 !opacity-40" />
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+            className="relative mt-14 w-full overflow-hidden rounded-[40px] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,242,234,0.92)_100%)] p-4 shadow-[0_40px_120px_rgba(15,23,42,0.10),inset_0_1px_0_rgba(255,255,255,0.84)] dark:bg-[linear-gradient(180deg,rgba(20,23,20,0.96)_0%,rgba(9,11,9,0.94)_100%)] dark:shadow-[0_40px_120px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-6 lg:p-8"
+          >
+            <div className="absolute -left-10 top-16 h-44 w-44 rounded-full bg-accent/12 blur-3xl dark:bg-accent/10" />
+            <div className="absolute -right-8 bottom-16 h-52 w-52 rounded-full bg-black/6 blur-3xl dark:bg-white/6" />
 
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={debouncedProduct}
-                initial={{ opacity: 0, scale: 0.8, rotateY: -20, z: -100 }}
-                animate={{ opacity: 1, scale: 1, rotateY: 0, z: 0 }}
-                exit={{ opacity: 0, scale: 1.1, rotateY: 20, z: 100 }}
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className="product-frame relative z-10 w-full h-[450px] flex justify-center preserve-3d group/jar transition-transform"
-              >
-                {(PRODUCTS[debouncedProduct] as any).model && scrollActive ? (
-                  <Product3DViewer
-                    modelPath={(PRODUCTS[debouncedProduct] as any).model}
-                    theme={isDark ? "dark" : "light"}
-                    className="w-[85%] h-full max-w-[300px]"
-                    sectionId={`shop-${debouncedProduct}`}
-                    scrollActive={scrollActive}
-                  />
-                ) : (
-                  <Image
-                    src={PRODUCTS[debouncedProduct].image}
-                    alt={debouncedProduct.toString()}
-                    width={500}
-                    height={650}
-                    className="w-[85%] h-auto max-w-[300px] drop-shadow-2xl animate-float mask-radial"
-                  />
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
+            <div className="relative grid gap-4 xl:grid-cols-[310px_minmax(0,1fr)_360px] xl:items-stretch">
+              <div className="order-2 xl:order-1">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                  {filteredProducts.map((key) => {
+                    const product = PRODUCTS[key];
+                    const productFlavor = getProductFlavor(product);
+                    const isSelected = selectedProduct === key;
 
-          <div className="flex-1 order-3 text-center md:text-left">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={debouncedProduct}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="max-w-xs mx-auto md:mx-0"
-              >
-                <span className="inline-block text-[10px] font-semibold uppercase tracking-headline text-accent px-4 py-2 bg-accent/10 rounded-full mb-10">
-                  Premium Quality
-                </span>
-                <div className="flex flex-col gap-4">
-                  <h3 className="text-4xl md:text-5xl font-headline font-bold text-foreground leading-tight tracking-display">
-                    {PRODUCTS[debouncedProduct].name}
-                  </h3>
-                  <p className="mt-6 text-secondary-label text-lg leading-normal tracking-body">
-                    {PRODUCTS[debouncedProduct].description}
-                  </p>
-                </div>
-                {(PRODUCTS[debouncedProduct] as any).stats && (
-                  <div className="mt-10 flex flex-wrap gap-4 justify-center md:justify-start">
-                    {Object.entries((PRODUCTS[debouncedProduct] as any).stats).map(
-                      ([statKey, value]: [string, any]) => (
-                        <div key={statKey} className="flex flex-col">
-                          <span className="text-[8px] font-semibold uppercase tracking-headline text-secondary-label">
-                            {statKey}
-                          </span>
-                          <span className="text-lg font-bold text-label tracking-tight">
-                            {value}
-                          </span>
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => setSelectedProduct(key)}
+                        className={cn(
+                          "group relative overflow-hidden rounded-[28px] p-3 text-left transition-all duration-500 sm:p-4",
+                          isSelected
+                            ? "bg-label text-system-background shadow-[0_28px_80px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.08)]"
+                            : "bg-system-background/70 shadow-[0_14px_40px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.78)] hover:-translate-y-1 hover:bg-system-background/90 dark:bg-white/[0.03] dark:shadow-[0_18px_48px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.04)] dark:hover:bg-white/[0.05]"
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "absolute inset-0 opacity-0 transition-opacity duration-500",
+                            isSelected
+                              ? "bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_55%)] opacity-100"
+                              : "bg-[radial-gradient(circle_at_top_right,rgba(15,61,46,0.08),transparent_55%)] group-hover:opacity-100 dark:bg-[radial-gradient(circle_at_top_right,rgba(215,197,163,0.12),transparent_55%)]"
+                          )}
+                        />
+
+                        <div className="relative flex items-center gap-4">
+                          <div
+                            className={cn(
+                              "flex h-20 w-20 shrink-0 items-center justify-center rounded-[22px] p-3",
+                              isSelected
+                                ? "bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                                : "bg-system-fill shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+                            )}
+                          >
+                            <Image
+                              src={product.image}
+                              alt={product.name}
+                              width={88}
+                              height={88}
+                              className="h-full w-full object-contain drop-shadow-xl"
+                            />
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div
+                              className={cn(
+                                "text-[10px] font-semibold uppercase tracking-headline",
+                                isSelected
+                                  ? "text-system-background/55"
+                                  : "text-secondary-label"
+                              )}
+                            >
+                              {product.category}
+                            </div>
+
+                            <div className="mt-1 text-xl font-headline font-semibold tracking-title">
+                              {productFlavor || product.name}
+                            </div>
+
+                            {productFlavor ? (
+                              <div
+                                className={cn(
+                                  "mt-1 text-sm",
+                                  isSelected
+                                    ? "text-system-background/72"
+                                    : "text-secondary-label"
+                                )}
+                              >
+                                {product.name}
+                              </div>
+                            ) : null}
+                          </div>
+
+                          <div
+                            aria-hidden
+                            className={cn(
+                              "h-3 w-3 rounded-full transition-all duration-500",
+                              isSelected
+                                ? "bg-system-background shadow-[0_0_0_6px_rgba(255,255,255,0.12)]"
+                                : "bg-quaternary-label/70 group-hover:bg-secondary-label"
+                            )}
+                          />
                         </div>
-                      )
-                    )}
-                  </div>
-                )}
-
-                <div className="mt-10 pt-10">
-                  <div className="flex items-baseline gap-2 mb-6 justify-center md:justify-start">
-                    <span className="text-4xl font-bold text-label">
-                      ${Math.floor(PRODUCTS[debouncedProduct].price)}.
-                    </span>
-                    <span className="text-xl font-bold text-label">
-                      {(PRODUCTS[debouncedProduct].price % 1).toFixed(2).split(".")[1]}
-                    </span>
-                    <span className="text-xs font-semibold uppercase tracking-headline text-secondary-label ml-4 opacity-40">
-                      Per Unit
-                    </span>
-                  </div>
-                  <Button
-                    size="lg"
-                    className="w-full !h-16 squircle text-base font-semibold uppercase tracking-headline shadow-float hover:scale-[1.02] transition-transform duration-700 ease-smooth"
-                    onClick={() => handleCheckout(debouncedProduct)}
-                  >
-                    Order via WhatsApp
-                  </Button>
+                      </button>
+                    );
+                  })}
                 </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
+              </div>
+
+              <div className="order-1 xl:order-2">
+                <div className="relative isolate h-[440px] overflow-hidden rounded-[34px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),rgba(241,236,226,0.84)_58%,rgba(229,222,208,0.68)_100%)] shadow-[0_24px_80px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.84)] dark:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),rgba(14,17,14,0.92)_58%,rgba(8,10,8,0.98)_100%)] dark:shadow-[0_28px_90px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)] sm:h-[520px]">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(15,61,46,0.10),transparent_65%)] dark:bg-[radial-gradient(circle_at_center,rgba(215,197,163,0.12),transparent_70%)]" />
+                  <div className="absolute left-1/2 top-14 h-48 w-48 -translate-x-1/2 rounded-full bg-white/80 blur-3xl dark:bg-white/10" />
+                  <div className="absolute inset-x-8 bottom-5 h-12 rounded-full bg-black/10 blur-2xl dark:bg-black/50" />
+                  <div className="stage-light !top-[46%] !scale-90 !opacity-50" />
+
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={debouncedProduct}
+                      initial={{ opacity: 0, scale: 0.92, y: 16, rotateY: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0, rotateY: 0 }}
+                      exit={{ opacity: 0, scale: 1.04, y: -8, rotateY: 10 }}
+                      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                      className="product-frame relative z-10 flex h-full items-center justify-center px-4 sm:px-10"
+                    >
+                      {activeProduct.model && scrollActive ? (
+                        <Product3DViewer
+                          modelPath={activeProduct.model}
+                          theme={isDark ? "dark" : "light"}
+                          className="h-full w-full max-w-[360px]"
+                          sectionId={`shop-${debouncedProduct}`}
+                          scrollActive={scrollActive}
+                        />
+                      ) : (
+                        <Image
+                          src={activeProduct.image}
+                          alt={activeProduct.name}
+                          width={560}
+                          height={720}
+                          className="h-auto w-full max-w-[360px] drop-shadow-[0_28px_80px_rgba(0,0,0,0.24)] animate-float"
+                        />
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              <div className="order-3">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={debouncedProduct}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                    className="flex h-full flex-col rounded-[32px] bg-system-background/60 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.78)] backdrop-blur-2xl dark:bg-white/[0.04] dark:shadow-[0_28px_90px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-8"
+                  >
+                    <span className="inline-flex w-fit rounded-full bg-accent/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-accent dark:bg-accent/15">
+                      Premium Quality
+                    </span>
+
+                    <div className="mt-6 space-y-4">
+                      <h3 className="text-4xl font-headline font-bold tracking-display text-foreground md:text-5xl xl:text-[3.25rem]">
+                        {activeProduct.name}
+                      </h3>
+
+                      <p className="text-base leading-relaxed tracking-body text-secondary-label sm:text-lg">
+                        {activeProduct.description}
+                      </p>
+                    </div>
+
+                    {statEntries.length > 0 ? (
+                      <div
+                        className={cn(
+                          "mt-8 grid gap-3",
+                          statEntries.length > 2 ? "grid-cols-3" : "grid-cols-2"
+                        )}
+                      >
+                        {statEntries.map(([statKey, value]) => (
+                          <div
+                            key={statKey}
+                            className="rounded-[24px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] dark:bg-white/[0.03] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                          >
+                            <span className="text-[8px] font-semibold uppercase tracking-headline text-secondary-label">
+                              {statKey}
+                            </span>
+                            <div className="mt-2 text-lg font-bold tracking-tight text-label">
+                              {value}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    <div className={cn("mt-auto", statEntries.length > 0 ? "pt-10" : "pt-16")}>
+                      <div className="flex items-end gap-2 pt-6">
+                        <span className="text-4xl font-bold tracking-tight text-label">
+                          ${Math.floor(activeProduct.price)}.
+                        </span>
+                        <span className="pb-0.5 text-xl font-bold tracking-tight text-label">
+                          {(activeProduct.price % 1).toFixed(2).split(".")[1]}
+                        </span>
+                        <span className="mb-1 ml-3 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                          Per Unit
+                        </span>
+                      </div>
+
+                      <Button
+                        size="lg"
+                        className="mt-6 w-full !h-16 rounded-full text-base font-semibold uppercase tracking-headline shadow-[0_22px_60px_rgba(15,61,46,0.18)] transition-transform duration-700 ease-premium hover:scale-[1.01]"
+                        onClick={() => handleCheckout(debouncedProduct)}
+                      >
+                        Order via WhatsApp
+                      </Button>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
     </SectionContainer>
