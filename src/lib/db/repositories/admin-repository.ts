@@ -1,8 +1,11 @@
 import "server-only";
 
-import { isDatabaseConfigured, query } from "@/lib/db/client";
+import {
+  isDatabaseConfigured,
+  query,
+  type DatabaseActorContext,
+} from "@/lib/db/client";
 import type {
-  AdminCatalogProduct,
   AdminCustomerSummary,
   AdminLayoutSection,
   AdminLayoutSummary,
@@ -10,6 +13,19 @@ import type {
   BankAccountRow,
   SiteSettingRow,
 } from "@/lib/db/types";
+
+function buildAdminActor(email?: string | null): DatabaseActorContext | undefined {
+  const normalizedEmail = email?.trim().toLowerCase();
+
+  if (!normalizedEmail) {
+    return undefined;
+  }
+
+  return {
+    email: normalizedEmail,
+    role: "admin",
+  };
+}
 
 export async function getAdminOverviewMetrics() {
   if (!isDatabaseConfigured()) {
@@ -166,7 +182,10 @@ export async function listAdminHomeLayoutSections() {
   return result.rows;
 }
 
-export async function listAdminCustomerSummaries(limit = 40) {
+export async function listAdminCustomerSummaries(
+  limit = 40,
+  actorEmail?: string | null
+) {
   if (!isDatabaseConfigured()) {
     return [] satisfies AdminCustomerSummary[];
   }
@@ -190,7 +209,7 @@ export async function listAdminCustomerSummaries(limit = 40) {
       rollup as (
         select
           op.customer_key,
-          max(op.user_id) as user_id,
+          max(op.user_id::text)::uuid as user_id,
           max(op.normalized_email) as email,
           max(op.customer_name) as customer_name,
           max(op.customer_phone_e164) as phone,
@@ -240,7 +259,8 @@ export async function listAdminCustomerSummaries(limit = 40) {
       order by r.latest_order_at desc nulls last
       limit $1
     `,
-    [limit]
+    [limit],
+    { actor: buildAdminActor(actorEmail) }
   );
 
   return result.rows;

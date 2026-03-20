@@ -6,6 +6,7 @@ import { resolvePostSignInRedirect, sanitizeReturnTo } from "@/lib/auth/navigati
 import type { AuthActionState } from "@/lib/auth/types";
 import { hasEmailDeliveryConfig, serverEnv } from "@/lib/config/server";
 import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
+import { sendEmailOtp } from "@/lib/email/auth";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_PATTERN = /^\d{6}$/;
@@ -44,6 +45,19 @@ export async function requestEmailOtpAction(
     ? serverEnv.auth.developmentOtpCode
     : Math.floor(100000 + Math.random() * 900000).toString();
 
+  if (hasEmailDeliveryConfig) {
+    try {
+      await sendEmailOtp({ email, code });
+    } catch (error) {
+      console.error("Failed to send sign-in code:", error);
+
+      return {
+        status: "error",
+        message: "We couldn't send the sign-in code right now. Try again.",
+      };
+    }
+  }
+
   await setPendingAuthChallenge({
     email,
     code,
@@ -52,11 +66,12 @@ export async function requestEmailOtpAction(
 
   return {
     status: "success",
-    message: serverEnv.isDevelopment
-      ? "Development OTP generated. Continue to verification."
-      : "A sign-in code has been sent to your email address.",
+    message: hasEmailDeliveryConfig
+      ? "A sign-in code has been sent to your email address."
+      : "Development OTP generated. Continue to verification.",
     redirectTo: "/auth/verify",
-    developmentOtpCode: serverEnv.isDevelopment ? code : undefined,
+    developmentOtpCode:
+      serverEnv.isDevelopment && !hasEmailDeliveryConfig ? code : undefined,
   };
 }
 

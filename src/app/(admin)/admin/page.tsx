@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Clock3, CreditCard, Layers3, Sparkles } from "lucide-react";
 import { MetricRail } from "@/components/admin/MetricRail";
+import { requireAdminSession } from "@/lib/auth/guards";
 import {
   getAdminHomeLayoutSummary,
   getAdminOverviewMetrics,
@@ -17,12 +18,13 @@ function formatStatusLabel(value: string) {
 }
 
 export default async function AdminPage() {
+  const session = await requireAdminSession("/admin");
   const [metrics, layoutSummary, products, orders, payments] = await Promise.all([
     getAdminOverviewMetrics(),
     getAdminHomeLayoutSummary(),
     listAllAdminCatalogProducts(),
-    listOrdersForAdmin(12),
-    listPaymentsForAdmin(12),
+    listOrdersForAdmin(12, session.email),
+    listPaymentsForAdmin(12, session.email),
   ]);
 
   const activeOrders = orders.filter(

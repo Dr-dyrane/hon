@@ -55,12 +55,19 @@ Current state:
 - layout section authoring now writes draft content correctly and publish flow remains active
 - tokenized courier links now open a real courier location-sharing route
 - delivery tracking points now ingest through the app and feed signed-in customer tracking
-- portal tracking now polls a real delivery snapshot instead of using a placeholder route
+- portal tracking now streams a real delivery snapshot over SSE with polling fallback
+- admin delivery metrics and dispatch map now stream from the live delivery snapshot path
 - portal profile and saved address management now read and write against Aurora
 - portal reorder now rebuilds the cart from past orders using current availability and pricing
+- admin catalog and layout server actions now enforce admin session checks instead of relying on shell-only protection
+- request-scoped database actor context and audit triggers now record critical write flows in `audit.audit_logs`
+- database-level RLS is now active and forced on the owner-scoped profile, order, payment, proof, timeline, and review tables
+- admin and customer read paths now seed actor context so the app continues to function under forced RLS
+- secondary layout mutations and review-request lifecycle changes are now captured in the audit ledger
 - root admin overview, orders, payments, customers, reviews, delivery, and settings now use the quieter KPI-rail and compact-row shell direction instead of the earlier explanatory scaffold pattern
 - portal profile and addresses now use compact context panels instead of route-level hero repetition
 - portal home, reorder, and reviews now use the same KPI-rail and compact-root direction as the newer console screens
+- portal order detail, proof upload, and live tracking now use quieter value strips and tighter section shells instead of generic stacked cards
 
 This means the system has crossed into operational platform work.
 
@@ -186,7 +193,7 @@ Deliverables:
 
 Status:
 
-- `not started`
+- `in progress`
 
 Deliverables:
 
@@ -208,7 +215,7 @@ Completed:
 
 - [x] Aurora IAM-backed database runtime
 - [x] Vercel-compatible DB scripts
-- [x] migrations through `0007__carts.sql`
+- [x] migrations through `0011__rls_policies.sql`
 - [x] marketing seed path
 - [x] bank-account seed path
 - [x] repository layer for marketing, admin, account, orders, and payments
@@ -225,11 +232,15 @@ Completed:
 - [x] review request and review schema
 - [x] review repository and moderation write path
 - [x] rider tracking ingestion path
+- [x] SSE delivery stream for signed-in tracking and admin dispatch
+- [x] request-scoped DB actor context for audited write paths
+- [x] audit trigger foundation for critical mutable tables
+- [x] owner/admin RLS policy rollout on order-, profile-, and review-scoped tables
+- [x] low-churn secondary audit coverage for layout presentations, layout bindings, and review requests
 
 Open:
 
-- [ ] RLS policies for ownership and admin scopes
-- [ ] audit coverage review for write-heavy flows
+- [ ] review whether any future low-churn mutable tables should join the audit ledger as new admin surfaces are introduced
 
 ---
 
@@ -286,10 +297,10 @@ Completed:
 - [x] addresses
 - [x] profile
 - [x] reorder
+- [x] quieter order detail and tracking surfaces
 
 Open:
 
-- [ ] review history
 - [ ] quieter Apple-style copy pass across portal screens
 
 ---
@@ -341,25 +352,41 @@ This is acceptable for the current pass, but a fuller focused checkout shell may
 Current tracking behavior:
 
 - courier links can post tracking points into the platform
-- the signed-in portal tracking route polls a real delivery snapshot and latest rider position
-- admin dispatch map can prefer latest tracking points when available
+- the signed-in portal tracking route now streams a real delivery snapshot and latest rider position
+- admin dispatch metrics and map now stream from the same live delivery snapshot path
 
 Missing:
 
-- SSE or socket streaming updates
 - richer route/ETA logic
 - guest tracking on the same live model
 
-### RLS is not active yet
-
+### RLS is active on the first protected slice
 Current protection model:
 
 - route guards
 - repository scoping
+- transaction-scoped database actor context for audited writes and actor-scoped reads
+- database-level RLS on owner-scoped profile, order, payment, proof, timeline, and review tables
 
 Missing:
 
-- database-level row-level security policies
+- expand policy coverage review to any future tables that become customer-visible
+
+### High-churn audit exclusions are intentional
+
+Current exclusions:
+
+- `app.carts`
+- `app.cart_items`
+- `app.delivery_events`
+- `app.tracking_points`
+- auth-touching `app.users` activity such as sign-in timestamps
+
+Reason:
+
+- these paths are high-frequency or operationally derivative
+- auditing them row-by-row would create avoidable database growth without giving proportional debugging value
+- the quieter business-critical tables are already covered
 
 ### Viewport-native execution is still partial
 
@@ -398,6 +425,7 @@ Current checkpoint verification:
 
 - `npm run db:migrate` passes
 - `npx tsc --noEmit` passes
+- targeted `eslint` passes on the active hardening slice
 - `npm run build` passes
 - `npm run db:seed` passes, but bank-account seed safely skips if bank env vars are missing
 - `npm run lint` does not pass repo-wide because of the legacy issues listed above
@@ -425,16 +453,15 @@ The active build block is Pass 5: admin console expansion.
 
 Implement in this order:
 
-1. Harden admin and portal visual passes.
-2. Add stronger realtime delivery streaming.
-3. Add RLS and audit hardening.
-4. Review legacy lint debt outside platform work.
+1. Review legacy lint debt outside platform work.
+2. Keep tightening the Apple-HIG execution across admin and portal root/detail screens.
+3. Reassess audit coverage only when new low-churn admin mutation surfaces appear.
 
 After that:
 
-1. expand the user portal
-2. build delivery and realtime
-3. harden uploads, RLS, and quality
+1. continue admin and portal polish
+2. deepen delivery quality where ETA/live behavior still feels thin
+3. harden uploads, audit coverage, and quality
 
 ---
 

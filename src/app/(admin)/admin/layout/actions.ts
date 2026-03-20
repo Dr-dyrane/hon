@@ -1,15 +1,32 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { requireAdminSession } from "@/lib/auth/guards";
+import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
 import { 
   ensureLayoutDraft, 
   publishLayoutVersion, 
   updateLayoutSection 
 } from "@/lib/db/repositories/layout-repository";
 
+async function getAdminActor(returnTo: string) {
+  const session = await requireAdminSession(returnTo);
+  const user = await ensureUserByEmail(session.email);
+
+  return {
+    userId: user?.userId ?? null,
+    email: session.email,
+  };
+}
+
 export async function createDraftAction() {
   try {
-    await ensureLayoutDraft("home");
+    const actor = await getAdminActor("/admin/layout");
+    await ensureLayoutDraft("home", {
+      userId: actor.userId,
+      email: actor.email,
+      role: "admin",
+    });
     revalidatePath("/admin/layout");
     return { success: true };
   } catch (error) {
@@ -28,11 +45,16 @@ export async function updateSectionAction(formData: FormData) {
   if (!sectionId) return { success: false, error: "Missing section ID" };
 
   try {
+    const actor = await getAdminActor(`/admin/layout/sections/${sectionId}`);
     await updateLayoutSection(sectionId, {
       eyebrow: eyebrow || null,
       heading: heading || null,
       body: body || null,
       isEnabled,
+    }, {
+      userId: actor.userId,
+      email: actor.email,
+      role: "admin",
     });
     revalidatePath("/admin/layout");
     revalidatePath(`/admin/layout/sections/${sectionId}`);
@@ -47,7 +69,12 @@ export async function publishDraftAction(versionId: string) {
   if (!versionId) return { success: false, error: "Missing version ID" };
 
   try {
-    await publishLayoutVersion(versionId);
+    const actor = await getAdminActor("/admin/layout");
+    await publishLayoutVersion(versionId, {
+      userId: actor.userId,
+      email: actor.email,
+      role: "admin",
+    });
     revalidatePath("/admin/layout");
     revalidatePath("/"); // Revalidate marketing home
     return { success: true };

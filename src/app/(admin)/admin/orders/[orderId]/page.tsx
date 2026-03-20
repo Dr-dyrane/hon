@@ -39,13 +39,8 @@ export default async function AdminOrderDetailPage({
 }: {
   params: { orderId: string };
 }) {
-  await requireAdminSession(`/admin/orders/${params.orderId}`);
-  const [order, events, reviews, proofs] = await Promise.all([
-    getAdminOrderDetail(params.orderId),
-    listOrderStatusEvents(params.orderId),
-    listPaymentReviewEvents(params.orderId),
-    listPaymentProofs(params.orderId),
-  ]);
+  const session = await requireAdminSession(`/admin/orders/${params.orderId}`);
+  const order = await getAdminOrderDetail(params.orderId, session.email);
 
   if (!order) {
     return (
@@ -62,6 +57,16 @@ export default async function AdminOrderDetailPage({
       </div>
     );
   }
+
+  const adminActor = {
+    email: session.email,
+    role: "admin" as const,
+  };
+  const [events, reviews, proofs] = await Promise.all([
+    listOrderStatusEvents(params.orderId, adminActor),
+    order.paymentId ? listPaymentReviewEvents(order.paymentId, session.email) : [],
+    order.paymentId ? listPaymentProofs(order.paymentId, adminActor) : [],
+  ]);
 
   return (
     <div className="space-y-8">

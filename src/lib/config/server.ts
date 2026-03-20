@@ -57,7 +57,9 @@ export const serverEnv = {
   },
   email: {
     resendApiKey: readOptionalEnv(process.env.RESEND_API_KEY),
-    resendFromEmail: readEmailEnv("RESEND_FROM_EMAIL", process.env.RESEND_FROM_EMAIL),
+    resendFromEmail:
+      readEmailEnv("RESEND_FROM_EMAIL", process.env.RESEND_FROM_EMAIL) ??
+      (isProduction ? undefined : "onboarding@resend.dev"),
     sesFromEmail: readEmailEnv("SES_FROM_EMAIL", process.env.SES_FROM_EMAIL),
     sesConfigurationSet: readOptionalEnv(process.env.SES_CONFIGURATION_SET),
   },

@@ -1,7 +1,9 @@
+import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { PaymentProofUploadCard } from "@/components/orders/PaymentProofUploadCard";
 import { WorkspaceContextPanel } from "@/components/shell/WorkspaceContextPanel";
+import { QuietValueStrip } from "@/components/ui/QuietValueStrip";
 import { formatNgn } from "@/lib/commerce";
 import type {
   OrderStatusEventRow,
@@ -122,167 +124,229 @@ export function OrderDetailView({
             value: formatTimestamp(order.placedAt),
           },
           {
-            label: "Transfer",
+            label: "Ref",
             value: order.transferReference,
+          },
+          {
+            label: "Drop",
+            value: getDeliveryLine(order.deliveryAddressSnapshot),
+          },
+        ]}
+      />
+
+      <QuietValueStrip
+        items={[
+          {
+            label: "Due",
+            value: formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn),
+            detail: order.payment?.status
+              ? formatStatusLabel(order.payment.status)
+              : "Pending",
           },
           {
             label: "Deadline",
             value: order.transferDeadlineAt
               ? formatTimestamp(order.transferDeadlineAt)
-              : "No deadline",
+              : "Open",
+          },
+          {
+            label: "Items",
+            value: `${order.items.length}`,
+            detail: `${order.items.reduce((total, item) => total + item.quantity, 0)} units`,
+          },
+          {
+            label: "Proofs",
+            value: `${proofs.length}`,
+            detail: proofs.length > 0 ? "Received" : "Waiting",
           },
         ]}
+        columns={4}
       />
 
-      <section className="glass-morphism rounded-[32px] bg-system-background/78 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-              Transfer
-            </p>
-            <div className="text-lg font-semibold tracking-tight text-label">
-              {formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn)}
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
+        <div className="space-y-4">
+          <OrderSurface title="Pay">
+            <div className="space-y-3">
+              <div className="text-[28px] font-semibold tracking-tight text-label">
+                {formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn)}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <SurfaceMeta
+                  label="Bank"
+                  value={order.payment?.bankName ?? "Pending"}
+                />
+                <SurfaceMeta
+                  label="Name"
+                  value={order.payment?.accountName ?? "Pending"}
+                />
+              </div>
+              <div className="rounded-[24px] bg-system-fill/42 px-4 py-4">
+                <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                  Number
+                </div>
+                <div className="mt-2 text-[26px] font-semibold tracking-tight text-label">
+                  {order.payment?.accountNumber ?? "Pending"}
+                </div>
+                {order.payment?.instructions ? (
+                  <div className="mt-2 text-sm text-secondary-label">
+                    {order.payment.instructions}
+                  </div>
+                ) : null}
+              </div>
             </div>
-            <div className="grid gap-1 text-sm">
-              <div className="text-secondary-label">
-                {order.payment?.bankName ?? "Bank pending"}
-              </div>
-              <div className="text-label">
-                {order.payment?.accountName ?? "Account pending"}
-              </div>
-              <div className="text-xl font-semibold tracking-tight text-label">
-                {order.payment?.accountNumber ?? "Pending"}
-              </div>
-            </div>
-            {order.payment?.instructions ? (
-              <div className="text-sm text-secondary-label">
-                {order.payment.instructions}
-              </div>
-            ) : null}
-          </div>
+          </OrderSurface>
 
-          <div className="space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-              Delivery
-            </p>
-            <div className="text-sm text-label">
-              {getDeliveryLine(order.deliveryAddressSnapshot)}
+          <OrderSurface title="Items">
+            <div className="grid gap-3">
+              {order.items.map((item) => (
+                <div
+                  key={`${item.sku}-${item.title}`}
+                  className="rounded-[24px] bg-system-fill/42 px-4 py-4 text-sm text-secondary-label"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="truncate font-medium text-label">{item.title}</div>
+                      <div className="mt-1 text-xs">
+                        {item.quantity} x {formatNgn(item.unitPriceNgn)}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right font-medium text-label">
+                      {formatNgn(item.lineTotalNgn)}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="text-sm text-secondary-label">{order.customerPhone}</div>
-            {["ready_for_dispatch", "out_for_delivery", "delivered"].includes(
-              order.fulfillmentStatus
-            ) ? (
-              <div className="pt-1">
+          </OrderSurface>
+        </div>
+
+        <div className="space-y-4">
+          <OrderSurface
+            title="Delivery"
+            action={
+              ["ready_for_dispatch", "out_for_delivery", "delivered"].includes(
+                order.fulfillmentStatus
+              ) ? (
                 <Link
                   href={`/account/tracking/${order.orderId}`}
                   className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
                 >
                   Track
                 </Link>
-              </div>
-            ) : null}
-            {order.notes ? (
-              <div className="text-sm text-secondary-label">{order.notes}</div>
-            ) : null}
-          </div>
-        </div>
-      </section>
-
-      <section className="glass-morphism rounded-[32px] bg-system-background/78 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
-        <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-          Items
-        </p>
-        <div className="mt-4 grid gap-3">
-          {order.items.map((item) => (
-            <div
-              key={`${item.sku}-${item.title}`}
-              className="rounded-[24px] bg-system-fill/70 p-4 text-sm text-secondary-label"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="text-label">{item.title}</div>
-                <div className="text-right">
-                  <div className="text-label">
-                    {item.quantity} x {formatNgn(item.unitPriceNgn)}
-                  </div>
-                  <div>{formatNgn(item.lineTotalNgn)}</div>
-                </div>
-              </div>
+              ) : null
+            }
+          >
+            <div className="space-y-3 text-sm text-secondary-label">
+              <div className="text-label">{getDeliveryLine(order.deliveryAddressSnapshot)}</div>
+              <div>{order.customerPhone}</div>
+              {order.notes ? <div>{order.notes}</div> : null}
             </div>
-          ))}
-        </div>
-      </section>
+          </OrderSurface>
 
-      <section className="glass-morphism rounded-[32px] bg-system-background/78 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-            Proof
-          </p>
-          <span className="text-xs text-secondary-label">
-            {order.payment?.status ? formatStatusLabel(order.payment.status) : "Pending"}
-          </span>
-        </div>
-
-        <PaymentProofUploadCard
-          orderId={order.orderId}
-          paymentId={order.paymentId}
-          accessToken={accessToken}
-        />
-
-        {proofs.length > 0 ? (
-          <div className="mt-4 grid gap-2 text-xs text-secondary-label">
-            {proofs.map((proof) => (
-              <Link
-                key={proof.proofId}
-                href={proof.publicUrl ?? "#"}
-                target="_blank"
-                rel="noreferrer"
-                className="underline-offset-4 hover:text-label"
-              >
-                {formatTimestamp(proof.createdAt)}
-              </Link>
-            ))}
-          </div>
-        ) : null}
-      </section>
-
-      <section className="glass-morphism rounded-[32px] bg-system-background/78 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
-        <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-          Timeline
-        </p>
-        <div className="mt-4 grid gap-2 text-sm text-secondary-label">
-          {timeline.length === 0 ? (
-            <div>No updates.</div>
-          ) : (
-            timeline.map((event) => (
-              <div
-                key={event.eventId}
-                className="flex items-center justify-between gap-4"
-              >
-                <span>{formatStatusLabel(event.toStatus)}</span>
-                <span>{formatTimestamp(event.createdAt)}</span>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-
-      {mapSrc ? (
-        <section className="glass-morphism rounded-[32px] bg-system-background/78 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
-          <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-            Tracking
-          </p>
-          <div className="mt-4 overflow-hidden rounded-[28px]">
-            <Image
-              src={mapSrc}
-              alt="Delivery location"
-              width={600}
-              height={300}
-              className="h-auto w-full"
-              priority
+          <OrderSurface
+            title="Proof"
+            action={
+              <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                {order.payment?.status ? formatStatusLabel(order.payment.status) : "Pending"}
+              </span>
+            }
+          >
+            <PaymentProofUploadCard
+              orderId={order.orderId}
+              paymentId={order.paymentId}
+              accessToken={accessToken}
             />
-          </div>
-        </section>
-      ) : null}
+
+            {proofs.length > 0 ? (
+              <div className="mt-4 grid gap-2 text-xs text-secondary-label">
+                {proofs.map((proof) => (
+                  <Link
+                    key={proof.proofId}
+                    href={proof.publicUrl ?? "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline-offset-4 hover:text-label"
+                  >
+                    {formatTimestamp(proof.createdAt)}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </OrderSurface>
+
+          <OrderSurface title="Updates">
+            <div className="grid gap-2 text-sm text-secondary-label">
+              {timeline.length === 0 ? (
+                <div>Waiting.</div>
+              ) : (
+                timeline.map((event) => (
+                  <div
+                    key={event.eventId}
+                    className="flex items-center justify-between gap-4 rounded-[22px] bg-system-fill/36 px-4 py-3"
+                  >
+                    <span className="text-label">{formatStatusLabel(event.toStatus)}</span>
+                    <span>{formatTimestamp(event.createdAt)}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </OrderSurface>
+
+          {mapSrc ? (
+            <OrderSurface title="Map">
+              <div className="overflow-hidden rounded-[26px]">
+                <Image
+                  src={mapSrc}
+                  alt="Delivery location"
+                  width={600}
+                  height={300}
+                  className="h-auto w-full"
+                  priority
+                />
+              </div>
+            </OrderSurface>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OrderSurface({
+  title,
+  action,
+  children,
+}: {
+  title: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="glass-morphism rounded-[32px] bg-system-background/78 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] md:p-6">
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+          {title}
+        </p>
+        {action}
+      </div>
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+function SurfaceMeta({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[22px] bg-system-fill/42 px-4 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-medium text-label">{value}</div>
     </div>
   );
 }

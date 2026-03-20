@@ -1,6 +1,11 @@
 import "server-only";
 
-import { isDatabaseConfigured, query, withTransaction } from "@/lib/db/client";
+import {
+  isDatabaseConfigured,
+  query,
+  type DatabaseActorContext,
+  withTransaction,
+} from "@/lib/db/client";
 import type {
   AdminReviewRow,
   PortalPendingReview,
@@ -13,6 +18,32 @@ type MatchedUser = {
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
+}
+
+function buildCustomerActor(email: string): DatabaseActorContext | undefined {
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!normalizedEmail) {
+    return undefined;
+  }
+
+  return {
+    email: normalizedEmail,
+    role: "customer",
+  };
+}
+
+function buildAdminActor(email?: string | null): DatabaseActorContext | undefined {
+  const normalizedEmail = email?.trim().toLowerCase();
+
+  if (!normalizedEmail) {
+    return undefined;
+  }
+
+  return {
+    email: normalizedEmail,
+    role: "admin",
+  };
 }
 
 async function getMatchedUser(email: string) {
@@ -71,7 +102,8 @@ export async function listPendingReviewsForPortal(email: string) {
         )
       order by o.delivered_at desc nulls last, rr.created_at desc
     `,
-    [normalizedEmail]
+    [normalizedEmail],
+    { actor: buildCustomerActor(normalizedEmail) }
   );
 
   return result.rows;
@@ -112,7 +144,8 @@ export async function listReviewsForPortal(email: string) {
          or lower(o.customer_email) = $1
       order by r.created_at desc
     `,
-    [normalizedEmail]
+    [normalizedEmail],
+    { actor: buildCustomerActor(normalizedEmail) }
   );
 
   return result.rows;
@@ -226,10 +259,15 @@ export async function submitPortalReview(input: {
       `,
       [request.requestId]
     );
+  }, {
+    actor: {
+      email: normalizedEmail,
+      role: "customer",
+    },
   });
 }
 
-export async function listReviewsForAdmin() {
+export async function listReviewsForAdmin(actorEmail?: string | null) {
   if (!isDatabaseConfigured()) {
     return [] satisfies AdminReviewRow[];
   }
@@ -260,7 +298,9 @@ export async function listReviewsForAdmin() {
           else 2
         end asc,
         r.created_at desc
-    `
+    `,
+    [],
+    { actor: buildAdminActor(actorEmail) }
   );
 
   return result.rows;
@@ -363,5 +403,11 @@ export async function moderateReview(input: {
       default:
         throw new Error("Unsupported review action.");
     }
+  }, {
+    actor: {
+      userId: input.actorUserId,
+      email: input.actorEmail,
+      role: "admin",
+    },
   });
 }

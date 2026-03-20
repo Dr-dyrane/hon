@@ -47,7 +47,8 @@ export async function POST(request: Request) {
     storageKey,
     body.publicUrl?.trim() || null,
     mimeType,
-    access.mode === "session" ? access.sessionEmail : access.order.customerEmail
+    access.mode === "session" ? access.sessionEmail : access.order.customerEmail,
+    access.mode === "guest" ? { guestOrderId: orderId } : undefined
   );
 
   return NextResponse.json(

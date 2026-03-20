@@ -34,12 +34,14 @@ function revalidateDeliverySurfaces(orderId?: string | null) {
 }
 
 export async function createRiderAction(formData: FormData) {
-  await getAdminActor("/admin/delivery");
+  const actor = await getAdminActor("/admin/delivery");
 
   await createOrUpdateRider({
     name: formData.get("name")?.toString() ?? "",
     phoneNumber: formData.get("phoneNumber")?.toString() ?? "",
     vehicleType: formData.get("vehicleType")?.toString() ?? null,
+    actorUserId: actor.userId,
+    actorEmail: actor.email,
   });
 
   revalidateDeliverySurfaces();

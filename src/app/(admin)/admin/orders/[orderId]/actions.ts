@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/auth/guards";
+import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
 import { reviewPayment } from "@/lib/db/repositories/orders-repository";
 
 export async function reviewPaymentAction(formData: FormData) {
@@ -13,12 +14,19 @@ export async function reviewPaymentAction(formData: FormData) {
   }
 
   const session = await requireAdminSession(`/admin/orders/${orderId}`);
+  const actor = await ensureUserByEmail(session.email);
 
   if (!["submitted", "under_review", "confirmed", "rejected"].includes(action)) {
     throw new Error("Unsupported action");
   }
 
-  await reviewPayment(paymentId, action as "submitted" | "under_review" | "confirmed" | "rejected", session.email, note);
+  await reviewPayment(
+    paymentId,
+    action as "submitted" | "under_review" | "confirmed" | "rejected",
+    session.email,
+    actor?.userId ?? null,
+    note
+  );
 
   revalidatePath(`/admin/orders/${orderId}`);
 }

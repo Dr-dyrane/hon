@@ -29,7 +29,7 @@ export function PaymentProofUploadCard({
     const file = inputRef.current?.files?.[0];
 
     if (!file) {
-      setMessage("Choose a file.");
+      setMessage("Pick a file.");
       return;
     }
 
@@ -108,7 +108,7 @@ export function PaymentProofUploadCard({
           inputRef.current.value = "";
         }
 
-        setMessage("Uploaded.");
+        setMessage("Added.");
         router.refresh();
       } catch (error) {
         setMessage(getErrorMessage(error));
@@ -117,23 +117,23 @@ export function PaymentProofUploadCard({
   }
 
   return (
-    <div className="mt-4 flex flex-col gap-3">
+    <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center">
       <input
         ref={inputRef}
         type="file"
         accept="image/*,application/pdf"
-        className="rounded-[24px] bg-system-fill/70 px-3 py-3 text-xs text-label file:mr-3 file:rounded-full file:bg-system-background file:px-3 file:py-2 file:text-[10px] file:font-semibold file:text-label"
+        className="min-w-0 flex-1 rounded-[24px] bg-system-fill/70 px-3 py-3 text-xs text-label file:mr-3 file:rounded-full file:bg-system-background file:px-3 file:py-2 file:text-[10px] file:font-semibold file:text-label"
       />
       <button
         type="button"
         onClick={() => void handleUpload()}
         disabled={isPending}
-        className="button-primary min-h-[44px] text-xs font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:shadow-none"
+        className="button-primary min-h-[44px] shrink-0 text-xs font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:shadow-none md:px-5"
       >
-        {isPending ? "Uploading" : "Upload proof"}
+        {isPending ? "Sending" : "Add proof"}
       </button>
       {message ? (
-        <p className="text-xs text-secondary-label">{message}</p>
+        <p className="text-xs text-secondary-label md:min-w-[72px] md:text-right">{message}</p>
       ) : null}
     </div>
   );

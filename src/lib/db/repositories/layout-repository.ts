@@ -1,4 +1,9 @@
-import { isDatabaseConfigured, query, withTransaction } from "@/lib/db/client";
+import {
+  isDatabaseConfigured,
+  query,
+  type DatabaseActorContext,
+  withTransaction,
+} from "@/lib/db/client";
 import type {
   AdminLayoutDraftDetail,
   AdminLayoutSection,
@@ -234,7 +239,10 @@ export async function getLayoutDraftSectionDetail(
   return result.rows[0] ?? null;
 }
 
-export async function ensureLayoutDraft(pageKey: string): Promise<string> {
+export async function ensureLayoutDraft(
+  pageKey: string,
+  actor?: DatabaseActorContext
+): Promise<string> {
   return withTransaction(async (queryFn) => {
     // 1. Find the page
     const pageRes = await queryFn('select id from app.pages where key = $1', [pageKey]);
@@ -258,10 +266,10 @@ export async function ensureLayoutDraft(pageKey: string): Promise<string> {
 
     // 4. Create new draft version
     const newVersionRes = await queryFn(
-      `insert into app.page_versions (page_id, label, status) 
-       values ($1, $2, 'draft') 
+      `insert into app.page_versions (page_id, label, status, created_by_user_id) 
+       values ($1, $2, 'draft', $3) 
        returning id`,
-      [pageId, nextLabel]
+      [pageId, nextLabel, actor?.userId ?? null]
     );
     const newVersionId = newVersionRes.rows[0].id;
 
@@ -310,7 +318,7 @@ export async function ensureLayoutDraft(pageKey: string): Promise<string> {
     }
 
     return newVersionId;
-  });
+  }, { actor });
 }
 
 export async function updateLayoutSection(
@@ -322,7 +330,8 @@ export async function updateLayoutSection(
     sortOrder?: number;
     isEnabled?: boolean;
     settings?: Record<string, unknown>;
-  }
+  },
+  actor?: DatabaseActorContext
 ) {
   // Ensure we are only updating a DRAFT section by checking the version status
   const versionCheck = await query(
@@ -330,7 +339,8 @@ export async function updateLayoutSection(
      from app.page_sections ps
      inner join app.page_versions pv on pv.id = ps.page_version_id
      where ps.id = $1`,
-    [sectionId]
+    [sectionId],
+    { actor }
   );
   
   if (versionCheck.rows[0]?.status !== 'draft') {
@@ -371,11 +381,15 @@ export async function updateLayoutSection(
   values.push(sectionId);
   await query(
     `update app.page_sections set ${updates.join(', ')}, updated_at = now() where id = $${index}`,
-    values
+    values,
+    { actor }
   );
 }
 
-export async function publishLayoutVersion(versionId: string) {
+export async function publishLayoutVersion(
+  versionId: string,
+  actor?: DatabaseActorContext
+) {
   return withTransaction(async (queryFn) => {
     // 1. Get the page_id for this version
     const versionRes = await queryFn('select page_id from app.page_versions where id = $1', [versionId]);
@@ -390,8 +404,16 @@ export async function publishLayoutVersion(versionId: string) {
 
     // 3. Promote this version to published
     await queryFn(
-      "update app.page_versions set status = 'published', published_at = now(), updated_at = now() where id = $1",
-      [versionId]
+      `
+        update app.page_versions
+        set
+          status = 'published',
+          published_by_user_id = $2,
+          published_at = now(),
+          updated_at = now()
+        where id = $1
+      `,
+      [versionId, actor?.userId ?? null]
     );
-  });
+  }, { actor });
 }

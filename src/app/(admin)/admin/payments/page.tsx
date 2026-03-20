@@ -21,8 +21,8 @@ function formatStatusLabel(value: string) {
 }
 
 export default async function AdminPaymentsPage() {
-  await requireAdminSession("/admin/payments");
-  const payments = await listPaymentsForAdmin(50);
+  const session = await requireAdminSession("/admin/payments");
+  const payments = await listPaymentsForAdmin(50, session.email);
   const underReview = payments.filter((payment) => payment.status === "under_review").length;
   const submitted = payments.filter((payment) => payment.status === "submitted").length;
 

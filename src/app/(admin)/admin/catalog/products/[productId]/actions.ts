@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { requireAdminSession } from "@/lib/auth/guards";
+import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
 import { 
   createAdminCatalogProduct,
   updateAdminCatalogProduct, 
@@ -18,6 +20,16 @@ function revalidateCatalogPaths(productId?: string) {
   }
 }
 
+async function getAdminActor(returnTo: string) {
+  const session = await requireAdminSession(returnTo);
+  const user = await ensureUserByEmail(session.email);
+
+  return {
+    userId: user?.userId ?? null,
+    email: session.email,
+  };
+}
+
 export async function createProductAction(formData: FormData) {
   const categoryId = (formData.get("categoryId") as string) || null;
   const productName = formData.get("productName") as string;
@@ -26,12 +38,15 @@ export async function createProductAction(formData: FormData) {
   const priceNgn = formData.get("priceNgn") as string;
 
   try {
+    const actor = await getAdminActor("/admin/catalog/products/new");
     const productId = await createAdminCatalogProduct({
       categoryId,
       productName,
       marketingName,
       variantName,
       priceNgn,
+      actorUserId: actor.userId,
+      actorEmail: actor.email,
     });
 
     revalidateCatalogPaths(productId);
@@ -69,6 +84,7 @@ export async function updateProductAction(formData: FormData) {
   const reorderThreshold = formData.get("reorderThreshold") as string || undefined;
 
   try {
+    const actor = await getAdminActor(`/admin/catalog/products/${productId}`);
     await updateAdminCatalogProduct({
       productId,
       categoryId,
@@ -89,6 +105,8 @@ export async function updateProductAction(formData: FormData) {
       variantStatus,
       inventoryOnHand,
       reorderThreshold,
+      actorUserId: actor.userId,
+      actorEmail: actor.email,
     });
 
     revalidateCatalogPaths(productId);
@@ -100,7 +118,8 @@ export async function updateProductAction(formData: FormData) {
 
 export async function toggleProductAvailabilityAction(productId: string, isAvailable: boolean) {
   try {
-    await setAdminCatalogProductAvailability(productId, isAvailable);
+    const actor = await getAdminActor(`/admin/catalog/products/${productId}`);
+    await setAdminCatalogProductAvailability(productId, isAvailable, actor);
     revalidateCatalogPaths(productId);
     return { success: true };
   } catch (error) {
@@ -113,7 +132,8 @@ export async function setProductMerchandisingAction(
   merchandisingState: "standard" | "featured" | "hidden"
 ) {
   try {
-    await setAdminCatalogProductMerchandising(productId, merchandisingState);
+    const actor = await getAdminActor(`/admin/catalog/products/${productId}`);
+    await setAdminCatalogProductMerchandising(productId, merchandisingState, actor);
     revalidateCatalogPaths(productId);
     return { success: true };
   } catch (error) {
@@ -123,7 +143,13 @@ export async function setProductMerchandisingAction(
 
 export async function updateInventoryAction(variantId: string, onHand: number, reorderThreshold?: number | null) {
   try {
-    await updateAdminCatalogInventory(variantId, { onHand, reorderThreshold });
+    const actor = await getAdminActor("/admin/catalog/products");
+    await updateAdminCatalogInventory(variantId, {
+      onHand,
+      reorderThreshold,
+      actorUserId: actor.userId,
+      actorEmail: actor.email,
+    });
     revalidateCatalogPaths();
     // Note: revalidating by productId would be better if we had it here, but revalidatePath works on the route
     return { success: true };

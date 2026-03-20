@@ -91,8 +91,11 @@ async function expireCartIfNeeded(cartId: string) {
   );
 }
 
-async function findOrderSummaryById(orderId: string) {
-  const result = await query<CreatedOrder>(
+async function findOrderSummaryById(
+  queryFn: typeof query,
+  orderId: string
+) {
+  const result = await queryFn<CreatedOrder>(
     `
       select
         id as "orderId",
@@ -597,7 +600,10 @@ export async function createOrderFromCart(input: CheckoutInput) {
     }
 
     if (cart.status === "converted" && cart.convertedOrderId) {
-      const existingOrder = await findOrderSummaryById(cart.convertedOrderId);
+      const existingOrder = await findOrderSummaryById(
+        queryFn,
+        cart.convertedOrderId
+      );
 
       if (existingOrder) {
         return existingOrder;
@@ -825,5 +831,11 @@ export async function createOrderFromCart(input: CheckoutInput) {
     );
 
     return createdOrder;
+  }, {
+    actor: {
+      userId: input.userId,
+      email: normalizedEmail,
+      role: "customer",
+    },
   });
 }

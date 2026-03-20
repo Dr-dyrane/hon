@@ -34,8 +34,8 @@ function formatStatusLabel(value: string) {
 }
 
 export default async function AdminOrdersPage() {
-  await requireAdminSession("/admin/orders");
-  const orders = await listOrdersForAdmin(40);
+  const session = await requireAdminSession("/admin/orders");
+  const orders = await listOrdersForAdmin(40, session.email);
   const awaitingTransfer = orders.filter(
     (order) => order.paymentStatus === "awaiting_transfer"
   ).length;

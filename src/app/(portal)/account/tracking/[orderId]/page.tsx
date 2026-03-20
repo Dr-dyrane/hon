@@ -20,6 +20,7 @@ export default async function TrackingPage({
     <PortalTrackingExperience
       initialSnapshot={snapshot}
       pollUrl={`/api/account/tracking/${orderId}`}
+      streamUrl={`/api/account/tracking/${orderId}/stream`}
     />
   );
 }

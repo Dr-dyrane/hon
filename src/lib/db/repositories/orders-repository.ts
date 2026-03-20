@@ -1,6 +1,11 @@
 import "server-only";
 
-import { isDatabaseConfigured, query } from "@/lib/db/client";
+import {
+  isDatabaseConfigured,
+  query,
+  type DatabaseActorContext,
+  withTransaction,
+} from "@/lib/db/client";
 import type {
   AdminPaymentQueueRow,
   BankAccountRow,
@@ -13,7 +18,37 @@ import type {
   PortalOrderListRow,
 } from "@/lib/db/types";
 
-export async function listOrdersForAdmin(limit = 40) {
+function buildAdminActor(email: string | null | undefined): DatabaseActorContext | undefined {
+  const normalizedEmail = email?.trim().toLowerCase();
+
+  if (!normalizedEmail) {
+    return undefined;
+  }
+
+  return {
+    email: normalizedEmail,
+    role: "admin",
+  };
+}
+
+function buildCustomerActor(input: {
+  email?: string | null;
+  guestOrderId?: string | null;
+}): DatabaseActorContext | undefined {
+  const normalizedEmail = input.email?.trim().toLowerCase() ?? null;
+
+  if (!normalizedEmail && !input.guestOrderId) {
+    return undefined;
+  }
+
+  return {
+    email: normalizedEmail,
+    role: "customer",
+    guestOrderId: input.guestOrderId ?? null,
+  };
+}
+
+export async function listOrdersForAdmin(limit = 40, actorEmail?: string | null) {
   if (!isDatabaseConfigured()) {
     return [] satisfies OrderListRow[];
   }
@@ -50,13 +85,14 @@ export async function listOrdersForAdmin(limit = 40) {
       order by o.placed_at desc
       limit $1
     `,
-    [limit]
+    [limit],
+    { actor: buildAdminActor(actorEmail) }
   );
 
   return result.rows;
 }
 
-export async function listPaymentsForAdmin(limit = 40) {
+export async function listPaymentsForAdmin(limit = 40, actorEmail?: string | null) {
   if (!isDatabaseConfigured()) {
     return [] satisfies AdminPaymentQueueRow[];
   }
@@ -83,7 +119,8 @@ export async function listPaymentsForAdmin(limit = 40) {
       order by p.status desc, p.created_at desc
       limit $1
     `,
-    [limit]
+    [limit],
+    { actor: buildAdminActor(actorEmail) }
   );
 
   return result.rows;
@@ -158,13 +195,17 @@ export async function listOrdersForPortal(email: string) {
       order by o.placed_at desc
       limit 50
     `,
-    [normalizedEmail]
+    [normalizedEmail],
+    { actor: buildCustomerActor({ email: normalizedEmail }) }
   );
 
   return result.rows;
 }
 
-async function getOrderPaymentSummary(orderId: string) {
+async function getOrderPaymentSummary(
+  orderId: string,
+  actor?: DatabaseActorContext
+) {
   const paymentResult = await query<{
     status: string;
     expected_amount_ngn: number;
@@ -192,7 +233,8 @@ async function getOrderPaymentSummary(orderId: string) {
       where p.order_id = $1
       limit 1
     `,
-    [orderId]
+    [orderId],
+    { actor }
   );
 
   const payment = paymentResult.rows[0];
@@ -214,7 +256,7 @@ async function getOrderPaymentSummary(orderId: string) {
   };
 }
 
-async function listOrderItems(orderId: string) {
+async function listOrderItems(orderId: string, actor?: DatabaseActorContext) {
   const itemsResult = await query<PortalOrderLine>(
     `
       select
@@ -227,7 +269,8 @@ async function listOrderItems(orderId: string) {
       where order_id = $1
       order by created_at asc
     `,
-    [orderId]
+    [orderId],
+    { actor }
   );
 
   return itemsResult.rows;
@@ -236,15 +279,16 @@ async function listOrderItems(orderId: string) {
 async function buildOrderDetail(
   detail: (PortalOrderDetail & {
     deliveryAddressSnapshot: Record<string, unknown>;
-  }) | null
+  }) | null,
+  actor?: DatabaseActorContext
 ) {
   if (!detail) {
     return null;
   }
 
   const [payment, items] = await Promise.all([
-    getOrderPaymentSummary(detail.orderId),
-    listOrderItems(detail.orderId),
+    getOrderPaymentSummary(detail.orderId, actor),
+    listOrderItems(detail.orderId, actor),
   ]);
 
   return {
@@ -301,10 +345,14 @@ export async function getPortalOrderDetail(email: string, orderId: string) {
         and (mu.id is not null or lower(o.customer_email) = $1)
       limit 1
     `,
-    [normalizedEmail, orderId]
+    [normalizedEmail, orderId],
+    { actor: buildCustomerActor({ email: normalizedEmail }) }
   );
 
-  return buildOrderDetail(detailResult.rows[0] ?? null);
+  return buildOrderDetail(
+    detailResult.rows[0] ?? null,
+    buildCustomerActor({ email: normalizedEmail })
+  );
 }
 
 export async function preparePortalReorder(email: string, orderId: string) {
@@ -364,7 +412,8 @@ export async function preparePortalReorder(email: string, orderId: string) {
       where o.id = $2
         and (mu.id is not null or lower(o.customer_email) = $1)
     `,
-    [normalizedEmail, orderId]
+    [normalizedEmail, orderId],
+    { actor: buildCustomerActor({ email: normalizedEmail }) }
   );
 
   const items = result.rows
@@ -426,13 +475,17 @@ export async function getGuestOrderDetail(orderId: string) {
       where o.id = $1
       limit 1
     `,
-    [orderId]
+    [orderId],
+    { actor: buildCustomerActor({ guestOrderId: orderId }) }
   );
 
-  return buildOrderDetail(result.rows[0] ?? null);
+  return buildOrderDetail(
+    result.rows[0] ?? null,
+    buildCustomerActor({ guestOrderId: orderId })
+  );
 }
 
-export async function getAdminOrderDetail(orderId: string) {
+export async function getAdminOrderDetail(orderId: string, actorEmail?: string | null) {
   if (!orderId || !isDatabaseConfigured()) {
     return null;
   }
@@ -468,13 +521,17 @@ export async function getAdminOrderDetail(orderId: string) {
       where o.id = $1
       limit 1
     `,
-    [orderId]
+    [orderId],
+    { actor: buildAdminActor(actorEmail) }
   );
 
-  return buildOrderDetail(result.rows[0] ?? null);
+  return buildOrderDetail(result.rows[0] ?? null, buildAdminActor(actorEmail));
 }
 
-export async function listOrderStatusEvents(orderId: string) {
+export async function listOrderStatusEvents(
+  orderId: string,
+  actor?: DatabaseActorContext
+) {
   if (!orderId || !isDatabaseConfigured()) {
     return [] satisfies OrderStatusEventRow[];
   }
@@ -494,13 +551,17 @@ export async function listOrderStatusEvents(orderId: string) {
       where order_id = $1
       order by created_at desc
     `,
-    [orderId]
+    [orderId],
+    { actor }
   );
 
   return result.rows;
 }
 
-export async function listPaymentReviewEvents(paymentId: string) {
+export async function listPaymentReviewEvents(
+  paymentId: string,
+  actorEmail?: string | null
+) {
   if (!paymentId || !isDatabaseConfigured()) {
     return [] satisfies PaymentReviewEventRow[];
   }
@@ -518,13 +579,17 @@ export async function listPaymentReviewEvents(paymentId: string) {
       where payment_id = $1
       order by created_at desc
     `,
-    [paymentId]
+    [paymentId],
+    { actor: buildAdminActor(actorEmail) }
   );
 
   return result.rows;
 }
 
-export async function listPaymentProofs(paymentId: string) {
+export async function listPaymentProofs(
+  paymentId: string,
+  actor?: DatabaseActorContext
+) {
   if (!paymentId || !isDatabaseConfigured()) {
     return [] satisfies PaymentProofRow[];
   }
@@ -543,7 +608,8 @@ export async function listPaymentProofs(paymentId: string) {
       where payment_id = $1
       order by created_at desc
     `,
-    [paymentId]
+    [paymentId],
+    { actor }
   );
 
   return result.rows;
@@ -554,7 +620,8 @@ export async function createPaymentProof(
   storageKey: string,
   publicUrl: string | null,
   mimeType: string,
-  submittedByEmail: string | null
+  submittedByEmail: string | null,
+  options?: { guestOrderId?: string | null }
 ) {
   if (!isDatabaseConfigured()) {
     return;
@@ -571,7 +638,14 @@ export async function createPaymentProof(
       )
       values ($1, $2, $3, $4, $5)
     `,
-    [paymentId, storageKey, publicUrl, mimeType, submittedByEmail]
+    [paymentId, storageKey, publicUrl, mimeType, submittedByEmail],
+    {
+      actor: {
+        email: submittedByEmail,
+        role: "customer",
+        guestOrderId: options?.guestOrderId ?? null,
+      },
+    }
   );
 }
 
@@ -614,6 +688,7 @@ export async function reviewPayment(
   paymentId: string,
   action: keyof typeof PAYMENT_ACTIONS,
   actorEmail: string | null,
+  actorUserId: string | null,
   note: string | null
 ) {
   if (!isDatabaseConfigured()) {
@@ -626,78 +701,90 @@ export async function reviewPayment(
     throw new Error("Unsupported payment action");
   }
 
-  const paymentOrderResult = await query<{
-    order_id: string;
-    status: string;
-  }>(
-    `
-      select
-        p.order_id,
-        o.status
-      from app.payments p
-      inner join app.orders o on o.id = p.order_id
-      where p.id = $1
-      limit 1
-    `,
-    [paymentId]
-  );
+  await withTransaction(async (queryFn) => {
+    const paymentOrderResult = await queryFn<{
+      order_id: string;
+      status: string;
+    }>(
+      `
+        select
+          p.order_id,
+          o.status
+        from app.payments p
+        inner join app.orders o on o.id = p.order_id
+        where p.id = $1
+        limit 1
+        for update
+      `,
+      [paymentId]
+    );
 
-  const orderId = paymentOrderResult.rows[0]?.order_id;
-  const currentStatus = paymentOrderResult.rows[0]?.status ?? null;
+    const orderId = paymentOrderResult.rows[0]?.order_id;
+    const currentStatus = paymentOrderResult.rows[0]?.status ?? null;
 
-  if (!orderId) {
-    throw new Error("Order not found for payment");
-  }
+    if (!orderId) {
+      throw new Error("Order not found for payment");
+    }
 
-  await query(
-    `
-      update app.payments
-      set
-        status = $1,
-        reviewed_by_email = $2,
-        reviewed_at = timezone('utc', now())
-      where id = $3
-    `,
-    [transition.paymentStatus, actorEmail, paymentId]
-  );
+    await queryFn(
+      `
+        update app.payments
+        set
+          status = $1,
+          reviewed_by_user_id = $2,
+          reviewed_by_email = $3,
+          reviewed_at = timezone('utc', now())
+        where id = $4
+      `,
+      [transition.paymentStatus, actorUserId, actorEmail, paymentId]
+    );
 
-  await query(
-    `
-      insert into app.payment_review_events (
-        payment_id,
-        actor_email,
-        action,
-        note
-      )
-      values ($1, $2, $3, $4)
-    `,
-    [paymentId, actorEmail, transition.reviewAction, note]
-  );
+    await queryFn(
+      `
+        insert into app.payment_review_events (
+          payment_id,
+          actor_user_id,
+          actor_email,
+          action,
+          note
+        )
+        values ($1, $2, $3, $4, $5)
+      `,
+      [paymentId, actorUserId, actorEmail, transition.reviewAction, note]
+    );
 
-  await query(
-    `
-      update app.orders
-      set
-        payment_status = $1,
-        status = $2,
-        fulfillment_status = $3
-      where id = $4
-    `,
-    [transition.paymentStatus, transition.orderStatus, transition.fulfillmentStatus, orderId]
-  );
+    await queryFn(
+      `
+        update app.orders
+        set
+          payment_status = $1,
+          status = $2,
+          fulfillment_status = $3
+        where id = $4
+      `,
+      [transition.paymentStatus, transition.orderStatus, transition.fulfillmentStatus, orderId]
+    );
 
-  await query(
-    `
-      insert into app.order_status_events (
-        order_id,
-        from_status,
-        to_status,
-        actor_type,
-        actor_email,
-        note
-      )
-      values ($1, $2, $3, 'admin', $4, $5)
-    `,
-    [orderId, currentStatus, transition.orderStatus, actorEmail, note]
-  );
+    await queryFn(
+      `
+        insert into app.order_status_events (
+          order_id,
+          from_status,
+          to_status,
+          actor_type,
+          actor_user_id,
+          actor_email,
+          note
+        )
+        values ($1, $2, $3, 'admin', $4, $5, $6)
+      `,
+      [orderId, currentStatus, transition.orderStatus, actorUserId, actorEmail, note]
+    );
+  }, {
+    actor: {
+      userId: actorUserId,
+      email: actorEmail,
+      role: "admin",
+    },
+  });
 }

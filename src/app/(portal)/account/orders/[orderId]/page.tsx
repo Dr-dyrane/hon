@@ -13,9 +13,13 @@ export default async function OrderDetailPage({
 }) {
   const session = await requireAuthenticatedSession(`/account/orders/${params.orderId}`);
   const order = await getPortalOrderDetail(session.email, params.orderId);
+  const customerActor = {
+    email: session.email,
+    role: "customer" as const,
+  };
   const [timeline, proofs] = await Promise.all([
-    listOrderStatusEvents(params.orderId),
-    listPaymentProofs(order?.paymentId ?? ""),
+    listOrderStatusEvents(params.orderId, customerActor),
+    listPaymentProofs(order?.paymentId ?? "", customerActor),
   ]);
 
   return (

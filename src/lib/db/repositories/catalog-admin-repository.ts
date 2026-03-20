@@ -290,6 +290,8 @@ export async function createAdminCatalogProduct(input: {
   marketingName: string | null;
   variantName: string | null;
   priceNgn: string | number;
+  actorUserId?: string | null;
+  actorEmail?: string | null;
 }) {
   requireDatabase();
 
@@ -380,6 +382,12 @@ export async function createAdminCatalogProduct(input: {
     }
 
     return productId;
+  }, {
+    actor: {
+      userId: input.actorUserId ?? null,
+      email: input.actorEmail ?? null,
+      role: "admin",
+    },
   });
 }
 
@@ -403,6 +411,8 @@ export async function updateAdminCatalogProduct(input: {
   variantStatus?: string;
   inventoryOnHand?: string | number;
   reorderThreshold?: string | number | null;
+  actorUserId?: string | null;
+  actorEmail?: string | null;
 }) {
   requireDatabase();
 
@@ -553,6 +563,12 @@ export async function updateAdminCatalogProduct(input: {
         input.reorderThreshold !== undefined
       ]
     );
+  }, {
+    actor: {
+      userId: input.actorUserId ?? null,
+      email: input.actorEmail ?? null,
+      role: "admin",
+    },
   });
 }
 
@@ -561,6 +577,8 @@ export async function updateAdminCatalogInventory(
   input: {
     onHand: string | number;
     reorderThreshold?: string | number | null;
+    actorUserId?: string | null;
+    actorEmail?: string | null;
   }
 ) {
   requireDatabase();
@@ -586,13 +604,24 @@ export async function updateAdminCatalogInventory(
         reorder_threshold = $3,
         updated_at = timezone('utc', now())
     `,
-    [variantId, onHand, reorderThreshold]
+    [variantId, onHand, reorderThreshold],
+    {
+      actor: {
+        userId: input.actorUserId ?? null,
+        email: input.actorEmail ?? null,
+        role: "admin",
+      },
+    }
   );
 }
 
 export async function setAdminCatalogProductAvailability(
   productId: string,
-  isAvailable: boolean
+  isAvailable: boolean,
+  actor?: {
+    userId?: string | null;
+    email?: string | null;
+  }
 ) {
   requireDatabase();
 
@@ -602,13 +631,24 @@ export async function setAdminCatalogProductAvailability(
       set is_available = $1
       where id = $2
     `,
-    [isAvailable, productId]
+    [isAvailable, productId],
+    {
+      actor: {
+        userId: actor?.userId ?? null,
+        email: actor?.email ?? null,
+        role: "admin",
+      },
+    }
   );
 }
 
 export async function setAdminCatalogProductMerchandising(
   productId: string,
-  merchandisingState: string
+  merchandisingState: string,
+  actor?: {
+    userId?: string | null;
+    email?: string | null;
+  }
 ) {
   requireDatabase();
 
@@ -620,6 +660,13 @@ export async function setAdminCatalogProductMerchandising(
       set merchandising_state = $1
       where id = $2
     `,
-    [normalizedState, productId]
+    [normalizedState, productId],
+    {
+      actor: {
+        userId: actor?.userId ?? null,
+        email: actor?.email ?? null,
+        role: "admin",
+      },
+    }
   );
 }

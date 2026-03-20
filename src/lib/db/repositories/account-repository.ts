@@ -1,6 +1,11 @@
 import "server-only";
 
-import { isDatabaseConfigured, query, withTransaction } from "@/lib/db/client";
+import {
+  isDatabaseConfigured,
+  query,
+  type DatabaseActorContext,
+  withTransaction,
+} from "@/lib/db/client";
 import { normalizePhoneToE164 } from "@/lib/phone";
 import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
 import type {
@@ -8,6 +13,19 @@ import type {
   PortalAddress,
   PortalProfile,
 } from "@/lib/db/types";
+
+function buildCustomerActor(email: string): DatabaseActorContext | undefined {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (!normalizedEmail) {
+    return undefined;
+  }
+
+  return {
+    email: normalizedEmail,
+    role: "customer",
+  };
+}
 
 function emptyProfile(email: string) {
   return {
@@ -106,7 +124,8 @@ export async function getPortalAccountSummary(email: string) {
         lo.public_order_number,
         lo.status
     `,
-    [normalizedEmail]
+    [normalizedEmail],
+    { actor: buildCustomerActor(normalizedEmail) }
   );
 
   return (
@@ -139,7 +158,7 @@ export async function getPortalProfile(email: string) {
   const result = await query<PortalProfile>(
     `
       with matched_user as (
-        select id, email
+        select id, email, phone_e164
         from app.users
         where lower(email) = $1
         limit 1
@@ -157,7 +176,8 @@ export async function getPortalProfile(email: string) {
         on p.user_id = mu.id
       limit 1
     `,
-    [normalizedEmail]
+    [normalizedEmail],
+    { actor: buildCustomerActor(normalizedEmail) }
   );
 
   return result.rows[0] ?? emptyProfile(normalizedEmail);
@@ -229,6 +249,12 @@ export async function updatePortalProfile(email: string, input: {
       `,
       [user.userId, fullName, firstName, lastName, preferredPhoneE164, marketingOptIn]
     );
+  }, {
+    actor: {
+      userId: user.userId,
+      email: normalizedEmail,
+      role: "customer",
+    },
   });
 }
 
@@ -267,7 +293,8 @@ export async function listPortalAddresses(email: string) {
         on a.user_id = mu.id
       order by a.is_default desc, a.updated_at desc, a.created_at desc
     `,
-    [normalizedEmail]
+    [normalizedEmail],
+    { actor: buildCustomerActor(normalizedEmail) }
   );
 
   return result.rows;
@@ -448,6 +475,12 @@ export async function savePortalAddress(email: string, input: {
         shouldDefault,
       ]
     );
+  }, {
+    actor: {
+      userId: user.userId,
+      email: normalizedEmail,
+      role: "customer",
+    },
   });
 }
 
@@ -497,6 +530,12 @@ export async function setPortalAddressDefault(email: string, addressId: string) 
       `,
       [addressId]
     );
+  }, {
+    actor: {
+      userId: user.userId,
+      email: normalizedEmail,
+      role: "customer",
+    },
   });
 }
 
@@ -552,5 +591,11 @@ export async function deletePortalAddress(email: string, addressId: string) {
         [user.userId]
       );
     }
+  }, {
+    actor: {
+      userId: user.userId,
+      email: normalizedEmail,
+      role: "customer",
+    },
   });
 }

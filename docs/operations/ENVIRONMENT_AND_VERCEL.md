@@ -294,6 +294,11 @@ Every environment-variable change should satisfy all three:
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
 
+Development note:
+
+- local development can fall back to `onboarding@resend.dev` when `RESEND_API_KEY` is set and `RESEND_FROM_EMAIL` is omitted
+- production should always set `RESEND_FROM_EMAIL` to a verified sender on your domain
+
 ### Required if using direct S3 uploads
 
 - `S3_BUCKET_NAME`

@@ -1,6 +1,11 @@
 import "server-only";
 
-import { isDatabaseConfigured, query, withTransaction } from "@/lib/db/client";
+import {
+  isDatabaseConfigured,
+  query,
+  type DatabaseActorContext,
+  withTransaction,
+} from "@/lib/db/client";
 import { readCourierAccessToken } from "@/lib/delivery/access";
 import type {
   AdminDeliveryOrder,
@@ -67,6 +72,36 @@ function requireDatabase() {
   if (!isDatabaseConfigured()) {
     throw new Error("Database is not configured.");
   }
+}
+
+function normalizeEmail(email?: string | null) {
+  return email?.trim().toLowerCase() ?? null;
+}
+
+function buildAdminActor(email?: string | null): DatabaseActorContext | undefined {
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!normalizedEmail) {
+    return undefined;
+  }
+
+  return {
+    email: normalizedEmail,
+    role: "admin",
+  };
+}
+
+function buildCustomerActor(email?: string | null): DatabaseActorContext | undefined {
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!normalizedEmail) {
+    return undefined;
+  }
+
+  return {
+    email: normalizedEmail,
+    role: "customer",
+  };
 }
 
 function getOrderStatusUpdate(nextAssignmentStatus: string): OrderStatusUpdate {
@@ -340,7 +375,10 @@ async function updateOrderForDeliveryState(
   });
 }
 
-export async function listAdminDeliveryBoardOrders(limit = 60) {
+export async function listAdminDeliveryBoardOrders(
+  limit = 60,
+  actorEmail?: string | null
+) {
   if (!isDatabaseConfigured()) {
     return [] satisfies AdminDeliveryOrder[];
   }
@@ -477,13 +515,14 @@ export async function listAdminDeliveryBoardOrders(limit = 60) {
         do."placedAt" asc
       limit $1
     `,
-    [limit, ACTIVE_ORDER_ASSIGNMENT_STATUSES]
+    [limit, ACTIVE_ORDER_ASSIGNMENT_STATUSES],
+    { actor: buildAdminActor(actorEmail) }
   );
 
   return result.rows;
 }
 
-export async function listAdminDeliveryRiders(limit = 24) {
+export async function listAdminDeliveryRiders(limit = 24, actorEmail?: string | null) {
   if (!isDatabaseConfigured()) {
     return [] satisfies AdminDeliveryRider[];
   }
@@ -514,16 +553,37 @@ export async function listAdminDeliveryRiders(limit = 24) {
         r.name asc
       limit $1
     `,
-    [limit, ACTIVE_RIDER_ASSIGNMENT_STATUSES]
+    [limit, ACTIVE_RIDER_ASSIGNMENT_STATUSES],
+    { actor: buildAdminActor(actorEmail) }
   );
 
   return result.rows;
+}
+
+export async function getAdminDeliveryBoardSnapshot(input?: {
+  orderLimit?: number;
+  riderLimit?: number;
+  actorEmail?: string | null;
+}) {
+  const orderLimit = input?.orderLimit ?? 60;
+  const riderLimit = input?.riderLimit ?? 24;
+  const [orders, riders] = await Promise.all([
+    listAdminDeliveryBoardOrders(orderLimit, input?.actorEmail),
+    listAdminDeliveryRiders(riderLimit, input?.actorEmail),
+  ]);
+
+  return {
+    orders,
+    riders,
+  };
 }
 
 export async function createOrUpdateRider(input: {
   name: string;
   phoneNumber: string;
   vehicleType: string | null;
+  actorUserId?: string | null;
+  actorEmail?: string | null;
 }) {
   requireDatabase();
 
@@ -560,7 +620,14 @@ export async function createOrUpdateRider(input: {
         phone_e164 as phone,
         vehicle_type as "vehicleType"
     `,
-    [name, phone, vehicleType]
+    [name, phone, vehicleType],
+    {
+      actor: {
+        userId: input.actorUserId ?? null,
+        email: input.actorEmail ?? null,
+        role: "admin",
+      },
+    }
   );
 
   return result.rows[0] ?? null;
@@ -624,6 +691,12 @@ export async function markOrderReadyForDispatch(input: {
       status: "ready_for_dispatch",
       fulfillmentStatus: "ready_for_dispatch",
     };
+  }, {
+    actor: {
+      userId: input.actorUserId,
+      email: input.actorEmail,
+      role: "admin",
+    },
   });
 }
 
@@ -747,6 +820,12 @@ export async function assignRiderToOrder(input: {
       assignmentId,
       rider,
     };
+  }, {
+    actor: {
+      userId: input.actorUserId,
+      email: input.actorEmail,
+      role: "admin",
+    },
   });
 }
 
@@ -849,6 +928,12 @@ export async function updateDeliveryAssignmentStatus(input: {
       ...assignment,
       status: input.nextStatus,
     };
+  }, {
+    actor: {
+      userId: input.actorUserId,
+      email: input.actorEmail,
+      role: "admin",
+    },
   });
 }
 
@@ -1049,7 +1134,7 @@ export async function listDeliveryEventsForOrder(orderId: string, limit = 16) {
 }
 
 export async function getPortalTrackingSnapshot(email: string, orderId: string) {
-  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail = normalizeEmail(email) ?? "";
 
   if (!normalizedEmail || !orderId || !isDatabaseConfigured()) {
     return null;
@@ -1128,7 +1213,8 @@ export async function getPortalTrackingSnapshot(email: string, orderId: string) 
         and (mu.id is not null or lower(o.customer_email) = $1)
       limit 1
     `,
-    [normalizedEmail, orderId]
+    [normalizedEmail, orderId],
+    { actor: buildCustomerActor(normalizedEmail) }
   );
 
   const row = result.rows[0];

@@ -23,8 +23,8 @@ function formatStatusLabel(value?: string | null) {
 }
 
 export default async function AdminCustomersPage() {
-  await requireAdminSession("/admin/customers");
-  const customers = await listAdminCustomerSummaries(40);
+  const session = await requireAdminSession("/admin/customers");
+  const customers = await listAdminCustomerSummaries(40, session.email);
   const accountLinked = customers.filter((customer) => customer.userId).length;
   const activeCustomers = customers.filter((customer) => customer.activeOrders > 0).length;
 

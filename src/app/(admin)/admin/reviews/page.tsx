@@ -21,8 +21,8 @@ function formatStatusLabel(value: string) {
 }
 
 export default async function AdminReviewsPage() {
-  await requireAdminSession("/admin/reviews");
-  const reviews = await listReviewsForAdmin();
+  const session = await requireAdminSession("/admin/reviews");
+  const reviews = await listReviewsForAdmin(session.email);
   const pendingCount = reviews.filter((review) => review.status === "pending").length;
   const approvedCount = reviews.filter((review) => review.status === "approved").length;
   const featuredCount = reviews.filter((review) => review.isFeatured).length;

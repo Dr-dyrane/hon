@@ -35,9 +35,13 @@ export default async function GuestCheckoutOrderPage({
   }
 
   const order = await getGuestOrderDetail(params.orderId);
+  const guestActor = {
+    role: "customer" as const,
+    guestOrderId: params.orderId,
+  };
   const [timeline, proofs] = await Promise.all([
-    listOrderStatusEvents(params.orderId),
-    listPaymentProofs(order?.paymentId ?? ""),
+    listOrderStatusEvents(params.orderId, guestActor),
+    listPaymentProofs(order?.paymentId ?? "", guestActor),
   ]);
 
   return (

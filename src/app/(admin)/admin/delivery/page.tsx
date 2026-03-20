@@ -1,17 +1,11 @@
-import Image from "next/image";
 import Link from "next/link";
-import { Bike, Clock3, Truck } from "lucide-react";
-import { MetricRail } from "@/components/admin/MetricRail";
+import { AdminDeliveryLiveSurface } from "@/components/admin/delivery/AdminDeliveryLiveSurface";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
 import { buildCourierAccessUrl, createCourierAccessToken } from "@/lib/delivery/access";
+import { buildAdminDeliveryLiveSnapshot, getDeliveryLine } from "@/lib/delivery/snapshot";
 import {
-  buildTrackingMapUrl,
-  getTrackingCoords as getSnapshotTrackingCoords,
-} from "@/lib/delivery/tracking";
-import {
-  listAdminDeliveryBoardOrders,
-  listAdminDeliveryRiders,
+  getAdminDeliveryBoardSnapshot,
 } from "@/lib/db/repositories/delivery-repository";
 import type { AdminDeliveryOrder, AdminDeliveryRider } from "@/lib/db/types";
 import {
@@ -34,38 +28,6 @@ function formatTimestamp(value?: string | null) {
 
 function formatStatusLabel(value: string) {
   return value.replace(/_/g, " ");
-}
-
-function getDeliveryLine(snapshot: Record<string, unknown>) {
-  const candidates = ["formatted", "line1", "label"];
-
-  for (const key of candidates) {
-    const value = snapshot[key];
-
-    if (typeof value === "string" && value.trim()) {
-      return value;
-    }
-  }
-
-  return "Pending";
-}
-
-function getTrackingCoords(snapshot: Record<string, unknown>) {
-  return getSnapshotTrackingCoords(snapshot);
-}
-
-function getOrderTrackingCoords(order: AdminDeliveryOrder) {
-  if (
-    typeof order.latestTrackingLatitude === "number" &&
-    typeof order.latestTrackingLongitude === "number"
-  ) {
-    return {
-      lat: order.latestTrackingLatitude,
-      lng: order.latestTrackingLongitude,
-    };
-  }
-
-  return getTrackingCoords(order.deliveryAddressSnapshot);
 }
 
 function StageChip({ value }: { value: string }) {
@@ -474,11 +436,10 @@ function RiderRoster({ riders }: { riders: AdminDeliveryRider[] }) {
 }
 
 export default async function AdminDeliveryPage() {
-  await requireAdminSession("/admin/delivery");
-  const [orders, riders] = await Promise.all([
-    listAdminDeliveryBoardOrders(60),
-    listAdminDeliveryRiders(24),
-  ]);
+  const session = await requireAdminSession("/admin/delivery");
+  const { orders, riders } = await getAdminDeliveryBoardSnapshot({
+    actorEmail: session.email,
+  });
   const preparingOrders = orders.filter((order) => order.deliveryStage === "preparing");
   const readyOrders = orders.filter(
     (order) => order.deliveryStage === "ready_for_dispatch"
@@ -486,48 +447,10 @@ export default async function AdminDeliveryPage() {
   const liveOrders = orders.filter(
     (order) => order.deliveryStage === "out_for_delivery"
   );
-  const mapOrder =
-    [...liveOrders, ...readyOrders, ...preparingOrders].find((order) =>
-      Boolean(getOrderTrackingCoords(order))
-    ) ?? null;
-  const mapCoords = mapOrder ? getOrderTrackingCoords(mapOrder) : null;
-  const mapSrc = mapCoords
-    ? buildTrackingMapUrl({
-        latitude: mapCoords.lat,
-        longitude: mapCoords.lng,
-        width: 1000,
-        height: 720,
-        zoom: mapOrder?.latestTrackingRecordedAt ? 14 : 12,
-      })
-    : null;
+  const liveSnapshot = buildAdminDeliveryLiveSnapshot({ orders, riders });
 
   return (
     <div className="space-y-8 pb-20 md:space-y-10">
-      <MetricRail
-        items={[
-          {
-            label: "Preparing",
-            value: `${preparingOrders.length}`,
-            detail: "Kitchen side",
-            icon: Clock3,
-          },
-          {
-            label: "Ready",
-            value: `${readyOrders.length}`,
-            detail: "Waiting rider",
-            icon: Bike,
-          },
-          {
-            label: "Live",
-            value: `${liveOrders.length}`,
-            detail: "On road",
-            icon: Truck,
-            tone: "success",
-          },
-        ]}
-        columns={3}
-      />
-
       <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="grid gap-4 xl:grid-cols-3">
           <StageCard
@@ -551,35 +474,11 @@ export default async function AdminDeliveryPage() {
         </div>
 
         <div className="grid gap-4">
-          <section className="glass-morphism rounded-[32px] bg-system-background/78 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
-            <div className="flex items-center justify-between gap-4">
-              <h3 className="text-lg font-semibold tracking-tight text-label">Map</h3>
-              <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                Snapshot
-              </span>
-            </div>
-
-            {mapSrc && mapOrder ? (
-              <div className="mt-4 overflow-hidden rounded-[28px]">
-                <Image
-                  src={mapSrc}
-                  alt={`Delivery map for order ${mapOrder.orderNumber}`}
-                  width={1000}
-                  height={720}
-                  className="h-auto w-full"
-                  priority
-                />
-                <div className="bg-system-fill/70 px-4 py-3 text-sm text-secondary-label">
-                  <div className="font-semibold text-label">#{mapOrder.orderNumber}</div>
-                  <div>{getDeliveryLine(mapOrder.deliveryAddressSnapshot)}</div>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-4 rounded-[28px] bg-system-fill/60 px-4 py-12 text-sm text-secondary-label">
-                No live location.
-              </div>
-            )}
-          </section>
+          <AdminDeliveryLiveSurface
+            initialSnapshot={liveSnapshot}
+            fallbackUrl="/api/admin/delivery/live"
+            streamUrl="/api/admin/delivery/live/stream"
+          />
 
           <RiderRoster riders={riders} />
         </div>
