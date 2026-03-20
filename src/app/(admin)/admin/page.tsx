@@ -2,15 +2,15 @@ import { ScaffoldPage } from "@/components/shell/ScaffoldPage";
 import {
   getAdminHomeLayoutSummary,
   getAdminOverviewMetrics,
-  listAdminCatalogProducts,
 } from "@/lib/db/repositories/admin-repository";
+import { listAllAdminCatalogProducts } from "@/lib/db/repositories/catalog-admin-repository";
 import { serverEnv } from "@/lib/config/server";
 
 export default async function AdminPage() {
   const [metrics, layoutSummary, products] = await Promise.all([
     getAdminOverviewMetrics(),
     getAdminHomeLayoutSummary(),
-    listAdminCatalogProducts(),
+    listAllAdminCatalogProducts(),
   ]);
   const featuredProducts = products
     .filter((product) => product.merchandisingState === "featured")

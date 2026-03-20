@@ -165,21 +165,32 @@ export async function getRuntimeVercelOidcToken() {
     return process.env.VERCEL_OIDC_TOKEN;
   }
 
-  const accessToken = readLocalVercelAccessToken();
-  const projectInfo = readLinkedProjectInfo();
-
-  if (accessToken && projectInfo) {
-    const refreshedToken = await requestFreshOidcToken(projectInfo, accessToken);
-    process.env.VERCEL_OIDC_TOKEN = refreshedToken;
-
-    return refreshedToken;
-  }
-
   const pulledToken = readPulledOidcToken();
 
   if (pulledToken) {
     process.env.VERCEL_OIDC_TOKEN = pulledToken;
     return pulledToken;
+  }
+
+  const accessToken = readLocalVercelAccessToken();
+  const projectInfo = readLinkedProjectInfo();
+
+  if (accessToken && projectInfo) {
+    try {
+      const refreshedToken = await requestFreshOidcToken(projectInfo, accessToken);
+      process.env.VERCEL_OIDC_TOKEN = refreshedToken;
+
+      return refreshedToken;
+    } catch (error) {
+      const fallbackToken = readPulledOidcToken();
+
+      if (fallbackToken) {
+        process.env.VERCEL_OIDC_TOKEN = fallbackToken;
+        return fallbackToken;
+      }
+
+      throw error;
+    }
   }
 
   throw new Error(

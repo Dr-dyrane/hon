@@ -1,9 +1,9 @@
 import { ScaffoldPage } from "@/components/shell/ScaffoldPage";
 import { formatNgn } from "@/lib/commerce";
-import { listAdminCatalogProducts } from "@/lib/db/repositories/admin-repository";
+import { listAllAdminCatalogProducts } from "@/lib/db/repositories/catalog-admin-repository";
 
 export default async function AdminProductsPage() {
-  const products = await listAdminCatalogProducts();
+  const products = await listAllAdminCatalogProducts();
   const featuredProducts = products.filter(
     (product) => product.merchandisingState === "featured"
   );
@@ -26,7 +26,7 @@ export default async function AdminProductsPage() {
         {
           label: "Products",
           value: products.length.toString(),
-          detail: "Only active default-variant products are shown here to keep the operational view focused.",
+          detail: "All products (draft, active, archived) are now visible here to provide a complete operational view of the catalog.",
         },
         {
           label: "Available",

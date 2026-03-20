@@ -31,14 +31,13 @@ export async function listPublishedCatalogProducts() {
       inner join app.product_variants v
         on v.product_id = p.id
        and v.status = 'active'
+       and v.is_default = true
       left join app.product_media m
         on m.product_id = p.id
        and m.is_primary = true
       where p.status = 'active'
       order by
         p.sort_order asc,
-        v.is_default desc,
-        v.sort_order asc,
         p.created_at asc
     `
   );

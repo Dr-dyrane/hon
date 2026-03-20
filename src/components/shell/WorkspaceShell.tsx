@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Logo } from "@/components/ui/Logo";
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { WorkspaceHeaderTitle } from "@/components/shell/WorkspaceHeaderTitle";
 import { WorkspaceNav } from "@/components/shell/WorkspaceNav";
 import type { ShellNavItem } from "@/lib/app-shell";
 
@@ -28,7 +29,7 @@ export function WorkspaceShell({
   return (
     <div className="min-h-svh bg-[radial-gradient(circle_at_top,rgba(15,61,46,0.08),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,242,234,0.9)_100%)] dark:bg-[radial-gradient(circle_at_top,rgba(215,197,163,0.09),transparent_38%),linear-gradient(180deg,rgba(18,22,18,0.98)_0%,rgba(10,12,10,1)_100%)]">
       <div className="mx-auto min-h-svh max-w-[1600px] md:grid md:grid-cols-[300px_minmax(0,1fr)]">
-        <aside className="hidden bg-system-background/48 px-6 py-6 md:flex md:flex-col">
+        <aside className="hidden bg-system-background/48 px-6 py-6 md:sticky md:top-0 md:flex md:h-svh md:flex-col md:self-start">
           <Link href="/" className="inline-flex">
             <Logo />
           </Link>
@@ -77,18 +78,16 @@ export function WorkspaceShell({
                     {eyebrow}
                   </div>
                   <div className="mt-1 text-xl font-semibold tracking-title text-label md:text-2xl">
-                    {title}
+                    <WorkspaceHeaderTitle title={title} navItems={navItems} />
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <Link
-                    href="/"
-                    className="hidden rounded-full bg-system-fill/72 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-200 hover:bg-system-fill hover:text-label sm:inline-flex"
-                  >
-                    Back to site
-                  </Link>
-                  {sessionEmail ? <div className="md:hidden"><SignOutButton /></div> : null}
+                  {sessionEmail ? (
+                    <div className="md:hidden">
+                      <SignOutButton />
+                    </div>
+                  ) : null}
                   <ThemeToggle />
                 </div>
               </div>

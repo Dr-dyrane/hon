@@ -9,8 +9,13 @@ import {
   listMarketingProducts,
   listMarketingSiteSettings,
 } from "@/lib/db/repositories/marketing-repository";
-import { getPublishedPageSections } from "@/lib/db/repositories/layout-repository";
+import { 
+  getPublishedPageSections, 
+  getPageSectionsByVersion, 
+  getLayoutDraftDetail 
+} from "@/lib/db/repositories/layout-repository";
 import { isDatabaseConfigured } from "@/lib/db/client";
+import { type PublishedPageSection } from "@/lib/db/types";
 
 function getBootstrapSnapshot() {
   return createMarketingSnapshot(marketingBootstrap, "bootstrap");
@@ -22,18 +27,32 @@ function readSetting<T>(settings: Map<string, unknown>, key: string, fallback: T
   return value !== undefined ? (value as T) : fallback;
 }
 
-export const getMarketingSnapshot = cache(async (): Promise<MarketingSnapshot> => {
+// Use a shared cache key that includes the version type
+export const getMarketingSnapshot = cache(async (mode: "published" | "draft" = "published"): Promise<MarketingSnapshot> => {
   if (!isDatabaseConfigured()) {
     return getBootstrapSnapshot();
   }
 
   try {
-    const [categories, products, ingredients, sectionRows, settingRows] =
+    let sectionRows: PublishedPageSection[] = [];
+    
+    // Fetch sections based on mode
+    if (mode === "draft") {
+      const draftDetail = await getLayoutDraftDetail("home");
+      if (draftDetail) {
+        sectionRows = await getPageSectionsByVersion(draftDetail.version.versionId);
+      } else {
+        sectionRows = await getPublishedPageSections("home");
+      }
+    } else {
+      sectionRows = await getPublishedPageSections("home");
+    }
+
+    const [categories, products, ingredients, settingRows] =
       await Promise.all([
         listMarketingCategories(),
         listMarketingProducts(),
         listMarketingIngredients(),
-        getPublishedPageSections("home"),
         listMarketingSiteSettings([
           "marketing_brand",
           "marketing_navigation",

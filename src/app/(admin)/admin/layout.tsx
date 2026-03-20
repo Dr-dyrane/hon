@@ -12,6 +12,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       title="Admin"
       description="Orders, payments, delivery, merchandising, and customer support now have a dedicated shell."
       navItems={ADMIN_NAV_ITEMS}
+      mobileNav
       sessionEmail={session.email}
       sessionRoleLabel="Administrator"
     >

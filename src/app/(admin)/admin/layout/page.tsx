@@ -1,66 +1,62 @@
-import { ScaffoldPage } from "@/components/shell/ScaffoldPage";
+import { CheckCircle2, FileStack, Layers3 } from "lucide-react";
+import { MetricRail } from "@/components/admin/MetricRail";
 import {
-  getAdminHomeLayoutSummary,
-  listAdminHomeLayoutSections,
-} from "@/lib/db/repositories/admin-repository";
+  getLayoutDraftDetail,
+  getPublishedPageSections,
+} from "@/lib/db/repositories/layout-repository";
+import { LayoutDashboard } from "@/components/admin/layout/LayoutDashboard";
 
 export default async function AdminLayoutPage() {
-  const [summary, sections] = await Promise.all([
-    getAdminHomeLayoutSummary(),
-    listAdminHomeLayoutSections(),
-  ]);
+  const publishedSections = await getPublishedPageSections("home");
+  const draftDetail = await getLayoutDraftDetail("home");
+
+  const publishedCount = publishedSections.length;
+  const enabledCount = publishedSections.filter((section) => section.isEnabled).length;
+  const draftVersionId = draftDetail?.version.versionId || null;
+  const latestVersionLabel = publishedSections[0]?.versionLabel || "Bootstrap Home v1";
+  const metrics = [
+    {
+      label: "Published",
+      value: publishedCount.toString(),
+      detail: `${enabledCount} live`,
+      icon: Layers3,
+    },
+    {
+      label: "Version",
+      value: latestVersionLabel,
+      detail: "Current live",
+      icon: CheckCircle2,
+      tone: "success" as const,
+    },
+    {
+      label: "Draft",
+      value: draftVersionId ? "Edit" : "None",
+      detail: draftVersionId ? "In progress" : "No draft",
+      icon: FileStack,
+    },
+  ];
 
   return (
-    <ScaffoldPage
-      badge="Layout"
-      title="Published layout state is now visible."
-      description="The homepage composition is no longer trapped in static code. This route reads the current published version, section order, and binding coverage from Aurora."
-      primaryAction={{ href: "/admin/catalog/products", label: "Open Catalog" }}
-      summary={[
-        {
-          label: "Version",
-          value: summary.versionLabel ?? "None",
-          detail: "Only one published version remains live at a time, exactly as planned.",
-        },
-        {
-          label: "Sections",
-          value: summary.enabledSectionCount.toString(),
-          detail: `${summary.sectionCount} total sections exist in the current home composition.`,
-        },
-        {
-          label: "Bindings",
-          value: summary.bindingCount.toString(),
-          detail: "Bindings stay explicit so merchandising remains inspectable and auditable.",
-        },
-      ]}
-      sections={[
-        {
-          title: "Published Sequence",
-          description: "Section order is now the live order, not an assumption.",
-          items: sections.map((section) => {
-            const title =
-              section.heading ?? section.eyebrow ?? section.sectionKey.replaceAll("_", " ");
-            return `${section.sortOrder + 1}. ${title}, ${section.sectionType}, ${section.isEnabled ? "enabled" : "disabled"}`;
-          }),
-        },
-        {
-          title: "Breakpoint Coverage",
-          description: "Published sections can now be audited against the planned mobile, tablet, and desktop model.",
-          items: sections.map(
-            (section) =>
-              `${section.sectionKey} has ${section.presentationCount} presentation records and ${section.bindingCount} bindings`
-          ),
-        },
-        {
-          title: "Constraint Reminder",
-          description: "This stays a structured merchandising surface, not a generic builder.",
-          items: [
-            "Publishing remains versioned and single-live.",
-            "Section settings stay bounded instead of freeform.",
-            "Bindings stay attached to approved entities only.",
-          ],
-        },
-      ]}
-    />
+    <div className="space-y-10">
+      <header className="flex flex-col gap-6">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div className="max-w-3xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-secondary-label">
+              Layout
+            </p>
+            <h1 className="mt-2 text-4xl font-bold tracking-display text-label md:text-5xl">
+              Homepage Layout
+            </h1>
+            <p className="mt-3 text-sm leading-relaxed text-secondary-label md:text-lg">
+              Draft, review, publish.
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <MetricRail items={metrics} columns={3} />
+
+      <LayoutDashboard publishedSections={publishedSections} draftDetail={draftDetail} />
+    </div>
   );
 }

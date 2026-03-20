@@ -15,6 +15,7 @@ The goal is that product, engineering, operations, and database rules are all re
 - [End-To-End Flows](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/END_TO_END_FLOWS.md)
 - [State Machines](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/STATE_MACHINES.md)
 - [Screen Specifications](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/SCREEN_SPECS.md)
+- [UI Implementation Doctrine](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/UI_IMPLEMENTATION_DOCTRINE.md)
 
 ## Operations
 

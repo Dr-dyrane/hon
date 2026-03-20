@@ -31,12 +31,54 @@ export type AdminCatalogProduct = {
   productSlug: string;
   productName: string;
   productMarketingName: string | null;
+  categoryId: string | null;
   categoryName: string | null;
+  status: "draft" | "active" | "archived";
   merchandisingState: "featured" | "standard" | "hidden";
   isAvailable: boolean;
+  variantId: string;
+  variantSlug: string;
   variantName: string;
+  sku: string;
   priceNgn: number;
+  compareAtPriceNgn: number | null;
   ingredientCount: number;
+  sortOrder: number;
+};
+
+export type AdminCatalogCategory = {
+  categoryId: string;
+  categorySlug: string;
+  categoryName: string;
+};
+
+export type AdminCatalogProductDetail = {
+  productId: string;
+  productSlug: string;
+  productName: string;
+  productMarketingName: string | null;
+  productTagline: string | null;
+  shortDescription: string;
+  longDescription: string | null;
+  categoryId: string | null;
+  status: "draft" | "active" | "archived";
+  merchandisingState: "featured" | "standard" | "hidden";
+  isAvailable: boolean;
+  sortOrder: number;
+  variantId: string;
+  variantSlug: string;
+  variantName: string;
+  sku: string;
+  sizeLabel: string | null;
+  unitLabel: string | null;
+  priceNgn: number;
+  compareAtPriceNgn: number | null;
+  variantStatus: "draft" | "active" | "archived";
+  ingredientCount: number;
+  mediaCount: number;
+  inventoryOnHand: number | null;
+  inventoryReserved: number | null;
+  reorderThreshold: number | null;
 };
 
 export type AdminLayoutSummary = {
@@ -55,8 +97,25 @@ export type AdminLayoutSection = {
   isEnabled: boolean;
   eyebrow: string | null;
   heading: string | null;
+  body: string | null;
+  settings: Record<string, unknown>;
   presentationCount: number;
   bindingCount: number;
+};
+
+export type AdminLayoutVersion = {
+  versionId: string;
+  pageId: string;
+  label: string;
+  status: "draft" | "published" | "archived";
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminLayoutDraftDetail = {
+  version: AdminLayoutVersion;
+  sections: AdminLayoutSection[];
 };
 
 export type AdminCustomerSummary = {

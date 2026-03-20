@@ -15,6 +15,7 @@ Read with:
 - [Implementation Blueprint](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/IMPLEMENTATION_BLUEPRINT.md)
 - [End-To-End Flows](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/END_TO_END_FLOWS.md)
 - [State Machines](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/STATE_MACHINES.md)
+- [UI Implementation Doctrine](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/UI_IMPLEMENTATION_DOCTRINE.md)
 
 ---
 
@@ -25,6 +26,21 @@ Read with:
 3. Each screen should expose only the data needed for that purpose.
 4. Breakpoint differences should be intentional, not accidental.
 5. Shared patterns should repeat across screens.
+6. Mobile is not compressed desktop. It needs its own reading rhythm.
+7. Tablet is not stretched mobile. It needs its own split emphasis.
+
+### Viewport Contract
+
+- mobile: glance-first rails, single active column, compact actions, map or detail on demand
+- tablet: split emphasis, secondary pane when useful, denser controls than mobile
+- desktop: persistent workspace, broader context, multi-panel editing where appropriate
+
+### KPI And Action Rules
+
+- KPI summaries on mobile should prefer horizontal glanceable rails over tall stacked grids
+- mobile actions should be compact and icon-led when the context is obvious
+- if a mobile screen requires scrolling past summary cards before core action, redesign the order
+- desktop can expand labels and supporting copy, mobile should not inherit that density by default
 
 ---
 
@@ -468,8 +484,8 @@ Shared primitives:
 
 Breakpoint behavior:
 - desktop: editor + preview workspace
-- tablet: alternating editor and preview emphasis
-- mobile: view-only or minimal status access in V1
+- tablet: alternating editor and preview emphasis with compact outline access
+- mobile: KPI rail, compact status controls, section outline first, single-pane editing only when needed
 
 ### `/admin/customers`
 
@@ -575,4 +591,3 @@ These should be built as reusable primitives rather than page-specific one-offs.
 3. If two admin screens duplicate the same queue behavior, extract a primitive.
 4. If a mobile flow requires excessive scrolling to complete a core task, redesign the sequence.
 5. If a desktop flow hides critical actions in menus, simplify the action model.
-

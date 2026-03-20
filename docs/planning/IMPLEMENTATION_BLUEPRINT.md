@@ -15,6 +15,7 @@ Read this together with:
 - `docs/planning/README_BIBLE.md`
 - `docs/planning/SCHEMA_BLUEPRINT.md`
 - `docs/planning/RENDEZVOUS_STATUS.md`
+- `docs/planning/UI_IMPLEMENTATION_DOCTRINE.md`
 
 ---
 

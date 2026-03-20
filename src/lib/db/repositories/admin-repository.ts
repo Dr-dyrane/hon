@@ -77,56 +77,6 @@ export async function getAdminOverviewMetrics() {
   return result.rows[0];
 }
 
-export async function listAdminCatalogProducts() {
-  if (!isDatabaseConfigured()) {
-    return [] satisfies AdminCatalogProduct[];
-  }
-
-  const result = await query<AdminCatalogProduct>(
-    `
-      select
-        p.id as "productId",
-        p.slug as "productSlug",
-        p.name as "productName",
-        p.marketing_name as "productMarketingName",
-        pc.name as "categoryName",
-        p.merchandising_state as "merchandisingState",
-        p.is_available as "isAvailable",
-        v.name as "variantName",
-        v.price_ngn as "priceNgn",
-        count(vi.ingredient_id)::int as "ingredientCount"
-      from app.products p
-      left join app.product_categories pc
-        on pc.id = p.category_id
-      inner join app.product_variants v
-        on v.product_id = p.id
-       and v.is_default = true
-      left join app.variant_ingredients vi
-        on vi.variant_id = v.id
-      where p.status = 'active'
-      group by
-        p.id,
-        p.slug,
-        p.name,
-        p.marketing_name,
-        pc.name,
-        p.merchandising_state,
-        p.is_available,
-        v.name,
-        v.price_ngn,
-        p.sort_order,
-        p.created_at,
-        pc.sort_order
-      order by
-        pc.sort_order asc nulls last,
-        p.sort_order asc,
-        p.created_at asc
-    `
-  );
-
-  return result.rows;
-}
-
 export async function getAdminHomeLayoutSummary() {
   if (!isDatabaseConfigured()) {
     return {

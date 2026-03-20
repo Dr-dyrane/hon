@@ -50,6 +50,7 @@ Current state:
 - checkout and confirmation surfaces are tightened toward the marketing visual bar
 - admin delivery board now supports rider roster, assignment, and delivery-state actions from Aurora
 - review requests are created from delivered orders and both review surfaces now read and write against Aurora
+- catalog repositories tightened for draft-first creation, granular variant status, and inventory mutation
 
 This means the system has crossed into operational platform work.
 
@@ -246,8 +247,8 @@ Open:
 - [x] delivery board
 - [x] assignment-aware delivery operations
 - [x] review moderation
-- [ ] catalog creation and editing flows
-- [ ] availability and featured management actions
+- [x] catalog creation and editing flows (repository layer complete, UI in progress)
+- [x] availability and featured management actions (repository layer complete)
 - [ ] layout authoring flow
 - [ ] layout publishing flow
 - [ ] tighter Apple-style visual and copy pass across all admin pages
@@ -300,6 +301,7 @@ Open:
 
 - [ ] reduce explanatory copy in admin and portal UI
 - [ ] align page chrome more closely with the marketing visual language
+- [ ] enforce viewport-native mobile, tablet, and desktop compositions across admin and portal
 - [ ] ensure selected navigation states remain legible in every shell
 - [ ] finish no-border, Apple-HIG-consistent surface treatment review
 - [ ] resolve legacy lint failures in older 3D and marketing files
@@ -346,6 +348,23 @@ Current protection model:
 Missing:
 
 - database-level row-level security policies
+
+### Viewport-native execution is still partial
+
+Locked plan:
+
+- mobile, tablet, and desktop should each have intentional layouts
+
+Current implementation:
+
+- some admin and portal routes still read like compressed desktop pages
+- `/admin/layout` has started moving toward a mobile KPI rail and compact control rhythm
+
+Missing:
+
+- tablet-specific split treatments
+- mobile KPI rails and compact action groups across the rest of admin and portal
+- shared shell-level viewport primitives to keep this systematic
 
 ### Legacy lint failures remain
 
