@@ -6,6 +6,7 @@ import { useUI } from "@/components/providers/UIProvider";
 import { useTheme } from "next-themes";
 import { Home, AlertTriangle, Lightbulb, Sparkles, Leaf, Cog, Star, ShoppingBag, Rocket, TestTube, Sun, Moon, X, UnfoldVertical } from "lucide-react";
 import { LucideProps } from "lucide-react";
+import { useHydrated } from "@/hooks/useHydrated";
 
 interface ScrollNavProps {
   className?: string;
@@ -17,33 +18,29 @@ interface Section {
   icon: React.ComponentType<LucideProps>;
 }
 
+const SECTIONS: Section[] = [
+  { id: "hero", label: "Home", icon: Home },
+  { id: "problem", label: "Problem", icon: AlertTriangle },
+  { id: "solution", label: "Solution", icon: Lightbulb },
+  { id: "benefits", label: "Benefits", icon: Sparkles },
+  { id: "ingredients", label: "Ingredients", icon: Leaf },
+  { id: "how-it-works", label: "How It Works", icon: Cog },
+  { id: "lifestyle", label: "Lifestyle", icon: TestTube },
+  { id: "shop", label: "Products", icon: ShoppingBag },
+  { id: "social", label: "Reviews", icon: Star },
+  { id: "cta", label: "Get Started", icon: Rocket },
+];
+
 export function ScrollNav({ className }: ScrollNavProps) {
   const [activeSection, setActiveSection] = useState<string>("hero");
   const [isVisible, setIsVisible] = useState(false);
   const { isMobileMenuOpen, isScrollNavCollapsed, setIsScrollNavCollapsed } = useUI();
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const hydrated = useHydrated();
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
-
-  const sections: Section[] = [
-    { id: "hero", label: "Home", icon: Home },
-    { id: "problem", label: "Problem", icon: AlertTriangle },
-    { id: "solution", label: "Solution", icon: Lightbulb },
-    { id: "benefits", label: "Benefits", icon: Sparkles },
-    { id: "ingredients", label: "Ingredients", icon: Leaf },
-    { id: "how-it-works", label: "How It Works", icon: Cog },
-    { id: "lifestyle", label: "Lifestyle", icon: TestTube },
-    { id: "shop", label: "Products", icon: ShoppingBag },
-    { id: "social", label: "Reviews", icon: Star },
-    { id: "cta", label: "Get Started", icon: Rocket },
-  ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,7 +50,7 @@ export function ScrollNav({ className }: ScrollNavProps) {
       // Update active section
       const scrollPosition = window.scrollY + window.innerHeight / 3;
       
-      for (const section of sections) {
+      for (const section of SECTIONS) {
         const element = document.getElementById(section.id);
         if (element) {
           const { offsetTop, offsetHeight } = element;
@@ -118,7 +115,7 @@ export function ScrollNav({ className }: ScrollNavProps) {
             )}
             aria-label="Toggle theme"
           >
-            {mounted && (
+            {hydrated && (
               <div className="relative w-3 h-3">
                 <Sun className={cn(
                   "absolute inset-0 w-3 h-3 transition-all duration-300",
@@ -134,7 +131,7 @@ export function ScrollNav({ className }: ScrollNavProps) {
         )}
 
         {/* Navigation items */}
-        {!isScrollNavCollapsed && sections.map((section) => (
+        {!isScrollNavCollapsed && SECTIONS.map((section) => (
           <button
             key={section.id}
             onClick={() => scrollToSection(section.id)}
@@ -163,15 +160,15 @@ export function ScrollNav({ className }: ScrollNavProps) {
         {!isScrollNavCollapsed && (
           <div className="mt-3 flex flex-col items-center gap-1">
             <div className="text-xs text-muted font-medium uppercase tracking-wider">
-              {Math.round((sections.findIndex(s => s.id === activeSection) + 1) / sections.length * 100)}%
-            </div>
-            <div className="w-8 h-1 bg-border-soft rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-foreground transition-all duration-500 ease-out"
-                style={{ 
-                  width: `${((sections.findIndex(s => s.id === activeSection) + 1) / sections.length) * 100}%` 
-                }}
-              />
+               {Math.round((SECTIONS.findIndex((section) => section.id === activeSection) + 1) / SECTIONS.length * 100)}%
+             </div>
+             <div className="w-8 h-1 bg-border-soft rounded-full overflow-hidden">
+               <div 
+                 className="h-full bg-foreground transition-all duration-500 ease-out"
+                 style={{ 
+                   width: `${((SECTIONS.findIndex((section) => section.id === activeSection) + 1) / SECTIONS.length) * 100}%` 
+                 }}
+               />
             </div>
           </div>
         )}

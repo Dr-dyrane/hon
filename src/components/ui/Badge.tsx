@@ -76,6 +76,24 @@ export function BadgeList({
   animated = false
 }: BadgeListProps) {
   const Component = animated ? motion.div : "div";
+  const tone =
+    variant === "accent"
+      ? {
+          container: "bg-accent/10",
+          dot: "bg-accent",
+          text: "text-accent/80",
+        }
+      : variant === "default"
+        ? {
+            container: "bg-system-fill",
+            dot: "bg-label",
+            text: "text-label/70",
+          }
+        : {
+            container: "bg-system-fill",
+            dot: "bg-accent",
+            text: "text-secondary-label",
+          };
 
   return (
     <Component
@@ -98,9 +116,15 @@ export function BadgeList({
       })}
     >
       {items.map((item, index) => (
-        <div key={index} className="flex items-center gap-2 bg-system-fill backdrop-blur-sm px-3 py-1 squircle">
-          <div className="w-1 h-1 rounded-full bg-accent" />
-          <span className="text-[10px] tracking-[0.25em] text-secondary-label uppercase opacity-60">
+        <div
+          key={index}
+          className={cn(
+            "flex items-center gap-2 backdrop-blur-sm px-3 py-1 squircle",
+            tone.container
+          )}
+        >
+          <div className={cn("w-1 h-1 rounded-full", tone.dot)} />
+          <span className={cn("text-[10px] tracking-[0.25em] uppercase opacity-60", tone.text)}>
             {item}
           </span>
         </div>

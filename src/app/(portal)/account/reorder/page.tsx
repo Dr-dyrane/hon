@@ -17,20 +17,20 @@ export default async function ReorderPage() {
           {
             label: "History",
             value: `${orders.length}`,
-            detail: "Past orders",
+            detail: "Total",
             icon: History,
           },
           {
             label: "Ready",
             value: `${completedOrders}`,
-            detail: "Can reload",
+            detail: "Reload",
             icon: Repeat2,
             tone: "success",
           },
           {
             label: "Active",
             value: `${activeOrders}`,
-            detail: "Still moving",
+            detail: "Live",
             icon: ShoppingBag,
           },
         ]}

@@ -20,7 +20,7 @@ export function WorkspaceShell({
 }: {
   eyebrow: string;
   title: string;
-  description: string;
+  description?: string;
   navItems: ShellNavItem[];
   headerRoutes: ShellHeaderRoute[];
   children: ReactNode;
@@ -43,9 +43,11 @@ export function WorkspaceShell({
             <h1 className="mt-3 text-3xl font-bold tracking-display text-label">
               {title}
             </h1>
-            <p className="mt-3 text-sm leading-relaxed text-secondary-label">
-              {description}
-            </p>
+            {description ? (
+              <p className="mt-3 text-sm leading-relaxed text-secondary-label">
+                {description}
+              </p>
+            ) : null}
           </div>
 
           <div className="mt-10 min-h-0 flex-1 overflow-y-auto pr-1 scrollbar-hide">

@@ -27,23 +27,14 @@ export function HomeClient() {
   const renderedSections: ReactNode[] = homeSections.map((section) => {
     switch (section.sectionType) {
       case "hero":
-        return (
-          <HeroSection
-            key={section.sectionKey}
-            activeSection={activeSection}
-            isScrollingIntoSection={isScrollingIntoSection}
-            isScrollingOutOfSection={isScrollingOutOfSection}
-          />
-        );
+        return <HeroSection key={section.sectionKey} />;
       case "problem_statement":
         return <ProblemSection key={section.sectionKey} />;
       case "science_strip":
         return (
           <SolutionSection
             key={section.sectionKey}
-            activeSection={activeSection}
             isScrollingIntoSection={isScrollingIntoSection}
-            isScrollingOutOfSection={isScrollingOutOfSection}
           />
         );
       case "benefit_grid":

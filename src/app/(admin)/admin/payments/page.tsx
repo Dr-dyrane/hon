@@ -43,19 +43,19 @@ export default async function AdminPaymentsPage() {
             {
               label: "Review",
               value: `${underReview}`,
-              detail: "Need decision",
+              detail: "Queue",
               icon: AlertCircle,
             },
             {
               label: "Submitted",
               value: `${submitted}`,
-              detail: "Proof sent",
+              detail: "Proofs",
               icon: CircleEllipsis,
             },
             {
               label: "Queue",
               value: `${payments.length}`,
-              detail: "Recent transfers",
+              detail: "Recent",
               icon: CreditCard,
               tone: "success",
             },

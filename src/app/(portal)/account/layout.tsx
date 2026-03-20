@@ -10,7 +10,6 @@ export default async function PortalLayout({ children }: { children: ReactNode }
     <WorkspaceShell
       eyebrow="Customer Portal"
       title="Account"
-      description="Orders, delivery tracking, saved addresses, and reorder tools live here."
       navItems={PORTAL_NAV_ITEMS}
       headerRoutes={PORTAL_HEADER_ROUTES}
       mobileNav

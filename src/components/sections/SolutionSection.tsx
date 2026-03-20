@@ -3,6 +3,7 @@
 import React from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
 import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
@@ -25,13 +26,9 @@ const TRUST_INDICATORS = [
 ];
 
 export function SolutionSection({
-  activeSection,
   isScrollingIntoSection,
-  isScrollingOutOfSection,
 }: {
-  activeSection: string | null;
   isScrollingIntoSection: (sectionId: string) => boolean;
-  isScrollingOutOfSection: (sectionId: string) => boolean;
 }) {
   const { brand, homeSectionsByKey, productsById } = useMarketingContent();
   const solutionSettings = homeSectionsByKey.solution?.settings as
@@ -64,7 +61,8 @@ export function SolutionSection({
           data-aos-delay="300"
           className="text-xl text-secondary-label max-w-2xl leading-normal tracking-body italic"
         >
-          "Protein redesigned for the modern athlete. No fillers, no excuses. Just pure, plant-powered performance."
+          Protein redesigned for the modern athlete. No fillers, no excuses.
+          Just pure, plant-powered performance.
         </p>
 
         <div className="mt-24 w-full grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 lg:gap-24 max-w-5xl">
@@ -125,11 +123,13 @@ export function SolutionSection({
               scrollActive={scrollActive}
             />
           ) : (
-            <img
+            <Image
               src={productsById[currentProduct]?.image ?? ""}
               alt={productsById[currentProduct]?.name ?? "House of Prax product"}
-              className="relative z-10 mx-auto w-64 md:w-80 h-96 md:h-[450px] object-contain drop-shadow-2xl mask-radial"
-              loading="lazy"
+              width={640}
+              height={900}
+              sizes="(max-width: 768px) 16rem, 20rem"
+              className="relative z-10 mx-auto h-96 w-64 object-contain drop-shadow-2xl mask-radial md:h-[450px] md:w-80"
             />
           )}
         </div>

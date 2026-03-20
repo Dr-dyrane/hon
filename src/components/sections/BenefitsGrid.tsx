@@ -1,14 +1,13 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
-import { Badge } from "@/components/ui/Badge";
 import { LiquidGlassCard } from "@/components/ui/LiquidGlassCard";
 import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
 import { useMobile } from "@/hooks/useMobile";
 import { Zap, Wind, Activity, Leaf, Sparkles } from "lucide-react";
+import type { MarketingBenefit } from "@/lib/marketing/types";
 
 const ICON_MAP = {
   Zap: Zap,
@@ -22,7 +21,13 @@ export function BenefitsGrid() {
   const isMobile = useMobile();
 
   // Mobile-optimized benefit card component
-  const MobileBenefitCard = ({ benefit, index }: { benefit: any; index: number }) => {
+  const MobileBenefitCard = ({
+    benefit,
+    index,
+  }: {
+    benefit: MarketingBenefit;
+    index: number;
+  }) => {
     const Icon = ICON_MAP[benefit.icon as keyof typeof ICON_MAP];
     return (
       <LiquidGlassCard
@@ -57,7 +62,7 @@ export function BenefitsGrid() {
   };
 
   // Desktop benefit card component (original implementation)
-  const DesktopBenefitCard = ({ benefit }: { benefit: any }) => {
+  const DesktopBenefitCard = ({ benefit }: { benefit: MarketingBenefit }) => {
     const Icon = ICON_MAP[benefit.icon as keyof typeof ICON_MAP];
     return (
       <LiquidGlassCard

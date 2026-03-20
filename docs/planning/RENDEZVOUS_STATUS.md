@@ -68,6 +68,8 @@ Current state:
 - portal profile and addresses now use compact context panels instead of route-level hero repetition
 - portal home, reorder, and reviews now use the same KPI-rail and compact-root direction as the newer console screens
 - portal order detail, proof upload, and live tracking now use quieter value strips and tighter section shells instead of generic stacked cards
+- shell sidebars now avoid redundant descriptive copy and root metric language is shorter across the main admin and portal entry screens
+- repo-wide lint now passes after clearing the older 3D and marketing lint debt
 
 This means the system has crossed into operational platform work.
 
@@ -325,7 +327,6 @@ Open:
 - [ ] enforce viewport-native mobile, tablet, and desktop compositions across admin and portal
 - [ ] ensure selected navigation states remain legible in every shell
 - [ ] finish no-border, Apple-HIG-consistent surface treatment review
-- [ ] resolve legacy lint failures in older 3D and marketing files
 - [ ] tighten the checkout drawer and confirmation route further toward the marketing-page visual bar
 
 ---
@@ -405,20 +406,6 @@ Missing:
 - mobile KPI rails and compact action groups across the rest of admin and portal
 - shared shell-level viewport primitives to keep this systematic
 
-### Legacy lint failures remain
-
-Current repo-wide lint failures are still concentrated in older files such as:
-
-- `src/components/3d/Product3DCarousel.tsx`
-- `src/components/3d/Product3DViewer.tsx`
-- `src/components/sections/HeroSection.tsx`
-- `src/components/sections/ProblemSection.tsx`
-- `src/components/ui/ScrollNav.tsx`
-
-These are pre-existing issues outside the new platform work.
-
----
-
 ## 9. Verification Snapshot
 
 Current checkpoint verification:
@@ -428,7 +415,7 @@ Current checkpoint verification:
 - targeted `eslint` passes on the active hardening slice
 - `npm run build` passes
 - `npm run db:seed` passes, but bank-account seed safely skips if bank env vars are missing
-- `npm run lint` does not pass repo-wide because of the legacy issues listed above
+- `npm run lint` passes repo-wide
 
 ---
 
@@ -453,9 +440,9 @@ The active build block is Pass 5: admin console expansion.
 
 Implement in this order:
 
-1. Review legacy lint debt outside platform work.
-2. Keep tightening the Apple-HIG execution across admin and portal root/detail screens.
-3. Reassess audit coverage only when new low-churn admin mutation surfaces appear.
+1. Keep tightening the Apple-HIG execution across admin and portal root/detail screens.
+2. Reassess audit coverage only when new low-churn admin mutation surfaces appear.
+3. Keep delivery quality moving toward richer ETA/live behavior once the shell polish is stable.
 
 After that:
 

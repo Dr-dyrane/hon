@@ -10,7 +10,6 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     <WorkspaceShell
       eyebrow="Operations Console"
       title="Admin"
-      description="Orders, payments, delivery, merchandising, and customer support now have a dedicated shell."
       navItems={ADMIN_NAV_ITEMS}
       headerRoutes={ADMIN_HEADER_ROUTES}
       mobileNav

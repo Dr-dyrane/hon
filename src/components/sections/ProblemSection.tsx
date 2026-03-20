@@ -59,10 +59,7 @@
   LIQUID GLASS FEATURES: Mouse-tracking light refraction, soap bubble iridescence, surface tension morphing, three-layer system
 */
 
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { useTheme } from "next-themes";
-import { cn } from "@/lib/utils";
+import React from "react";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
 import { BadgeList } from "@/components/ui/Badge";
@@ -78,15 +75,7 @@ const PROBLEMS = [
 ];
 
 export function ProblemSection() {
-  const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const isMobile = useMobile();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const isDark = mounted && resolvedTheme === "dark";
 
   // Mobile-optimized card component
   const MobileProblemCard = ({ problem, index }: { problem: string; index: number }) => (
@@ -226,7 +215,8 @@ export function ProblemSection() {
           <div className="w-12 h-[4px] bg-accent/30 mx-auto mb-12 rounded-full" />
 
           <p className="relative z-10 text-xl leading-normal tracking-body w-full italic opacity-70">
-            "Don't build your foundation on sand. Choose a system <br className="hidden md:block" /> designed for longevity and power."
+            Don&apos;t build your foundation on sand. Choose a system
+            <br className="hidden md:block" /> designed for longevity and power.
           </p>
         </LiquidGlassCard>
       </div>

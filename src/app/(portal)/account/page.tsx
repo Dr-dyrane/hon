@@ -36,7 +36,7 @@ export default async function AccountPage() {
             {
               label: "Active",
               value: `${accountSummary.activeOrders}`,
-              detail: "In progress",
+              detail: "Live",
               icon: Receipt,
             },
             {
@@ -48,7 +48,7 @@ export default async function AccountPage() {
             {
               label: "Reviews",
               value: `${accountSummary.reviewCount}`,
-              detail: "Submitted",
+              detail: "Sent",
               icon: Sparkles,
               tone: "success",
             },

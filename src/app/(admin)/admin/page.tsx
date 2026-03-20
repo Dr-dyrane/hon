@@ -56,19 +56,19 @@ export default async function AdminPage() {
             {
               label: "Active",
               value: `${activeOrders}`,
-              detail: "Orders in motion",
+              detail: "Moving",
               icon: Clock3,
             },
             {
               label: "Payments",
               value: `${paymentAttention}`,
-              detail: "Need review",
+              detail: "Review",
               icon: CreditCard,
             },
             {
               label: "Featured",
               value: `${metrics.featuredProducts}`,
-              detail: "Homepage picks",
+              detail: "Picks",
               icon: Sparkles,
             },
             {

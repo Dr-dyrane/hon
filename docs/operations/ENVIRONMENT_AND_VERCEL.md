@@ -134,6 +134,19 @@ Official references:
 - [Vercel pull](https://vercel.com/docs/cli/pull)
 - [Environment variables](https://vercel.com/docs/projects/environment-variables)
 
+CLI requirement:
+
+- remote env sync requires an authenticated Vercel CLI session
+- use `vercel login` or provide `VERCEL_ACCESS_TOKEN`
+- if the CLI is unauthenticated, local code or local env changes do not count as remote env sync
+
+Readiness rule:
+
+- a provider integration is not considered live until all three are true:
+- code path is implemented
+- local env path is configured and tested
+- Vercel env values are present and verified from an authenticated CLI session
+
 ### Initial project linkage
 
 ```powershell
@@ -141,6 +154,20 @@ vercel link
 ```
 
 Use this once per local checkout if the project is not already linked.
+
+### CLI authentication
+
+```powershell
+vercel login
+```
+
+or set:
+
+```powershell
+$env:VERCEL_ACCESS_TOKEN="your_token_here"
+```
+
+Without one of these, `vercel env`, `vercel pull`, and other remote project commands cannot be trusted as complete.
 
 ### List remote variables
 
@@ -248,6 +275,7 @@ Every environment-variable change should satisfy all three:
 1. `.env.example` updated if the schema changed
 2. Vercel variables updated for the relevant environment
 3. comparison script run successfully
+4. Vercel CLI authentication confirmed for the shell performing the sync
 
 ---
 
@@ -338,3 +366,4 @@ When adding or changing a variable:
 3. Update Vercel using `vercel env add` or `vercel env update`.
 4. Pull or refresh local environment files if needed.
 5. Run the comparison script.
+6. Confirm the remote update from the CLI in the same authenticated session.

@@ -40,19 +40,19 @@ export function AdminDeliveryLiveSurface({
           {
             label: "Preparing",
             value: `${data.preparingCount}`,
-            detail: "Kitchen side",
+            detail: "Kitchen",
             icon: Clock3,
           },
           {
             label: "Ready",
             value: `${data.readyCount}`,
-            detail: "Waiting rider",
+            detail: "Rider",
             icon: Bike,
           },
           {
             label: "Live",
             value: `${data.liveCount}`,
-            detail: "On road",
+            detail: "Road",
             icon: Truck,
             tone: "success",
           },

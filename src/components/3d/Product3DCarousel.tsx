@@ -2,7 +2,7 @@
 
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, useGLTF } from "@react-three/drei";
+import { ContactShadows, PerspectiveCamera, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
 import { ProductFallback } from "./ProductFallback";
@@ -42,7 +42,7 @@ function StageModel({
   const clonedScene = useMemo(() => scene.clone(), [scene]);
   const groupRef = useRef<THREE.Group>(null);
   const hoverRef = useRef(false);
-  const activeMotionTimeRef = useRef(Math.random() * Math.PI * 2);
+  const activeMotionTimeRef = useRef((index + 1) * Math.PI * 0.5);
 
   const { size } = useThree();
   const relativeIndex = getRelativeIndex(index, activeIndex, totalProducts);
@@ -139,7 +139,7 @@ function StageModel({
 
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
 
-      materials.forEach((material: any) => {
+      materials.forEach((material) => {
         if (!material) return;
         material.transparent = true;
         material.opacity = THREE.MathUtils.damp(
@@ -172,18 +172,12 @@ function StageModel({
 }
 
 function ResponsiveCamera() {
-  const { camera, size } = useThree();
+  const { size } = useThree();
+  const aspect = size.width / Math.max(size.height, 1);
+  const fov = aspect < 1 ? 26 : aspect < 1.35 ? 25 : 24;
+  const z = aspect < 1 ? 6.15 : 5.95;
 
-  useEffect(() => {
-    const perspectiveCamera = camera as THREE.PerspectiveCamera;
-    const aspect = size.width / Math.max(size.height, 1);
-
-    perspectiveCamera.fov = aspect < 1 ? 26 : aspect < 1.35 ? 25 : 24;
-    perspectiveCamera.position.set(0, 0.15, aspect < 1 ? 6.15 : 5.95);
-    perspectiveCamera.updateProjectionMatrix();
-  }, [camera, size]);
-
-  return null;
+  return <PerspectiveCamera makeDefault position={[0, 0.15, z]} fov={fov} />;
 }
 
 export function Product3DCarousel({

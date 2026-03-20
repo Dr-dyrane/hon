@@ -166,10 +166,9 @@ export function IngredientSection() {
   const activeProduct = activeProductId ? productsById[activeProductId] : null;
 
   // Mobile-optimized ingredient card component
-  const MobileIngredientCard = ({ profile, relatedProductIds, matchesActive, index }: {
+  const MobileIngredientCard = ({ profile, relatedProductIds, index }: {
     profile: IngredientProfile;
     relatedProductIds: ProductId[];
-    matchesActive: boolean;
     index: number;
   }) => (
     <article
@@ -603,7 +602,6 @@ export function IngredientSection() {
                 key={profile.id}
                 profile={profile}
                 relatedProductIds={relatedProductIds}
-                matchesActive={matchesActive}
                 index={index}
               />
             ) : (

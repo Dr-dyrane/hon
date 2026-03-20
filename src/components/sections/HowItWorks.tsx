@@ -4,7 +4,6 @@ import React from "react";
 import { motion } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
-import { Badge } from "@/components/ui/Badge";
 import { Cog } from "lucide-react";
 import { Plus, MoveRight } from "lucide-react";
 import Image from "next/image";

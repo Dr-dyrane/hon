@@ -9,7 +9,7 @@ import { SceneEnvironment } from "./SceneEnvironment";
 import { cn } from "@/lib/utils";
 
 // Global WebGL context tracking
-let activeWebGLContexts: Set<string> = new Set();
+const activeWebGLContexts = new Set<string>();
 let globalSectionLock: string | null = null;
 
 interface Product3DViewerProps {
@@ -75,7 +75,16 @@ export function Product3DViewer({
   sectionId,
   scrollActive,
 }: Product3DViewerProps) {
-  const [isWebGLSupported, setIsWebGLSupported] = useState(true);
+  const [isWebGLSupported] = useState(() => {
+    if (typeof document === "undefined") {
+      return true;
+    }
+
+    const canvas = document.createElement("canvas");
+    return !!(
+      canvas.getContext("webgl") || canvas.getContext("experimental-webgl")
+    );
+  });
   const [hasError, setHasError] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
@@ -83,9 +92,9 @@ export function Product3DViewer({
   const instanceKey = `${sectionId || 'unknown'}-${modelPath}`;
 
   useEffect(() => {
-    if (scrollActive) {
-      const safeSectionId = sectionId || 'unknown';
+    const safeSectionId = sectionId || "unknown";
 
+    if (scrollActive) {
       if (globalSectionLock && globalSectionLock !== safeSectionId) {
         return;
       }
@@ -94,39 +103,29 @@ export function Product3DViewer({
       globalSectionLock = safeSectionId;
 
       const timer = setTimeout(() => {
-        if (scrollActive && !activeWebGLContexts.has(safeSectionId) && globalSectionLock === safeSectionId) {
+        if (
+          scrollActive &&
+          !activeWebGLContexts.has(safeSectionId) &&
+          globalSectionLock === safeSectionId
+        ) {
           activeWebGLContexts.add(safeSectionId);
           setIsReady(true);
         }
       }, 300);
       return () => clearTimeout(timer);
-    } else {
-      const safeSectionId = sectionId || 'unknown';
-
-      if (globalSectionLock === safeSectionId) {
-        globalSectionLock = null;
-      }
-
-      activeWebGLContexts.delete(safeSectionId);
-      setIsReady(false);
     }
-  }, [scrollActive, sectionId]);
 
-  // Enhanced cleanup on unmount
-  useEffect(() => {
-    return () => {
+    if (globalSectionLock === safeSectionId) {
+      globalSectionLock = null;
+    }
+
+    activeWebGLContexts.delete(safeSectionId);
+    const resetTimer = window.setTimeout(() => {
       setIsReady(false);
-      setHasError(false);
-    };
-  }, []);
+    }, 0);
 
-  useEffect(() => {
-    const canvas = document.createElement("canvas");
-    const gl =
-      canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-
-    setIsWebGLSupported(!!gl);
-  }, []);
+    return () => window.clearTimeout(resetTimer);
+  }, [scrollActive, sectionId]);
 
   const lightingConfig =
     theme === "dark"

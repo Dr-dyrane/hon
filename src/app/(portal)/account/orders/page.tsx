@@ -50,13 +50,13 @@ export default async function OrdersPage() {
             {
               label: "Active",
               value: `${activeOrders}`,
-              detail: "In progress",
+              detail: "Live",
               icon: Clock3,
             },
             {
               label: "Total",
               value: `${orders.length}`,
-              detail: "All orders",
+              detail: "History",
               icon: PackageCheck,
               tone: "success",
             },

@@ -32,25 +32,25 @@ export default async function AdminCustomersPage() {
     <div className="space-y-8 pb-20 md:space-y-10">
       <MetricRail
         items={[
-          {
-            label: "Visible",
-            value: `${customers.length}`,
-            detail: "Current list",
-            icon: CircleUserRound,
-          },
-          {
-            label: "Linked",
-            value: `${accountLinked}`,
-            detail: "Have accounts",
-            icon: UserRoundCheck,
-            tone: "success",
-          },
-          {
-            label: "Active",
-            value: `${activeCustomers}`,
-            detail: "Open orders",
-            icon: MapPinHouse,
-          },
+            {
+              label: "Visible",
+              value: `${customers.length}`,
+              detail: "Listed",
+              icon: CircleUserRound,
+            },
+            {
+              label: "Linked",
+              value: `${accountLinked}`,
+              detail: "Accounts",
+              icon: UserRoundCheck,
+              tone: "success",
+            },
+            {
+              label: "Active",
+              value: `${activeCustomers}`,
+              detail: "Live",
+              icon: MapPinHouse,
+            },
         ]}
         columns={3}
       />

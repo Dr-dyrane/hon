@@ -18,20 +18,20 @@ export default async function AdminLayoutPage() {
     {
       label: "Published",
       value: publishedCount.toString(),
-      detail: `${enabledCount} live`,
+      detail: `${enabledCount} on`,
       icon: Layers3,
     },
     {
       label: "Version",
       value: latestVersionLabel,
-      detail: "Current live",
+      detail: "Live",
       icon: CheckCircle2,
       tone: "success" as const,
     },
     {
       label: "Draft",
       value: draftVersionId ? "Edit" : "None",
-      detail: draftVersionId ? "In progress" : "No draft",
+      detail: draftVersionId ? "Open" : "Empty",
       icon: FileStack,
     },
   ];
@@ -47,9 +47,6 @@ export default async function AdminLayoutPage() {
             <h1 className="mt-2 text-4xl font-bold tracking-display text-label md:text-5xl">
               Homepage Layout
             </h1>
-            <p className="mt-3 text-sm leading-relaxed text-secondary-label md:text-lg">
-              Draft, review, publish.
-            </p>
           </div>
         </div>
       </header>

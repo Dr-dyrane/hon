@@ -63,19 +63,19 @@ export default async function AdminOrdersPage() {
             {
               label: "Active",
               value: `${activeOrders}`,
-              detail: "In progress",
+              detail: "Live",
               icon: Clock3,
             },
             {
               label: "Awaiting",
               value: `${awaitingTransfer}`,
-              detail: "Transfer pending",
+              detail: "Transfer",
               icon: Landmark,
             },
             {
               label: "Ready",
               value: `${dispatchReady}`,
-              detail: "Prep or dispatch",
+              detail: "Dispatch",
               icon: PackageCheck,
               tone: "success",
             },

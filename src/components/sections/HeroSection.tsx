@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { BadgeList } from "@/components/ui/Badge";
 import Image from "next/image";
@@ -10,6 +10,7 @@ import { useTheme } from "next-themes";
 import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
 import { cn } from "@/lib/utils";
 import { ProductFallback } from "@/components/3d/ProductFallback";
+import { useHydrated } from "@/hooks/useHydrated";
 import type { ProductId } from "@/lib/marketing/types";
 
 const Product3DCarousel = dynamic(
@@ -18,18 +19,10 @@ const Product3DCarousel = dynamic(
   { ssr: false }
 );
 
-export function HeroSection({
-  activeSection,
-  isScrollingIntoSection,
-  isScrollingOutOfSection,
-}: {
-  activeSection: string | null;
-  isScrollingIntoSection: (sectionId: string) => boolean;
-  isScrollingOutOfSection: (sectionId: string) => boolean;
-}) {
+export function HeroSection() {
   const { homeSectionsByKey, productIds, productsById } = useMarketingContent();
   const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const hydrated = useHydrated();
   const [enableHero3D, setEnableHero3D] = useState(false);
   const heroSettings = homeSectionsByKey.hero?.settings as
     | { badgeItems?: string[]; featuredProductId?: ProductId }
@@ -38,11 +31,7 @@ export function HeroSection({
   const [currentProduct, setCurrentProduct] = useState<ProductId>(defaultProductId);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
+    if (!hydrated) return;
 
     const enable = () => setEnableHero3D(true);
     const idleCallback =
@@ -61,11 +50,11 @@ export function HeroSection({
 
     const timer = globalThis.setTimeout(enable, 900);
     return () => globalThis.clearTimeout(timer);
-  }, [mounted]);
+  }, [hydrated]);
 
-  const isDark = mounted && resolvedTheme === "dark";
+  const isDark = hydrated && resolvedTheme === "dark";
 
-  const revealVariants: any = {
+  const revealVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: (i: number) => ({
       opacity: 1,

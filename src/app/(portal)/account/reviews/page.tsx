@@ -37,19 +37,19 @@ export default async function ReviewsPage() {
           {
             label: "Pending",
             value: `${pendingReviews.length}`,
-            detail: "Ready to rate",
+            detail: "Rate",
             icon: PenSquare,
           },
           {
             label: "Sent",
             value: `${reviews.length}`,
-            detail: "Submitted",
+            detail: "Saved",
             icon: Star,
           },
           {
             label: "Approved",
             value: `${approvedCount}`,
-            detail: "Visible",
+            detail: "Live",
             icon: CheckCircle2,
             tone: "success",
           },

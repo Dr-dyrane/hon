@@ -18,13 +18,13 @@ export default async function AdminSettingsPage() {
           {
             label: "Bank",
             value: snapshot.bankAccount?.bankName ?? "Pending",
-            detail: "Transfer route",
+            detail: "Transfer",
             icon: Landmark,
           },
           {
             label: "Registry",
             value: `${snapshot.siteSettings.length}`,
-            detail: "Operational keys",
+            detail: "Keys",
             icon: Settings2,
             tone: "success",
           },
@@ -33,7 +33,7 @@ export default async function AdminSettingsPage() {
             value: snapshot.siteSettings.some((setting) => setting.key === "delivery_defaults")
               ? "Live"
               : "None",
-            detail: "Delivery setup",
+            detail: "Defaults",
             icon: SlidersHorizontal,
           },
         ]}
