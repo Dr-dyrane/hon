@@ -4,13 +4,14 @@ import React from "react";
 import { motion } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { Badge } from "@/components/ui/Badge";
-import { SOCIAL_PROOF } from "@/lib/data";
+import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
 import { Star } from "lucide-react";
 
 export function SocialProof() {
+  const { socialProof } = useMarketingContent();
   const stats = [
-    { label: "Elite Rating", value: `${SOCIAL_PROOF.rating}`, sub: "Verified Reviews" },
-    { label: "Community", value: SOCIAL_PROOF.servings, sub: "Athletes Reached" },
+    { label: "Elite Rating", value: `${socialProof.rating}`, sub: "Verified Reviews" },
+    { label: "Community", value: socialProof.servings, sub: "Athletes Reached" },
     { label: "Ingredient Quality", value: "100%", sub: "Zero Fillers" }
   ];
 

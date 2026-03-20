@@ -6,7 +6,7 @@ import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
 import { Badge } from "@/components/ui/Badge";
 import { LiquidGlassCard } from "@/components/ui/LiquidGlassCard";
-import { BENEFITS } from "@/lib/data";
+import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
 import { Zap, Wind, Activity, Leaf, Sparkles } from "lucide-react";
 
 const ICON_MAP = {
@@ -17,6 +17,8 @@ const ICON_MAP = {
 };
 
 export function BenefitsGrid() {
+  const { benefits } = useMarketingContent();
+
   return (
     <SectionContainer variant="alt" id="benefits">
       <div className="flex flex-col lg:flex-row items-start justify-between mb-32 gap-y-12 gap-x-20">
@@ -84,7 +86,7 @@ export function BenefitsGrid() {
         MAINTAINED: All original hover states and group interactions
       */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {BENEFITS.map((benefit, i) => {
+        {benefits.map((benefit) => {
           const Icon = ICON_MAP[benefit.icon as keyof typeof ICON_MAP];
           return (
             <LiquidGlassCard

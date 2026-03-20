@@ -4,14 +4,15 @@ import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } fr
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import { PRODUCTS } from "@/lib/data";
+import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
 import { ProductFallback } from "./ProductFallback";
 import { SceneEnvironment } from "./SceneEnvironment";
 import { cn } from "@/lib/utils";
+import type { ProductId } from "@/lib/marketing/types";
 
 interface Product3DCarouselProps {
-  activeId: keyof typeof PRODUCTS;
-  onChange: (id: keyof typeof PRODUCTS) => void;
+  activeId: ProductId;
+  onChange: (id: ProductId) => void;
   isDark?: boolean;
 }
 
@@ -22,8 +23,6 @@ interface StageModelProps {
   totalProducts: number;
   onSelect: (index: number) => void;
 }
-
-const PRODUCT_KEYS = Object.keys(PRODUCTS) as (keyof typeof PRODUCTS)[];
 
 function getRelativeIndex(index: number, activeIndex: number, total: number) {
   let relative = index - activeIndex;
@@ -192,7 +191,8 @@ export function Product3DCarousel({
   onChange,
   isDark = true,
 }: Product3DCarouselProps) {
-  const activeIndex = PRODUCT_KEYS.indexOf(activeId);
+  const { productIds, productsById } = useMarketingContent();
+  const activeIndex = productIds.indexOf(activeId);
   const interactionRef = useRef<HTMLDivElement | null>(null);
   const cooldownRef = useRef(false);
   const touchStartXRef = useRef<number | null>(null);
@@ -216,10 +216,10 @@ export function Product3DCarousel({
   const step = useCallback(
     (direction: 1 | -1) => {
       const nextIndex =
-        (activeIndex + direction + PRODUCT_KEYS.length) % PRODUCT_KEYS.length;
-      onChange(PRODUCT_KEYS[nextIndex]);
+        (activeIndex + direction + productIds.length) % productIds.length;
+      onChange(productIds[nextIndex]);
     },
-    [activeIndex, onChange]
+    [activeIndex, onChange, productIds]
   );
 
   const lockStep = useCallback(
@@ -307,7 +307,7 @@ export function Product3DCarousel({
         isReady ? "opacity-0 scale-95" : "opacity-100 scale-100"
       )}>
         <ProductFallback
-          imagePath={PRODUCTS[activeId].model.replace("/models/products/", "/images/products/").replace(".glb", ".png")}
+          imagePath={productsById[activeId]?.image ?? ""}
           className="w-full h-full"
           priority
         />
@@ -358,19 +358,19 @@ export function Product3DCarousel({
 
             {/* Only render active model and immediate neighbors to prevent WebGL context overload */}
             <group position={[0, -0.02, 0]}>
-              {PRODUCT_KEYS.map((key, index) => {
-                const relativeIndex = getRelativeIndex(index, activeIndex, PRODUCT_KEYS.length);
+              {productIds.map((key, index) => {
+                const relativeIndex = getRelativeIndex(index, activeIndex, productIds.length);
                 // Only render active model and immediate neighbors
                 if (Math.abs(relativeIndex) > 1) return null;
 
                 return (
                   <StageModel
                     key={key}
-                    modelPath={PRODUCTS[key].model}
+                    modelPath={productsById[key].model}
                     index={index}
                     activeIndex={activeIndex}
-                    totalProducts={PRODUCT_KEYS.length}
-                    onSelect={(idx) => onChange(PRODUCT_KEYS[idx])}
+                    totalProducts={productIds.length}
+                    onSelect={(idx) => onChange(productIds[idx])}
                   />
                 );
               })}

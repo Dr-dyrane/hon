@@ -81,11 +81,7 @@ export const viewport: Viewport = {
 };
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { AOSProvider } from "@/components/providers/AOSProvider";
-import { ThreeJSSuppressor } from "@/components/providers/ThreeJSSuppressor";
 import { UIProvider } from "@/components/providers/UIProvider";
-import { CommerceProvider } from "@/components/providers/CommerceProvider";
-import { CartDrawer } from "@/components/commerce/CartDrawer";
 
 export default function RootLayout({
   children,
@@ -95,22 +91,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${sfPro.variable} font-sans antialiased`}>
-        {process.env.NODE_ENV === "development" ? <ThreeJSSuppressor /> : null}
-        <AOSProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <UIProvider>
-              <CommerceProvider>
-                {children}
-                <CartDrawer />
-              </CommerceProvider>
-            </UIProvider>
-          </ThemeProvider>
-        </AOSProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <UIProvider>{children}</UIProvider>
+        </ThemeProvider>
         {process.env.NODE_ENV === "production" ? <Analytics /> : null}
       </body>
     </html>

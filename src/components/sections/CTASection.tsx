@@ -3,21 +3,28 @@
 import React from "react";
 import Link from "next/link";
 import { Rocket } from "lucide-react";
+import Image from "next/image";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
 import { Button } from "@/components/ui/Button";
 import { useCommerce } from "@/components/providers/CommerceProvider";
+import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
 import {
   SHOT_BUNDLE,
   formatNgn,
   getProductPriceSnapshot,
 } from "@/lib/commerce";
-import Image from "next/image";
-
-const flagshipPricing = getProductPriceSnapshot("protein_chocolate");
+import type { ProductId } from "@/lib/marketing/types";
 
 export function CTASection() {
+  const { homeSectionsByKey, productsById } = useMarketingContent();
   const { addItem, itemCount, openCart } = useCommerce();
+  const ctaSettings = homeSectionsByKey.cta?.settings as
+    | { defaultProductId?: ProductId }
+    | undefined;
+  const defaultProductId = ctaSettings?.defaultProductId ?? "protein_chocolate";
+  const flagshipProduct = productsById[defaultProductId];
+  const flagshipPricing = getProductPriceSnapshot(productsById, defaultProductId);
   const ctaBadges = ["Subsidized", SHOT_BUNDLE.shortLabel, "WhatsApp Checkout"];
 
   const handlePrimaryAction = () => {
@@ -26,7 +33,7 @@ export function CTASection() {
       return;
     }
 
-    addItem("protein_chocolate");
+    addItem(defaultProductId);
   };
 
   return (
@@ -105,7 +112,7 @@ export function CTASection() {
             <div className="liquid-glass squircle relative overflow-hidden p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:p-6">
               <div className="absolute right-2 top-4 h-20 w-20 rounded-full bg-accent/10 blur-3xl" />
               <p className="text-[10px] font-semibold uppercase tracking-headline text-white/55">
-                Prax Protein
+                {flagshipProduct?.name ?? "Prax Protein"}
               </p>
 
               <div className="mt-4 flex items-start justify-between gap-4">
@@ -122,8 +129,11 @@ export function CTASection() {
                   <div className="absolute inset-0 rounded-full bg-accent/12 blur-2xl" />
                   <div className="relative flex h-20 w-20 items-center justify-center rounded-[22px] bg-white/[0.05] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                     <Image
-                      src="/images/products/protein_chocolate.png"
-                      alt="Prax Protein chocolate pack"
+                      src={
+                        flagshipProduct?.image ??
+                        "/images/products/protein_chocolate.png"
+                      }
+                      alt={`${flagshipProduct?.name ?? "Prax Protein"} pack`}
                       width={120}
                       height={120}
                       className="hero-product-image w-full max-w-[68px]"

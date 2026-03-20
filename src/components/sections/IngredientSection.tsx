@@ -5,12 +5,8 @@ import Image from "next/image";
 import { Leaf } from "lucide-react";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
-import {
-  INGREDIENTS,
-  PRODUCTS,
-  type IngredientProfile,
-  type ProductId,
-} from "@/lib/data";
+import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
+import type { IngredientProfile, MarketingProduct, ProductId } from "@/lib/marketing/types";
 import { cn } from "@/lib/utils";
 
 type IngredientFilter = "all" | ProductId;
@@ -21,19 +17,17 @@ type IngredientCard = {
   matchesActive: boolean;
 };
 
-const PRODUCT_KEYS = Object.keys(PRODUCTS) as ProductId[];
-
 function normalizeIngredientLabel(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
-function getProductLabel(productId: ProductId) {
-  return PRODUCTS[productId].name;
-}
-
-function getRelatedProductIds(profile: IngredientProfile) {
-  return PRODUCT_KEYS.filter((productId) => {
-    const productIngredients = PRODUCTS[productId].ingredients.map(
+function getRelatedProductIds(
+  profile: IngredientProfile,
+  productIds: ProductId[],
+  productsById: Record<ProductId, MarketingProduct>
+) {
+  return productIds.filter((productId) => {
+    const productIngredients = productsById[productId].ingredients.map(
       normalizeIngredientLabel
     );
 
@@ -43,10 +37,13 @@ function getRelatedProductIds(profile: IngredientProfile) {
   });
 }
 
-function isIngredientProfiled(ingredientName: string) {
+function isIngredientProfiled(
+  ingredientName: string,
+  ingredients: IngredientProfile[]
+) {
   const normalizedIngredient = normalizeIngredientLabel(ingredientName);
 
-  return INGREDIENTS.some((profile) =>
+  return ingredients.some((profile) =>
     profile.aliases.some(
       (alias) => normalizeIngredientLabel(alias) === normalizedIngredient
     )
@@ -55,14 +52,16 @@ function isIngredientProfiled(ingredientName: string) {
 
 function getFeaturedIngredientCard(
   cards: IngredientCard[],
-  activeProductId: ProductId | null
+  activeProductId: ProductId | null,
+  productsById: Record<ProductId, MarketingProduct>,
+  ingredients: IngredientProfile[]
 ) {
   if (cards.length === 0) {
     return null;
   }
 
   if (activeProductId) {
-    const orderedIngredients = PRODUCTS[activeProductId].ingredients.map(
+    const orderedIngredients = productsById[activeProductId].ingredients.map(
       normalizeIngredientLabel
     );
 
@@ -84,8 +83,8 @@ function getFeaturedIngredientCard(
       return right.relatedProductIds.length - left.relatedProductIds.length;
     }
 
-    return INGREDIENTS.findIndex((profile) => profile.id === left.profile.id) -
-      INGREDIENTS.findIndex((profile) => profile.id === right.profile.id);
+    return ingredients.findIndex((profile) => profile.id === left.profile.id) -
+      ingredients.findIndex((profile) => profile.id === right.profile.id);
   })[0];
 }
 
@@ -93,11 +92,13 @@ function IngredientCardOverlay({
   profile,
   relatedProductIds,
   activeFilter,
+  productsById,
   featured = false,
 }: {
   profile: IngredientProfile;
   relatedProductIds: ProductId[];
   activeFilter: IngredientFilter;
+  productsById: Record<ProductId, MarketingProduct>;
   featured?: boolean;
 }) {
   return (
@@ -146,7 +147,7 @@ function IngredientCardOverlay({
                     : "bg-white/58 text-label dark:bg-white/14 dark:text-white"
                 )}
               >
-                {getProductLabel(productId)}
+                {productsById[productId].name}
             </span>
           ))}
         </div>
@@ -156,14 +157,19 @@ function IngredientCardOverlay({
 }
 
 export function IngredientSection() {
+  const { ingredients, productIds, productsById } = useMarketingContent();
   const [activeFilter, setActiveFilter] = useState<IngredientFilter>("all");
 
   const activeProductId = activeFilter === "all" ? null : activeFilter;
-  const activeProduct = activeProductId ? PRODUCTS[activeProductId] : null;
+  const activeProduct = activeProductId ? productsById[activeProductId] : null;
 
   const ingredientCards = useMemo(() => {
-    return INGREDIENTS.map((profile) => {
-      const relatedProductIds = getRelatedProductIds(profile);
+    return ingredients.map((profile) => {
+      const relatedProductIds = getRelatedProductIds(
+        profile,
+        productIds,
+        productsById
+      );
       const matchesActive =
         activeProductId === null || relatedProductIds.includes(activeProductId);
 
@@ -179,9 +185,14 @@ export function IngredientSection() {
 
       return left.matchesActive ? -1 : 1;
     });
-  }, [activeProductId]);
+  }, [activeProductId, ingredients, productIds, productsById]);
 
-  const featuredCard = getFeaturedIngredientCard(ingredientCards, activeProductId);
+  const featuredCard = getFeaturedIngredientCard(
+    ingredientCards,
+    activeProductId,
+    productsById,
+    ingredients
+  );
   const supportingCards = ingredientCards.filter(
     (card) => card.profile.id !== featuredCard?.profile.id
   );
@@ -237,7 +248,7 @@ export function IngredientSection() {
               All Formulas
             </button>
 
-            {PRODUCT_KEYS.map((productId) => (
+            {productIds.map((productId) => (
               <button
                 key={productId}
                 type="button"
@@ -249,7 +260,7 @@ export function IngredientSection() {
                     : "text-secondary-label hover:bg-system-fill hover:text-label"
                 )}
               >
-                {getProductLabel(productId)}
+                {productsById[productId].name}
               </button>
             ))}
           </div>
@@ -302,7 +313,7 @@ export function IngredientSection() {
                         key={ingredient}
                         className={cn(
                           "rounded-full px-3 py-2 text-[11px] font-medium tracking-body",
-                          isIngredientProfiled(ingredient)
+                          isIngredientProfiled(ingredient, ingredients)
                             ? "bg-label text-system-background"
                             : "bg-system-background text-secondary-label"
                         )}
@@ -336,7 +347,7 @@ export function IngredientSection() {
                     Active Formulas
                   </div>
                   <div className="mt-2 text-2xl font-bold tracking-tight text-label">
-                    {PRODUCT_KEYS.length}
+                    {productIds.length}
                   </div>
                 </div>
 
@@ -387,6 +398,7 @@ export function IngredientSection() {
                   profile={featuredCard.profile}
                   relatedProductIds={featuredCard.relatedProductIds}
                   activeFilter={activeFilter}
+                  productsById={productsById}
                   featured
                 />
               </div>
@@ -418,6 +430,7 @@ export function IngredientSection() {
                   profile={profile}
                   relatedProductIds={relatedProductIds}
                   activeFilter={activeFilter}
+                  productsById={productsById}
                 />
               </div>
             </article>

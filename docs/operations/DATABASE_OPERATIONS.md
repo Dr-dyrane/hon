@@ -57,6 +57,16 @@ Supporting documentation lives in:
 - [db/docs/functions.md](C:/Users/Dyrane/Documents/GitHub/hop/db/docs/functions.md)
 - [db/docs/triggers.md](C:/Users/Dyrane/Documents/GitHub/hop/db/docs/triggers.md)
 
+### Connection mode rule
+
+For deployed application traffic, prefer:
+
+- Aurora PostgreSQL
+- Vercel OIDC federation
+- RDS IAM authentication
+
+Direct database passwords should be treated as fallback tooling access, not the primary production runtime path.
+
 ---
 
 ## 3. Migration Rules

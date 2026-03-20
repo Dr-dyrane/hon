@@ -1,4 +1,6 @@
-import { PRODUCTS, type ProductId } from "@/lib/data";
+import type { MarketingProduct, ProductId } from "@/lib/marketing/types";
+
+export type ProductLookup = Record<ProductId, MarketingProduct>;
 
 export const FX_REFERENCE = {
   usdToNgn: 1357.81,
@@ -15,17 +17,20 @@ export const SHOT_BUNDLE = {
   description: "Any 4 health shots in one order are priced at NGN 4,499.",
 } as const;
 
-export function getProductDisplayName(productId: ProductId) {
-  const product = PRODUCTS[productId];
-  if ("flavor" in product) {
+export function getProductDisplayName(
+  productsById: ProductLookup,
+  productId: ProductId
+) {
+  const product = productsById[productId];
+  if (product.flavor) {
     return `${product.name} (${product.flavor})`;
   }
 
   return product.name;
 }
 
-export function isShotProduct(productId: ProductId) {
-  return PRODUCTS[productId].category === "shots";
+export function isShotProduct(productsById: ProductLookup, productId: ProductId) {
+  return productsById[productId]?.categoryId === "shots";
 }
 
 export function convertUsdToNgn(amountUsd: number) {
@@ -61,8 +66,11 @@ export function formatFxRate(amountNgn: number) {
   }).format(amountNgn);
 }
 
-export function getProductPriceSnapshot(productId: ProductId) {
-  const product = PRODUCTS[productId];
+export function getProductPriceSnapshot(
+  productsById: ProductLookup,
+  productId: ProductId
+) {
+  const product = productsById[productId];
   const originalNgn = product.priceNgn;
   const originalUsd = convertNgnToUsd(originalNgn);
 
@@ -76,10 +84,13 @@ export function getProductPriceSnapshot(productId: ProductId) {
   };
 }
 
-export function getShotBundlePricing(shotQuantity: number) {
+export function getShotBundlePricing(
+  shotQuantity: number,
+  shotUnitPriceNgn: number
+) {
   const normalizedQuantity = Math.max(0, Math.floor(shotQuantity));
   const bundleCount = Math.floor(normalizedQuantity / SHOT_BUNDLE.unitCount);
-  const baseSetPriceNgn = PRODUCTS.shot_glow.priceNgn * SHOT_BUNDLE.unitCount;
+  const baseSetPriceNgn = shotUnitPriceNgn * SHOT_BUNDLE.unitCount;
   const bundleBaseTotalNgn = baseSetPriceNgn * bundleCount;
   const bundleActualTotalNgn = SHOT_BUNDLE.bundlePriceNgn * bundleCount;
   const discountNgn = bundleBaseTotalNgn - bundleActualTotalNgn;

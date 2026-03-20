@@ -5,10 +5,11 @@ import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
-import { BRAND, PRODUCTS } from "@/lib/data";
+import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
 import { CleanIcon, PlantIcon, DigestionIcon } from "@/components/ui/Icons";
 import { Lightbulb } from "lucide-react";
 import { LiquidGlassCard } from "@/components/ui/LiquidGlassCard";
+import type { ProductId } from "@/lib/marketing/types";
 
 const Product3DViewer = dynamic(
   () =>
@@ -32,21 +33,12 @@ export function SolutionSection({
   isScrollingIntoSection: (sectionId: string) => boolean;
   isScrollingOutOfSection: (sectionId: string) => boolean;
 }) {
-  const currentProduct: keyof typeof PRODUCTS = "protein_chocolate";
+  const { brand, homeSectionsByKey, productsById } = useMarketingContent();
+  const solutionSettings = homeSectionsByKey.solution?.settings as
+    | { featuredProductId?: ProductId }
+    | undefined;
+  const currentProduct = solutionSettings?.featuredProductId ?? "protein_chocolate";
   const scrollActive = isScrollingIntoSection("solution");
-
-  const productData: Record<string, { model: string; bgGlow: string; accent: string }> = {
-    protein_chocolate: {
-      model: "/models/products/protein_chocolate.glb",
-      bgGlow: "bg-[#4A2C2A]/20",
-      accent: "text-[#D7C5A3]",
-    },
-    soy_powder: {
-      model: "/models/products/soy_powder.glb",
-      bgGlow: "bg-accent/10",
-      accent: "text-accent",
-    },
-  };
 
   return (
     <SectionContainer variant="white" id="solution">
@@ -62,7 +54,7 @@ export function SolutionSection({
             data-aos-delay="200"
             className="mt-12 text-5xl md:text-6xl lg:text-7xl font-headline font-bold text-label tracking-display leading-tight"
           >
-            Meet {BRAND.name}
+            Meet {brand.name}
           </h2>
         </div>
 
@@ -126,7 +118,7 @@ export function SolutionSection({
 
           {scrollActive ? (
             <Product3DViewer
-              modelPath={productData[currentProduct].model}
+              modelPath={productsById[currentProduct]?.model ?? ""}
               theme="light"
               className="relative z-10 mx-auto w-64 md:w-80 h-96 md:h-[450px]"
               sectionId="solution"
@@ -134,8 +126,8 @@ export function SolutionSection({
             />
           ) : (
             <img
-              src={PRODUCTS[currentProduct].image}
-              alt={PRODUCTS[currentProduct].name}
+              src={productsById[currentProduct]?.image ?? ""}
+              alt={productsById[currentProduct]?.name ?? "House of Prax product"}
               className="relative z-10 mx-auto w-64 md:w-80 h-96 md:h-[450px] object-contain drop-shadow-2xl mask-radial"
               loading="lazy"
             />

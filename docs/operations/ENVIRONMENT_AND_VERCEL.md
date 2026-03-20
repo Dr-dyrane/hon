@@ -71,6 +71,8 @@ Examples:
 
 - `DATABASE_URL`
 - `APP_SESSION_SECRET`
+- `ADMIN_EMAILS`
+- `AWS_ROLE_ARN`
 - `COGNITO_USER_POOL_ID`
 - `RESEND_API_KEY`
 
@@ -168,6 +170,28 @@ Use `vercel pull` when you need the `.vercel/` local cache for Vercel-managed bu
 
 Use `vercel env pull` when you need an actual env file for local application runtimes.
 
+### Aurora IAM workflow
+
+For the deployed app, prefer Aurora PostgreSQL with:
+
+- `PGHOST`
+- `PGPORT`
+- `PGDATABASE`
+- `PGUSER`
+- `PGSSLMODE`
+- `AWS_REGION`
+- `AWS_ROLE_ARN`
+
+The runtime DB layer will generate an RDS IAM auth token through Vercel OIDC instead of relying on a stored database password.
+
+Direct credential paths remain supported for controlled cases:
+
+- `DATABASE_URL`
+- `PGPASSWORD`
+- `DATABASE_DIRECT_URL`
+
+Use those only for local tooling, emergency access, or environments where OIDC/IAM is not available.
+
 ### Add a variable
 
 ```powershell
@@ -235,11 +259,25 @@ Every environment-variable change should satisfy all three:
 - `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN`
 - `APP_AUTH_MODE`
 - `APP_SESSION_SECRET`
-- `DATABASE_URL`
+- `AUTH_DEV_OTP_CODE`
+- `ADMIN_EMAILS`
+- `AWS_REGION`
+- `AWS_ROLE_ARN`
+- `PGHOST`
+- `PGPORT`
+- `PGDATABASE`
+- `PGUSER`
 - `PGSSLMODE`
 - `BANK_TRANSFER_BANK_NAME`
 - `BANK_TRANSFER_ACCOUNT_NAME`
 - `BANK_TRANSFER_ACCOUNT_NUMBER`
+- `BANK_TRANSFER_INSTRUCTIONS`
+
+### Optional direct database access
+
+- `DATABASE_URL`
+- `DATABASE_DIRECT_URL`
+- `PGPASSWORD`
 
 ### Required if using Cognito
 
@@ -271,6 +309,7 @@ Every environment-variable change should satisfy all three:
 4. Treat all database credentials as sensitive, even in preview.
 5. Use `--sensitive` when adding variables in Vercel where appropriate.
 6. Prefer `vercel env run` when you need remote secrets temporarily without writing them to disk.
+7. Do not add `PGPASSWORD` to production Vercel envs when IAM auth is the chosen path.
 
 ---
 
@@ -281,6 +320,7 @@ Every environment-variable change should satisfy all three:
 3. Fail fast on missing required configuration.
 4. Do not scatter `process.env.*` access across the codebase.
 5. Keep provider-specific config grouped and documented.
+6. Development-only helpers such as `AUTH_DEV_OTP_CODE` must never be treated as production credentials.
 
 ---
 

@@ -23,6 +23,11 @@ Forward-only SQL migrations.
 
 Deterministic seed scripts for reference data and initial platform state.
 
+Current execution entry points:
+
+- `npm run db:migrate`
+- `npm run db:seed`
+
 ### `docs/`
 
 Implementation registries for:

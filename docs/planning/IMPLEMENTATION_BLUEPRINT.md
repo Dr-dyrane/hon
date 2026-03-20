@@ -14,6 +14,7 @@ Read this together with:
 
 - `docs/planning/README_BIBLE.md`
 - `docs/planning/SCHEMA_BLUEPRINT.md`
+- `docs/planning/RENDEZVOUS_STATUS.md`
 
 ---
 
@@ -31,6 +32,22 @@ These assumptions are now treated as implementation constraints.
 8. The admin console is desktop and tablet first.
 9. The customer portal is full cross-device.
 10. Vercel remains the deployment surface, but the data model is not allowed to bend around Vercel convenience.
+
+---
+
+## 1A. Live Pass Tracker
+
+For the live implementation checkpoint, read:
+
+- `docs/planning/RENDEZVOUS_STATUS.md`
+
+That file records:
+
+- what is actually implemented
+- what pass is active
+- what is complete, open, or blocked across backend, admin, and portal
+- what still diverges from the locked plan
+- what sequence should be built next
 
 ---
 
@@ -158,7 +175,7 @@ Exit criteria:
 
 The current app has three important temporary patterns:
 
-- hardcoded catalog and content data in `src/lib/data.ts`
+- bootstrap marketing fallback data in `src/lib/marketing/bootstrap-data.mjs`
 - localStorage-only cart state in `CommerceProvider`
 - WhatsApp handoff as checkout
 

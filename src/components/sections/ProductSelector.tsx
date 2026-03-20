@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { SectionContainer } from "@/components/ui/SectionContainer";
-import { CATEGORIES, PRODUCTS, type ProductId } from "@/lib/data";
+import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
 import {
   SHOT_BUNDLE,
   formatNgn,
@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { useCommerce } from "@/components/providers/CommerceProvider";
 import { cn } from "@/lib/utils";
+import type { MarketingProduct, ProductId } from "@/lib/marketing/types";
 
 const Product3DViewer = dynamic(
   () =>
@@ -23,20 +24,12 @@ const Product3DViewer = dynamic(
   { ssr: false }
 );
 
-type Product = (typeof PRODUCTS)[ProductId];
-
-const PRODUCT_KEYS = Object.keys(PRODUCTS) as ProductId[];
-
-function getProductFlavor(product: Product) {
-  return "flavor" in product ? product.flavor : undefined;
+function getProductFlavor(product: MarketingProduct) {
+  return product.flavor;
 }
 
-function getProductStats(product: Product) {
-  return "stats" in product ? Object.entries(product.stats) : [];
-}
-
-function getCategoryLabel(categoryId: string) {
-  return CATEGORIES.find((category) => category.id === categoryId)?.name ?? categoryId;
+function getProductStats(product: MarketingProduct) {
+  return Object.entries(product.stats);
 }
 
 export function ProductSelector({
@@ -46,24 +39,32 @@ export function ProductSelector({
   isScrollingIntoSection: (sectionId: string) => boolean;
   isScrollingOutOfSection: (sectionId: string) => boolean;
 }) {
+  const { categories, categoriesById, homeSectionsByKey, productIds, productsById } =
+    useMarketingContent();
   const { resolvedTheme } = useTheme();
   const { addItem } = useCommerce();
-  const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
-  const [selectedProduct, setSelectedProduct] =
-    useState<ProductId>("protein_chocolate");
+  const selectorSettings = homeSectionsByKey.products?.settings as
+    | { defaultCategoryId?: string; defaultProductId?: ProductId }
+    | undefined;
+  const [activeCategory, setActiveCategory] = useState(
+    selectorSettings?.defaultCategoryId ?? categories[0].id
+  );
+  const [selectedProduct, setSelectedProduct] = useState<ProductId>(
+    selectorSettings?.defaultProductId ?? productIds[0]
+  );
   const deferredProduct = useDeferredValue(selectedProduct);
 
   const scrollActive = isScrollingIntoSection("shop");
   const isDark = resolvedTheme === "dark";
 
-  const filteredProducts = PRODUCT_KEYS.filter(
-    (key) => PRODUCTS[key].category === activeCategory
+  const filteredProducts = productIds.filter(
+    (key) => productsById[key].categoryId === activeCategory
   );
-  const activeProduct = PRODUCTS[selectedProduct];
-  const activeIsShot = isShotProduct(selectedProduct);
+  const activeProduct = productsById[selectedProduct];
+  const activeIsShot = isShotProduct(productsById, selectedProduct);
   const statEntries = getProductStats(activeProduct);
-  const pricing = getProductPriceSnapshot(selectedProduct);
-  const stageProduct = PRODUCTS[deferredProduct];
+  const pricing = getProductPriceSnapshot(productsById, selectedProduct);
+  const stageProduct = productsById[deferredProduct];
 
   return (
     <SectionContainer variant="white" id="shop">
@@ -84,15 +85,15 @@ export function ProductSelector({
             </motion.h2>
 
             <div className="mt-8 inline-flex flex-wrap items-center justify-center gap-2 rounded-full bg-system-background/75 p-2 shadow-[0_20px_60px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-2xl dark:bg-[rgba(18,20,18,0.78)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)]">
-              {CATEGORIES.map((cat) => (
+              {categories.map((category) => (
                 <button
-                  key={cat.id}
+                  key={category.id}
                   type="button"
                   onClick={() => {
-                    setActiveCategory(cat.id);
+                    setActiveCategory(category.id);
 
-                    const firstInCategory = PRODUCT_KEYS.find(
-                      (key) => PRODUCTS[key].category === cat.id
+                    const firstInCategory = productIds.find(
+                      (key) => productsById[key].categoryId === category.id
                     );
 
                     if (firstInCategory) {
@@ -101,12 +102,12 @@ export function ProductSelector({
                   }}
                   className={cn(
                     "rounded-full px-5 py-3 text-[10px] font-semibold uppercase tracking-headline transition-all duration-500 sm:px-6",
-                    activeCategory === cat.id
+                    activeCategory === category.id
                       ? "bg-label text-system-background shadow-[0_18px_40px_rgba(15,23,42,0.18)]"
                       : "text-secondary-label hover:bg-system-fill hover:text-label"
                   )}
                 >
-                  {cat.name}
+                  {category.name}
                 </button>
               ))}
             </div>
@@ -117,7 +118,7 @@ export function ProductSelector({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
-            className="relative mt-14 w-full overflow-hidden rounded-[40px] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,242,234,0.92)_100%)] p-2 sm:px-4 shadow-[0_40px_120px_rgba(15,23,42,0.10),inset_0_1px_0_rgba(255,255,255,0.84)] dark:bg-[linear-gradient(180deg,rgba(20,23,20,0.96)_0%,rgba(9,11,9,0.94)_100%)] dark:shadow-[0_40px_120px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-6 lg:p-8"
+            className="relative mt-14 w-full overflow-hidden rounded-[40px] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,242,234,0.92)_100%)] p-2 shadow-[0_40px_120px_rgba(15,23,42,0.10),inset_0_1px_0_rgba(255,255,255,0.84)] dark:bg-[linear-gradient(180deg,rgba(20,23,20,0.96)_0%,rgba(9,11,9,0.94)_100%)] dark:shadow-[0_40px_120px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-6 lg:p-8"
           >
             <div className="absolute -left-10 top-16 h-44 w-44 rounded-full bg-accent/12 blur-3xl dark:bg-accent/10" />
             <div className="absolute -right-8 bottom-16 h-52 w-52 rounded-full bg-black/6 blur-3xl dark:bg-white/6" />
@@ -126,10 +127,10 @@ export function ProductSelector({
               <div className="order-2 xl:order-1">
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                   {filteredProducts.map((key) => {
-                    const product = PRODUCTS[key];
+                    const product = productsById[key];
                     const productFlavor = getProductFlavor(product);
                     const isSelected = selectedProduct === key;
-                    const cardPricing = getProductPriceSnapshot(key);
+                    const cardPricing = getProductPriceSnapshot(productsById, key);
 
                     return (
                       <button
@@ -180,7 +181,7 @@ export function ProductSelector({
                                   : "text-secondary-label"
                               )}
                             >
-                              {getCategoryLabel(product.category)}
+                              {categoriesById[product.categoryId]?.name ?? product.categoryId}
                             </div>
 
                             <div className="mt-1 text-xl font-headline font-semibold tracking-title">
@@ -203,9 +204,7 @@ export function ProductSelector({
                             <div
                               className={cn(
                                 "mt-3 flex flex-wrap items-center gap-2 text-sm tracking-tight",
-                                isSelected
-                                  ? "text-system-background"
-                                  : "text-label"
+                                isSelected ? "text-system-background" : "text-label"
                               )}
                             >
                               <span className="font-semibold">
@@ -302,7 +301,8 @@ export function ProductSelector({
                   >
                     <div className="flex flex-wrap gap-2">
                       <span className="inline-flex w-fit rounded-full bg-accent/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-accent dark:bg-accent/15">
-                        {getCategoryLabel(activeProduct.category)}
+                        {categoriesById[activeProduct.categoryId]?.name ??
+                          activeProduct.categoryId}
                       </span>
                       {activeIsShot ? (
                         <span className="inline-flex w-fit rounded-full bg-system-fill px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
@@ -341,14 +341,14 @@ export function ProductSelector({
 
                       {activeIsShot ? (
                         <p className="mt-4 text-sm leading-relaxed tracking-body text-secondary-label">
-                          {SHOT_BUNDLE.unitCount} shots, {formatNgn(SHOT_BUNDLE.bundlePriceNgn)}.
+                          {SHOT_BUNDLE.unitCount} shots,{" "}
+                          {formatNgn(SHOT_BUNDLE.bundlePriceNgn)}.
                         </p>
                       ) : (
                         <p className="mt-4 text-sm leading-relaxed tracking-body text-secondary-label">
                           Single unit.
                         </p>
                       )}
-
                     </div>
 
                     {statEntries.length > 0 ? (

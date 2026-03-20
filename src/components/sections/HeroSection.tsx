@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/Button";
 import { BadgeList } from "@/components/ui/Badge";
 import Image from "next/image";
 import { useTheme } from "next-themes";
-import { PRODUCTS } from "@/lib/data";
+import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
 import { cn } from "@/lib/utils";
 import { ProductFallback } from "@/components/3d/ProductFallback";
+import type { ProductId } from "@/lib/marketing/types";
 
 const Product3DCarousel = dynamic(
   () =>
@@ -26,11 +27,15 @@ export function HeroSection({
   isScrollingIntoSection: (sectionId: string) => boolean;
   isScrollingOutOfSection: (sectionId: string) => boolean;
 }) {
+  const { homeSectionsByKey, productIds, productsById } = useMarketingContent();
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [enableHero3D, setEnableHero3D] = useState(false);
-  const [currentProduct, setCurrentProduct] =
-    useState<keyof typeof PRODUCTS>("protein_chocolate");
+  const heroSettings = homeSectionsByKey.hero?.settings as
+    | { badgeItems?: string[]; featuredProductId?: ProductId }
+    | undefined;
+  const defaultProductId = heroSettings?.featuredProductId ?? productIds[0];
+  const [currentProduct, setCurrentProduct] = useState<ProductId>(defaultProductId);
 
   useEffect(() => {
     setMounted(true);
@@ -131,7 +136,7 @@ export function HeroSection({
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                 className="block mt-4 sm:mt-6 text-secondary-label italic font-headline tracking-headline"
               >
-                {PRODUCTS[currentProduct].name}
+                {productsById[currentProduct]?.name}
               </motion.span>
             </AnimatePresence>
           </motion.h1>
@@ -173,7 +178,13 @@ export function HeroSection({
           </motion.div>
 
           <BadgeList
-            items={["Plant-Based", "Clean Ingredients", "Easy Digestion"]}
+            items={
+              heroSettings?.badgeItems ?? [
+                "Plant-Based",
+                "Clean Ingredients",
+                "Easy Digestion",
+              ]
+            }
             className="mt-16"
             animated
           />
@@ -193,7 +204,7 @@ export function HeroSection({
             {!enableHero3D && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <ProductFallback
-                  imagePath={PRODUCTS[currentProduct].image}
+                  imagePath={productsById[currentProduct]?.image ?? ""}
                   className="w-[78%] h-auto max-w-[360px] sm:max-w-[420px] lg:max-w-[460px]"
                   priority
                 />
@@ -203,7 +214,7 @@ export function HeroSection({
             {enableHero3D && (
               <Product3DCarousel
                 activeId={currentProduct}
-                onChange={(id) => setCurrentProduct(id as keyof typeof PRODUCTS)}
+                onChange={setCurrentProduct}
                 isDark={isDark}
               />
             )}

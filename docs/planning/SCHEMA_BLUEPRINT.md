@@ -252,22 +252,22 @@ Purpose:
 
 Columns:
 - `id uuid primary key`
-- `category_id uuid not null references product_categories(id)`
+- `category_id uuid null references product_categories(id)`
 - `slug text not null unique`
 - `name text not null`
-- `short_name text null`
-- `description text not null`
+- `marketing_name text null`
+- `tagline text null`
+- `short_description text not null`
+- `long_description text null`
 - `status text not null default 'draft'`
-- `is_featured boolean not null default false`
-- `feature_rank integer null`
-- `available_for_sale boolean not null default false`
+- `merchandising_state text not null default 'standard'`
+- `is_available boolean not null default false`
+- `sort_order integer not null default 0`
 - `created_at timestamptz not null`
 - `updated_at timestamptz not null`
 
 Indexes:
-- index on `category_id`
-- index on `status`
-- index on `is_featured, feature_rank`
+- index on `status, merchandising_state, is_available, sort_order, created_at`
 
 ### `product_variants`
 
@@ -280,23 +280,23 @@ Columns:
 - `sku text not null unique`
 - `slug text not null unique`
 - `name text not null`
-- `flavor text null`
 - `size_label text null`
 - `unit_label text null`
-- `description text null`
 - `price_ngn integer not null`
-- `compare_at_ngn integer null`
-- `cost_ngn integer null`
-- `track_inventory boolean not null default false`
-- `available_for_sale boolean not null default false`
+- `compare_at_price_ngn integer null`
+- `status text not null default 'draft'`
 - `is_default boolean not null default false`
 - `sort_order integer not null default 0`
+- `attributes jsonb not null default '{}'::jsonb`
 - `created_at timestamptz not null`
 - `updated_at timestamptz not null`
 
 Indexes:
-- index on `product_id`
-- index on `available_for_sale`
+- unique partial index on `product_id` where `is_default = true`
+- index on `product_id, status, sort_order`
+
+Notes:
+- `attributes` is bounded JSON for presentational data like flavor and stats, not an escape hatch for arbitrary catalog structure.
 
 ### `product_media`
 
@@ -309,14 +309,18 @@ Columns:
 - `variant_id uuid null references product_variants(id)`
 - `media_type text not null`
 - `storage_key text not null`
-- `public_url text not null`
 - `alt_text text null`
 - `sort_order integer not null default 0`
-- `breakpoint text null`
+- `is_primary boolean not null default false`
+- `metadata jsonb not null default '{}'::jsonb`
 - `created_at timestamptz not null`
+- `updated_at timestamptz not null`
 
 Constraint:
-- exactly one of `product_id` or `variant_id` must be present
+- at least one of `product_id` or `variant_id` must be present
+
+Notes:
+- the current marketing seed stores image and 3D model asset paths in `storage_key` and resolves them as app-local assets.
 
 ### `ingredients`
 
@@ -325,7 +329,10 @@ Columns:
 - `slug text not null unique`
 - `name text not null`
 - `detail text not null`
-- `image_url text null`
+- `benefit text null`
+- `sort_order integer not null default 0`
+- `image_path text null`
+- `aliases jsonb not null default '[]'::jsonb`
 - `created_at timestamptz not null`
 - `updated_at timestamptz not null`
 
@@ -334,7 +341,9 @@ Columns:
 Columns:
 - `variant_id uuid not null references product_variants(id)`
 - `ingredient_id uuid not null references ingredients(id)`
+- `label text null`
 - `sort_order integer not null default 0`
+- `created_at timestamptz not null`
 
 Primary key:
 - `variant_id, ingredient_id`
@@ -346,7 +355,7 @@ Columns:
 - `on_hand integer not null default 0`
 - `reserved integer not null default 0`
 - `reorder_threshold integer null`
-- `last_counted_at timestamptz null`
+- `created_at timestamptz not null`
 - `updated_at timestamptz not null`
 
 ---
@@ -365,8 +374,10 @@ Seed values:
 Columns:
 - `id uuid primary key`
 - `key text not null unique`
-- `label text not null`
+- `name text not null`
+- `description text null`
 - `created_at timestamptz not null`
+- `updated_at timestamptz not null`
 
 ### `page_versions`
 
@@ -376,7 +387,7 @@ Purpose:
 Columns:
 - `id uuid primary key`
 - `page_id uuid not null references pages(id)`
-- `version_name text not null`
+- `label text not null`
 - `status text not null default 'draft'`
 - `created_by_user_id uuid null references users(id)`
 - `published_by_user_id uuid null references users(id)`
@@ -385,7 +396,7 @@ Columns:
 - `updated_at timestamptz not null`
 
 Indexes:
-- index on `page_id, status`
+- unique partial index on `page_id` where `status = 'published'`
 
 ### `page_sections`
 
@@ -397,15 +408,19 @@ Columns:
 - `page_version_id uuid not null references page_versions(id)`
 - `section_key text not null`
 - `section_type text not null`
+- `eyebrow text null`
+- `heading text null`
+- `body text null`
+- `settings jsonb not null default '{}'::jsonb`
 - `is_enabled boolean not null default true`
 - `sort_order integer not null`
-- `content jsonb not null default '{}'::jsonb`
 - `created_at timestamptz not null`
 - `updated_at timestamptz not null`
 
 Notes:
 - `section_type` is restricted to approved module types.
-- `content` stores bounded fields only.
+- `settings` stores bounded fields only.
+- unique on `page_version_id, section_key`
 
 ### `page_section_presentations`
 
@@ -416,8 +431,7 @@ Columns:
 - `id uuid primary key`
 - `page_section_id uuid not null references page_sections(id)`
 - `breakpoint text not null`
-- `variant_key text not null`
-- `config jsonb not null default '{}'::jsonb`
+- `presentation jsonb not null default '{}'::jsonb`
 - `created_at timestamptz not null`
 - `updated_at timestamptz not null`
 
@@ -433,22 +447,29 @@ Columns:
 - `id uuid primary key`
 - `page_section_id uuid not null references page_sections(id)`
 - `entity_type text not null`
-- `entity_id uuid not null`
+- `entity_id uuid null`
+- `binding_key text null`
 - `sort_order integer not null default 0`
 - `metadata jsonb not null default '{}'::jsonb`
 - `created_at timestamptz not null`
+- `updated_at timestamptz not null`
+
+Notes:
+- `entity_type` is restricted to `product`, `review`, `page`, or `setting`.
 
 ### Approved section types
 
 Initial allowed section types:
 
 - `hero`
+- `problem_statement`
+- `science_strip`
 - `featured_products`
 - `ingredient_story`
 - `benefit_grid`
-- `social_proof`
-- `promo_banner`
+- `process_steps`
 - `delivery_reassurance`
+- `lifestyle_gallery`
 - `review_highlight`
 - `faq`
 - `final_cta`

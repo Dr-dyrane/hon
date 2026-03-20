@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, useScroll, AnimatePresence } from "framer-motion";
 import { Equal, ShoppingBag, X } from "lucide-react";
-import { NAVIGATION } from "@/lib/data";
+import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
@@ -12,6 +12,7 @@ import { useUI } from "@/components/providers/UIProvider";
 import { useCommerce } from "@/components/providers/CommerceProvider";
 
 export function Navbar() {
+  const { navigation } = useMarketingContent();
   const [isScrolled, setIsScrolled] = useState(false);
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useUI();
   const { itemCount, openCart } = useCommerce();
@@ -74,7 +75,7 @@ export function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center justify-center gap-6 lg:gap-8 w-1/2">
-            {NAVIGATION.map((item) => (
+            {navigation.map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
@@ -196,7 +197,7 @@ export function Navbar() {
               className="relative flex flex-col justify-center min-h-screen px-8"
             >
               <nav className="flex flex-col">
-                {NAVIGATION.map((item, index) => (
+                {navigation.map((item, index) => (
                   <motion.div
                     key={item.label}
                     initial={{ opacity: 0, x: -20 }}
@@ -228,7 +229,7 @@ export function Navbar() {
                 transition={{
                   duration: 0.5,
                   ease: [0.22, 1, 0.36, 1],
-                  delay: 0.1 + NAVIGATION.length * 0.06,
+                  delay: 0.1 + navigation.length * 0.06,
                 }}
                 className="mt-12 flex flex-col gap-8"
               >

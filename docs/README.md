@@ -11,6 +11,7 @@ The goal is that product, engineering, operations, and database rules are all re
 - [Platform Bible](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/README_BIBLE.md)
 - [Schema Blueprint](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/SCHEMA_BLUEPRINT.md)
 - [Implementation Blueprint](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/IMPLEMENTATION_BLUEPRINT.md)
+- [Rendezvous Pass Tracker](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/RENDEZVOUS_STATUS.md)
 - [End-To-End Flows](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/END_TO_END_FLOWS.md)
 - [State Machines](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/STATE_MACHINES.md)
 - [Screen Specifications](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/SCREEN_SPECS.md)
@@ -44,8 +45,9 @@ The goal is that product, engineering, operations, and database rules are all re
 1. Read the Platform Bible for the product and architecture direction.
 2. Read the Schema Blueprint for the relational model and domain boundaries.
 3. Read the Implementation Blueprint for the migration plan, route contracts, APIs, and permissions.
-4. Read the Environment and Vercel document before touching secrets or deployment configuration.
-5. Read the Database Operations document before adding any migrations, triggers, functions, or policies.
+4. Read the Rendezvous Pass Tracker for the current implementation checkpoint, active pass, and task ledger.
+5. Read the Environment and Vercel document before touching secrets or deployment configuration.
+6. Read the Database Operations document before adding any migrations, triggers, functions, or policies.
 
 ---
 
