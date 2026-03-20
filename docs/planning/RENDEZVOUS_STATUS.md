@@ -49,6 +49,7 @@ Current state:
 - guest carts now merge safely into signed-in carts
 - checkout and confirmation surfaces are tightened toward the marketing visual bar
 - admin delivery board now supports rider roster, assignment, and delivery-state actions from Aurora
+- review requests are created from delivered orders and both review surfaces now read and write against Aurora
 
 This means the system has crossed into operational platform work.
 
@@ -146,7 +147,7 @@ Deliverables:
 
 Status:
 
-- `not started`
+- `in progress`
 
 Deliverables:
 
@@ -210,6 +211,8 @@ Completed:
 - [x] converted-cart checkout recovery path
 - [x] checkout cart refresh path for expired or replaced carts
 - [x] delivery assignment schema and repository path
+- [x] review request and review schema
+- [x] review repository and moderation write path
 
 Open:
 
@@ -242,7 +245,7 @@ Open:
 - [x] settings surface
 - [x] delivery board
 - [x] assignment-aware delivery operations
-- [ ] review moderation
+- [x] review moderation
 - [ ] catalog creation and editing flows
 - [ ] availability and featured management actions
 - [ ] layout authoring flow
@@ -267,6 +270,7 @@ Completed:
 - [x] live checkout-to-account handoff for signed-in checkout
 - [x] guest confirmation route for checkout-created orders
 - [x] quieter order history and confirmation surfaces
+- [x] review history
 
 Open:
 
@@ -390,10 +394,10 @@ The active build block is Pass 5: admin console expansion.
 
 Implement in this order:
 
-1. Add review moderation.
-2. Add richer catalog mutation flows.
-3. Add layout authoring and publishing.
-4. Add delivery tracking ingestion.
+1. Add richer catalog mutation flows.
+2. Add layout authoring and publishing.
+3. Add delivery tracking ingestion.
+4. Add addresses and profile.
 
 After that:
 

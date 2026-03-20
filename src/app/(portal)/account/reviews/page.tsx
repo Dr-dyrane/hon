@@ -1,58 +1,142 @@
-import { ScaffoldPage } from "@/components/shell/ScaffoldPage";
+import { requireAuthenticatedSession } from "@/lib/auth/guards";
+import {
+  listPendingReviewsForPortal,
+  listReviewsForPortal,
+} from "@/lib/db/repositories/review-repository";
+import { PortalReviewComposer } from "@/components/reviews/PortalReviewComposer";
 
-export default function ReviewsPage() {
+function formatTimestamp(value?: string | null) {
+  if (!value) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function formatStatusLabel(value: string) {
+  return value.replace(/_/g, " ");
+}
+
+export default async function ReviewsPage() {
+  const session = await requireAuthenticatedSession("/account/reviews");
+  const [pendingReviews, reviews] = await Promise.all([
+    listPendingReviewsForPortal(session.email),
+    listReviewsForPortal(session.email),
+  ]);
+  const approvedCount = reviews.filter((review) => review.status === "approved").length;
+
   return (
-    <ScaffoldPage
-      badge="Reviews"
-      title="Pending ratings and submitted feedback."
-      description="Reviews are customer trust signals and operational feedback. This route will handle the post-delivery review lifecycle while keeping moderation in admin."
-      primaryAction={{ href: "/account/orders", label: "Open Orders" }}
-      summary={[
-        {
-          label: "Policy",
-          value: "Pre-Moderated",
-          detail: "New reviews remain moderated before becoming visible as trust content.",
-        },
-        {
-          label: "Eligibility",
-          value: "Delivered Only",
-          detail: "Domain rules block review attempts before successful delivery.",
-        },
-        {
-          label: "Model",
-          value: "One Per Order",
-          detail: "Each delivered order maps to one canonical review unless edits are explicitly added later.",
-        },
-      ]}
-      sections={[
-        {
-          title: "Customer Experience",
-          description: "The flow should stay short and respectful.",
-          items: [
-            "Pending review requests list",
-            "Star-first input model",
-            "Optional text feedback",
-          ],
-        },
-        {
-          title: "Admin Relationship",
-          description: "This route feeds the moderation queue and later homepage bindings.",
-          items: [
-            "Review requests created on delivery",
-            "Moderation in admin",
-            "Featured review eligibility after approval",
-          ],
-        },
-        {
-          title: "Brand Intent",
-          description: "The system keeps trust signals structured instead of bolted on later.",
-          items: [
-            "Quiet customer prompt",
-            "Operational quality signal",
-            "Merchandising value for the marketing site",
-          ],
-        },
-      ]}
-    />
+    <div className="space-y-8">
+      <section className="glass-morphism rounded-[36px] bg-system-background/86 p-6 shadow-[0_28px_90px_rgba(15,23,42,0.08)]">
+        <div className="flex flex-col gap-1">
+          <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+            Reviews
+          </p>
+          <h2 className="text-3xl font-bold tracking-display text-label">Your reviews</h2>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
+              Pending
+            </p>
+            <p className="mt-2 text-4xl font-semibold text-label">
+              {pendingReviews.length}
+            </p>
+          </article>
+          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
+              Submitted
+            </p>
+            <p className="mt-2 text-4xl font-semibold text-label">{reviews.length}</p>
+          </article>
+          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
+              Approved
+            </p>
+            <p className="mt-2 text-4xl font-semibold text-label">{approvedCount}</p>
+          </article>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+          Pending
+        </div>
+        {pendingReviews.length === 0 ? (
+          <div className="glass-morphism rounded-[32px] bg-system-background/80 p-6 text-sm text-secondary-label shadow-soft">
+            Nothing to rate.
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {pendingReviews.map((request) => (
+              <PortalReviewComposer
+                key={request.requestId}
+                orderId={request.orderId}
+                orderNumber={request.orderNumber}
+                completedAt={formatTimestamp(request.completedAt)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+          Submitted
+        </div>
+        {reviews.length === 0 ? (
+          <div className="glass-morphism rounded-[32px] bg-system-background/80 p-6 text-sm text-secondary-label shadow-soft">
+            No reviews yet.
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {reviews.map((review) => (
+              <article
+                key={review.reviewId}
+                className="glass-morphism rounded-[32px] bg-system-background/78 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-headline text-secondary-label">
+                      #{review.orderNumber}
+                    </div>
+                    <div className="mt-1 text-2xl font-semibold text-label">
+                      {review.rating}/5
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                      {formatStatusLabel(review.status)}
+                    </span>
+                    {review.isFeatured ? (
+                      <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                        Featured
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                {review.title ? (
+                  <div className="mt-4 text-lg font-semibold tracking-tight text-label">
+                    {review.title}
+                  </div>
+                ) : null}
+                {review.body ? (
+                  <div className="mt-2 text-sm text-secondary-label">{review.body}</div>
+                ) : null}
+
+                <div className="mt-4 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                  {formatTimestamp(review.createdAt)}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   );
 }

@@ -288,3 +288,40 @@ export type PaymentProofRow = {
   submittedByEmail: string | null;
   createdAt: string;
 };
+
+export type PortalPendingReview = {
+  requestId: string;
+  orderId: string;
+  orderNumber: string;
+  completedAt: string;
+  customerName: string;
+};
+
+export type PortalReviewRow = {
+  reviewId: string;
+  orderId: string;
+  orderNumber: string;
+  rating: number;
+  title: string | null;
+  body: string | null;
+  status: string;
+  isFeatured: boolean;
+  createdAt: string;
+  moderatedAt: string | null;
+};
+
+export type AdminReviewRow = {
+  reviewId: string;
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  customerEmail: string | null;
+  rating: number;
+  title: string | null;
+  body: string | null;
+  status: string;
+  isFeatured: boolean;
+  createdAt: string;
+  moderatedAt: string | null;
+  moderatedByEmail: string | null;
+};

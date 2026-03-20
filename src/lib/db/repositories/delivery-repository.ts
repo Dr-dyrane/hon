@@ -30,6 +30,7 @@ const DELIVERY_TRANSITIONS: Record<string, readonly string[]> = {
 
 type MutableOrderState = {
   orderId: string;
+  userId: string | null;
   status: string;
   fulfillmentStatus: string;
 };
@@ -97,6 +98,7 @@ async function getMutableOrderStateForUpdate(
     `
       select
         id as "orderId",
+        user_id as "userId",
         status,
         fulfillment_status as "fulfillmentStatus"
       from app.orders
@@ -253,6 +255,38 @@ async function appendOrderStatusEventIfChanged(
       input.note,
       JSON.stringify(input.metadata ?? {}),
     ]
+  );
+}
+
+async function createReviewRequestIfNeeded(
+  queryFn: typeof query,
+  input: {
+    orderId: string;
+    userId: string | null;
+  }
+) {
+  await queryFn(
+    `
+      insert into app.review_requests (
+        order_id,
+        user_id,
+        status,
+        sent_at,
+        completed_at,
+        expires_at
+      )
+      values (
+        $1,
+        $2,
+        'pending',
+        timezone('utc', now()),
+        null,
+        timezone('utc', now()) + interval '30 days'
+      )
+      on conflict (order_id)
+      do nothing
+    `,
+    [input.orderId, input.userId]
   );
 }
 
@@ -764,6 +798,13 @@ export async function updateDeliveryAssignmentStatus(input: {
       actorEmail: input.actorEmail,
       note: input.note,
     });
+
+    if (input.nextStatus === "delivered") {
+      await createReviewRequestIfNeeded(queryFn, {
+        orderId: assignment.orderId,
+        userId: order.userId,
+      });
+    }
 
     await appendDeliveryEvent(queryFn, {
       orderId: assignment.orderId,

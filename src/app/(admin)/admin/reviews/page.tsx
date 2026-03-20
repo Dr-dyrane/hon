@@ -1,58 +1,138 @@
-import { ScaffoldPage } from "@/components/shell/ScaffoldPage";
+import Link from "next/link";
+import { requireAdminSession } from "@/lib/auth/guards";
+import { listReviewsForAdmin } from "@/lib/db/repositories/review-repository";
+import { AdminReviewModerationCard } from "@/components/reviews/AdminReviewModerationCard";
 
-export default function AdminReviewsPage() {
+function formatTimestamp(value?: string | null) {
+  if (!value) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function formatStatusLabel(value: string) {
+  return value.replace(/_/g, " ");
+}
+
+export default async function AdminReviewsPage() {
+  await requireAdminSession("/admin/reviews");
+  const reviews = await listReviewsForAdmin();
+  const pendingCount = reviews.filter((review) => review.status === "pending").length;
+  const approvedCount = reviews.filter((review) => review.status === "approved").length;
+  const featuredCount = reviews.filter((review) => review.isFeatured).length;
+
   return (
-    <ScaffoldPage
-      badge="Reviews"
-      title="Moderation and trust merchandising."
-      description="This route will moderate incoming reviews, manage featured trust content, and keep the brand signal clean before anything reaches the marketing site."
-      primaryAction={{ href: "/account/reviews", label: "Portal Review Surface" }}
-      summary={[
-        {
-          label: "Policy",
-          value: "Pre-Moderated",
-          detail: "The review lifecycle is intentionally moderated before public exposure.",
-        },
-        {
-          label: "Source",
-          value: "Delivered Orders",
-          detail: "Only delivered orders generate review requests and valid review submissions.",
-        },
-        {
-          label: "Outcome",
-          value: "Featured Trust",
-          detail: "Approved reviews can later power social proof sections on the storefront.",
-        },
-      ]}
-      sections={[
-        {
-          title: "Moderation Model",
-          description: "Operators need enough context to make high-confidence moderation decisions.",
-          items: [
-            "Review content",
-            "Source order snapshot",
-            "Approve, hide, or feature controls",
-          ],
-        },
-        {
-          title: "Brand Control",
-          description: "Review handling should align with the premium positioning of the brand.",
-          items: [
-            "No auto-publish at launch",
-            "Clear featured pathway",
-            "Review history remains auditable",
-          ],
-        },
-        {
-          title: "System Fit",
-          description: "This route closes the loop between delivery and social proof.",
-          items: [
-            "Review request after delivery",
-            "Moderation in admin",
-            "Binding into layout sections later",
-          ],
-        },
-      ]}
-    />
+    <div className="space-y-8">
+      <section className="glass-morphism rounded-[36px] bg-system-background/86 p-6 shadow-[0_28px_90px_rgba(15,23,42,0.08)]">
+        <div className="flex flex-col gap-1">
+          <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+            Reviews
+          </p>
+          <h2 className="text-3xl font-bold tracking-display text-label">
+            Moderation
+          </h2>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
+              Pending
+            </p>
+            <p className="mt-2 text-4xl font-semibold text-label">{pendingCount}</p>
+          </article>
+          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
+              Approved
+            </p>
+            <p className="mt-2 text-4xl font-semibold text-label">{approvedCount}</p>
+          </article>
+          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
+              Featured
+            </p>
+            <p className="mt-2 text-4xl font-semibold text-label">{featuredCount}</p>
+          </article>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        {reviews.length === 0 ? (
+          <div className="glass-morphism rounded-[32px] bg-system-background/80 p-6 text-sm text-secondary-label shadow-soft">
+            No reviews yet.
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {reviews.map((review) => (
+              <article
+                key={review.reviewId}
+                className="glass-morphism rounded-[32px] bg-system-background/78 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-headline text-secondary-label">
+                      #{review.orderNumber}
+                    </div>
+                    <div className="mt-1 text-2xl font-semibold text-label">
+                      {review.rating}/5
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                      {formatStatusLabel(review.status)}
+                    </span>
+                    {review.isFeatured ? (
+                      <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                        Featured
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 text-sm text-secondary-label md:grid-cols-[1fr_auto]">
+                  <div>
+                    <div className="font-semibold text-label">{review.customerName}</div>
+                    <div>{review.customerEmail ?? "No email"}</div>
+                  </div>
+                  <div className="md:text-right">
+                    <Link
+                      href={`/admin/orders/${review.orderId}`}
+                      className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
+                    >
+                      Open order
+                    </Link>
+                  </div>
+                </div>
+
+                {review.title ? (
+                  <div className="mt-4 text-lg font-semibold tracking-tight text-label">
+                    {review.title}
+                  </div>
+                ) : null}
+                {review.body ? (
+                  <div className="mt-2 text-sm text-secondary-label">{review.body}</div>
+                ) : null}
+
+                <div className="mt-4 flex flex-wrap items-center gap-3 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                  <span>{formatTimestamp(review.createdAt)}</span>
+                  {review.moderatedAt ? (
+                    <span>{formatTimestamp(review.moderatedAt)}</span>
+                  ) : null}
+                </div>
+
+                <AdminReviewModerationCard
+                  reviewId={review.reviewId}
+                  status={review.status}
+                  isFeatured={review.isFeatured}
+                />
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
