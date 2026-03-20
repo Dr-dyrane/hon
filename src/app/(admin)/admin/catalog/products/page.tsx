@@ -1,76 +1,84 @@
-import { ScaffoldPage } from "@/components/shell/ScaffoldPage";
-import { formatNgn } from "@/lib/commerce";
+import Link from "next/link";
+import { FileStack, LayoutTemplate, Package2, Plus, Sparkles, Store } from "lucide-react";
+import { MetricRail } from "@/components/admin/MetricRail";
+import { CatalogProductBoard } from "@/components/admin/catalog/CatalogProductBoard";
 import { listAllAdminCatalogProducts } from "@/lib/db/repositories/catalog-admin-repository";
 
 export default async function AdminProductsPage() {
   const products = await listAllAdminCatalogProducts();
+  const liveProducts = products.filter((product) => product.isAvailable);
   const featuredProducts = products.filter(
     (product) => product.merchandisingState === "featured"
   );
-  const availableProducts = products.filter((product) => product.isAvailable);
-  const powderProducts = products.filter(
-    (product) => product.categoryName?.toLowerCase() === "powders"
-  );
-  const shotProducts = products.filter(
-    (product) => product.categoryName?.toLowerCase() === "health shots"
-  );
+  const draftProducts = products.filter((product) => product.status === "draft");
 
   return (
-    <ScaffoldPage
-      badge="Catalog"
-      title="Products are now reading from Aurora."
-      description="This route is no longer just a placeholder. It reflects the current seeded catalog state that the storefront can resolve through the shared data layer."
-      primaryAction={{ href: "/admin/catalog/products/preview-product", label: "Open Product Editor" }}
-      secondaryAction={{ href: "/admin/layout", label: "Open Layout" }}
-      summary={[
-        {
-          label: "Products",
-          value: products.length.toString(),
-          detail: "All products (draft, active, archived) are now visible here to provide a complete operational view of the catalog.",
-        },
-        {
-          label: "Available",
-          value: availableProducts.length.toString(),
-          detail: "Availability remains separate from featured merchandising on purpose.",
-        },
-        {
-          label: "Featured",
-          value: featuredProducts.length.toString(),
-          detail: "Featured state is now measurable from the live catalog instead of being implied in static code.",
-        },
-      ]}
-      sections={[
-        {
-          title: "Powder Line",
-          description: "Primary products for longer-session nutrition.",
-          items:
-            powderProducts.length > 0
-              ? powderProducts.map(
-                  (product) =>
-                    `${product.productMarketingName ?? product.productName}, ${formatNgn(product.priceNgn)}, ${product.ingredientCount} ingredients`
-                )
-              : ["No powder products are currently active."],
-        },
-        {
-          title: "Shot Line",
-          description: "Fast-turn products that later need bundle-aware operations.",
-          items:
-            shotProducts.length > 0
-              ? shotProducts.map(
-                  (product) =>
-                    `${product.productName}, ${formatNgn(product.priceNgn)}, ${product.ingredientCount} ingredients`
-                )
-              : ["No health shots are currently active."],
-        },
-        {
-          title: "Merchandising Control",
-          description: "This is the current live business state, not aspirational copy.",
-          items: products.map((product) => {
-            const stateLabel = product.isAvailable ? "available" : "not available";
-            return `${product.productMarketingName ?? product.productName}, ${product.merchandisingState}, ${stateLabel}`;
-          }),
-        },
-      ]}
-    />
+    <div className="space-y-8 pb-20 md:space-y-10">
+      <header className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4 min-[1500px]:flex-row min-[1500px]:items-end min-[1500px]:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-secondary-label">
+              Catalog
+            </p>
+            <h1 className="mt-2 text-4xl font-bold tracking-display text-label md:text-5xl">
+              Products
+            </h1>
+            <p className="mt-3 text-sm text-secondary-label md:text-base">
+              Create, stock, feature.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/admin/layout"
+              className="flex min-h-[42px] items-center gap-2 rounded-[20px] bg-system-fill/42 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label transition-all hover:bg-system-fill/58"
+            >
+              <LayoutTemplate size={15} />
+              <span>Layout</span>
+            </Link>
+            <Link
+              href="/admin/catalog/products/new"
+              className="button-primary min-h-[42px] gap-2 px-4 text-[11px] font-semibold uppercase tracking-[0.16em]"
+            >
+              <Plus size={15} />
+              <span>New</span>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <MetricRail
+        items={[
+          {
+            label: "Products",
+            value: products.length.toString(),
+            detail: `${liveProducts.length} live`,
+            icon: Package2,
+          },
+          {
+            label: "Live",
+            value: liveProducts.length.toString(),
+            detail: "Available now",
+            icon: Store,
+            tone: "success",
+          },
+          {
+            label: "Featured",
+            value: featuredProducts.length.toString(),
+            detail: "Homepage ready",
+            icon: Sparkles,
+          },
+          {
+            label: "Drafts",
+            value: draftProducts.length.toString(),
+            detail: "Need review",
+            icon: FileStack,
+          },
+        ]}
+        columns={4}
+      />
+
+      <CatalogProductBoard products={products} />
+    </div>
   );
 }

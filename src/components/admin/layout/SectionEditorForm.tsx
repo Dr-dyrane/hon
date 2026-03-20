@@ -2,190 +2,193 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type AdminLayoutSection } from "@/lib/db/types";
 import { updateSectionAction } from "@/app/(admin)/admin/layout/actions";
-import { 
-  Save, 
-  AlertCircle, 
-  CheckCircle2, 
-  Type, 
-  Eye, 
-  EyeOff,
-  Settings
-} from "lucide-react";
 
-export function SectionEditorForm({ section }: { section: AdminLayoutSection }) {
+export function SectionEditorForm({
+  section,
+}: {
+  section: AdminLayoutSection;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageTone, setMessageTone] = useState<"success" | "error" | null>(null);
   const [isEnabled, setIsEnabled] = useState(section.isEnabled);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(null);
-    setSuccess(false);
+    setMessage(null);
+    setMessageTone(null);
 
     const formData = new FormData(event.currentTarget);
     formData.set("isEnabled", isEnabled.toString());
-    
+
     startTransition(async () => {
       const result = await updateSectionAction(formData);
-      if (result.success) {
-        setSuccess(true);
-        router.refresh();
-      } else {
-        setError(result.error || "An unexpected error occurred.");
+
+      if (!result.success) {
+        setMessage(result.error || "Unable to save.");
+        setMessageTone("error");
+        return;
       }
+
+      setMessage("Saved.");
+      setMessageTone("success");
+      router.refresh();
     });
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 pb-20">
+    <form onSubmit={handleSubmit} className="space-y-6 pb-24">
       <input type="hidden" name="sectionId" value={section.sectionId} />
-      
-      {/* Feedback Toast */}
-      {(success || error) && (
-        <div className={cn(
-          "fixed bottom-8 right-8 z-50 flex items-center gap-3 rounded-2xl px-6 py-4 shadow-float animate-in fade-in slide-in-from-bottom-4 duration-300",
-          success ? "bg-accent/10 text-accent backdrop-blur-xl" : "bg-red-500/10 text-red-500 backdrop-blur-xl"
-        )}>
-          {success ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-          <span className="text-sm font-medium">
-            {success ? "Section updated successfully" : error}
-          </span>
-        </div>
-      )}
 
-      <div className="liquid-glass flex items-center justify-between bg-system-background/60 p-6 transition-all">
-        <div className="flex items-center gap-4">
-          <div className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
-            isEnabled ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500"
-          )}>
-            {isEnabled ? <Eye size={18} /> : <EyeOff size={18} />}
-          </div>
-          <div>
-            <h3 className="text-base font-bold tracking-tight text-label">Visibility</h3>
-            <p className="text-xs text-secondary-label">
-              {isEnabled ? "Shown when published." : "Hidden when published."}
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => setIsEnabled(!isEnabled)}
-          className={cn(
-            "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent/20",
-            isEnabled ? "bg-accent" : "bg-system-fill"
-          )}
-        >
-          <span className={cn(
-            "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-            isEnabled ? "translate-x-5" : "translate-x-0"
-          )} />
-        </button>
-      </div>
-
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-8">
-          <EditorSection 
-            title="Content" 
-            description="Copy"
-            icon={<Type size={20} className="text-accent" />}
-          >
-            <div className="space-y-6">
-              <InputGroup label="Eyebrow Label" name="eyebrow" defaultValue={section.eyebrow || ""} placeholder="e.g. NEW ARRIVAL" />
-              <InputGroup label="Primary Heading" name="heading" defaultValue={section.heading || ""} placeholder="e.g. Elevate Your Energy" />
-              <TextAreaGroup label="Section Body" name="body" defaultValue={section.body || ""} rows={4} placeholder="Detailed description or supporting copy..." />
+      <div className="grid gap-6 min-[1500px]:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="space-y-6">
+          <EditorSection title="Content">
+            <div className="space-y-4">
+              <InputGroup
+                label="Eyebrow"
+                name="eyebrow"
+                defaultValue={section.eyebrow || ""}
+              />
+              <InputGroup
+                label="Heading"
+                name="heading"
+                defaultValue={section.heading || ""}
+              />
+              <TextAreaGroup
+                label="Body"
+                name="body"
+                defaultValue={section.body || ""}
+                rows={5}
+              />
             </div>
           </EditorSection>
         </div>
 
-        <div className="space-y-8">
-          <EditorSection 
-            title="Settings" 
-            description="Read only"
-            icon={<Settings size={20} className="text-accent" />}
-          >
-            <div className="space-y-6 opacity-60 pointer-events-none">
-              <InputGroup label="Section Type" value={section.sectionType} readOnly />
-              <InputGroup label="Sort Order" value={section.sortOrder} readOnly />
-            </div>
-            <div className="mt-6 rounded-[24px] bg-system-fill/50 p-4">
-              <p className="text-[10px] font-medium leading-relaxed text-amber-600/80">
-                Structure changes stay in code.
-              </p>
+        <aside className="space-y-4">
+          <EditorSection title="State">
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setIsEnabled((current) => !current)}
+                className="flex min-h-[48px] w-full items-center justify-between rounded-[20px] bg-system-fill/42 px-4 text-left"
+              >
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
+                    Visibility
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-label">
+                    {isEnabled ? "Shown" : "Hidden"}
+                  </p>
+                </div>
+                <span
+                  className={cn(
+                    "inline-flex min-w-[58px] justify-center rounded-full px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.16em]",
+                    isEnabled
+                      ? "bg-emerald-500/10 text-emerald-600"
+                      : "bg-system-fill/52 text-secondary-label"
+                  )}
+                >
+                  {isEnabled ? "On" : "Off"}
+                </span>
+              </button>
+
+              <SignalCard label="Type" value={section.sectionType} />
+              <SignalCard label="Sort" value={`${section.sortOrder}`} />
             </div>
           </EditorSection>
-        </div>
+        </aside>
       </div>
 
-      <div className="sticky bottom-8 z-40 mt-12 flex justify-end">
-        <button
-          type="submit"
-          disabled={isPending}
-          className={cn(
-            "button-primary h-14 min-w-[200px] gap-3 px-8 text-xs font-bold uppercase tracking-widest transition-all hover:scale-105 active:scale-95",
-            isPending && "opacity-50 pointer-events-none"
-          )}
-        >
-          {isPending ? (
-            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white" />
-          ) : (
-            <Save size={18} />
-          )}
-          {isPending ? "Saving..." : "Save"}
-        </button>
+      <div className="sticky bottom-6 z-30">
+        <div className="flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/56 px-4 py-3 shadow-[0_12px_24px_rgba(15,23,42,0.06)] backdrop-blur-xl">
+          <p
+            className={cn(
+              "text-xs font-medium",
+              messageTone === "success" && "text-accent",
+              messageTone === "error" && "text-red-500",
+              !messageTone && "text-secondary-label"
+            )}
+          >
+            {message ?? "Draft safe."}
+          </p>
+          <button
+            type="submit"
+            disabled={isPending}
+            className={cn(
+              "button-primary min-h-[44px] min-w-[144px] gap-2 px-5 text-[11px] font-semibold uppercase tracking-[0.16em]",
+              isPending && "pointer-events-none opacity-50"
+            )}
+          >
+            <Save size={16} />
+            <span>{isPending ? "Saving" : "Save"}</span>
+          </button>
+        </div>
       </div>
     </form>
   );
 }
 
-function EditorSection({ title, description, icon, children }: { title: string; description: string; icon: React.ReactNode; children: React.ReactNode }) {
+function EditorSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="liquid-glass bg-system-background/60 p-8 md:p-10">
-      <div className="mb-8 flex items-start gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-system-fill/50">
-          {icon}
-        </div>
-        <div>
-          <h3 className="text-xl font-bold tracking-title text-label">{title}</h3>
-          <p className="mt-1 text-sm text-secondary-label">{description}</p>
-        </div>
-      </div>
-      <div>{children}</div>
+    <section className="rounded-[28px] bg-system-background/86 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
+      <h2 className="text-lg font-semibold tracking-tight text-label">{title}</h2>
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+function SignalCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[20px] bg-system-fill/42 px-4 py-3">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-medium text-label">{value}</p>
     </div>
   );
 }
 
-function InputGroup({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+function InputGroup({
+  label,
+  className,
+  ...props
+}: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <div className="space-y-2">
-      <label className="text-[10px] font-bold uppercase tracking-widest text-secondary-label ml-1">
+    <div className={cn("space-y-2", className)}>
+      <label className="ml-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
         {label}
       </label>
       <input
         {...props}
-        className={cn(
-          "flex w-full rounded-2xl bg-system-fill/40 px-5 py-4 text-sm text-label transition-all focus:bg-system-fill/60 focus:ring-2 focus:ring-accent/20",
-          props.className
-        )}
+        className="flex min-h-[48px] w-full rounded-[20px] bg-system-fill/42 px-4 text-sm text-label outline-none transition-all placeholder:text-tertiary-label focus:bg-system-fill/58"
       />
     </div>
   );
 }
 
-function TextAreaGroup({ label, ...props }: { label: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+function TextAreaGroup({
+  label,
+  ...props
+}: { label: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-bold uppercase tracking-widest text-secondary-label ml-1">
+      <label className="ml-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
         {label}
       </label>
       <textarea
         {...props}
-        className="flex w-full resize-none rounded-2xl bg-system-fill/40 px-5 py-4 text-sm text-label transition-all focus:bg-system-fill/60 focus:ring-2 focus:ring-accent/20"
+        className="flex w-full resize-none rounded-[20px] bg-system-fill/42 px-4 py-3 text-sm text-label outline-none transition-all placeholder:text-tertiary-label focus:bg-system-fill/58"
       />
     </div>
   );

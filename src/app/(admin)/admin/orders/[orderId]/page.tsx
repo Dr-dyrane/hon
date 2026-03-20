@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { WorkspaceContextPanel } from "@/components/shell/WorkspaceContextPanel";
 import { formatNgn } from "@/lib/commerce";
 import { requireAdminSession } from "@/lib/auth/guards";
 import {
@@ -24,21 +25,13 @@ const statusLabelMap: Record<string, string> = {
 
 function formatTimestamp(value?: string | null) {
   if (!value) {
-    return "—";
+    return "-";
   }
 
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
-}
-
-function StatusBadge({ value }: { value: string }) {
-  return (
-    <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[11px] font-semibold tracking-tight text-secondary-label">
-      {statusLabelMap[value] ?? value.replace(/_/g, " ")}
-    </span>
-  );
 }
 
 export default async function AdminOrderDetailPage({
@@ -72,45 +65,36 @@ export default async function AdminOrderDetailPage({
 
   return (
     <div className="space-y-8">
-      <section className="glass-morphism rounded-[36px] bg-system-background/86 p-6 shadow-[0_28px_90px_rgba(15,23,42,0.08)]">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-              Order
-            </p>
-            <h2 className="text-3xl font-semibold tracking-title text-label">
-              #{order.orderNumber}
-            </h2>
-          </div>
-          <div className="flex gap-2">
-            <StatusBadge value={order.paymentStatus} />
-            <StatusBadge value={order.status} />
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-3 text-sm text-secondary-label">
-          <div>
-            <p className="font-semibold text-label">Customer</p>
-            <p>{order.customerName}</p>
-            <p className="text-xs">{order.customerEmail ?? "No email"}</p>
-            <p className="text-xs">{order.customerPhone}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-label">Totals</p>
-            <p>{formatNgn(order.totalNgn)}</p>
-            <p className="text-xs">
-              placed {formatTimestamp(order.placedAt)}
-            </p>
-          </div>
-          <div>
-            <p className="font-semibold text-label">Transfer</p>
-            <p>{order.transferReference}</p>
-            <p className="text-xs">
-              deadline {formatTimestamp(order.transferDeadlineAt)}
-            </p>
-          </div>
-        </div>
-      </section>
+      <WorkspaceContextPanel
+        title={`#${order.orderNumber}`}
+        detail={order.customerName}
+        tags={[
+          { label: statusLabelMap[order.paymentStatus] ?? order.paymentStatus },
+          { label: statusLabelMap[order.status] ?? order.status },
+        ]}
+        meta={[
+          {
+            label: "Customer",
+            value: order.customerEmail ? `${order.customerName} · ${order.customerEmail}` : order.customerName,
+          },
+          {
+            label: "Contact",
+            value: order.customerPhone,
+          },
+          {
+            label: "Total",
+            value: `${formatNgn(order.totalNgn)} · ${formatTimestamp(order.placedAt)}`,
+          },
+          {
+            label: "Transfer",
+            value: order.transferReference,
+          },
+          {
+            label: "Deadline",
+            value: formatTimestamp(order.transferDeadlineAt),
+          },
+        ]}
+      />
 
       <section className="glass-morphism rounded-[32px] bg-system-background/78 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
         <div className="flex items-center justify-between">
@@ -168,9 +152,10 @@ export default async function AdminOrderDetailPage({
         </p>
         <div className="mt-4 space-y-3 text-sm text-secondary-label">
           {reviews.map((review) => (
-            <div key={review.eventId} className="flex justify-between">
+            <div key={review.eventId} className="flex justify-between gap-4">
               <span>
-                {review.action.replace(/_/g, " ")} {review.note ? `– ${review.note}` : ""}
+                {review.action.replace(/_/g, " ")}
+                {review.note ? ` - ${review.note}` : ""}
               </span>
               <span>{formatTimestamp(review.createdAt)}</span>
             </div>

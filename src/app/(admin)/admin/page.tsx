@@ -1,75 +1,218 @@
-import { ScaffoldPage } from "@/components/shell/ScaffoldPage";
+import type { ReactNode } from "react";
+import Link from "next/link";
+import { Clock3, CreditCard, Layers3, Sparkles } from "lucide-react";
+import { MetricRail } from "@/components/admin/MetricRail";
 import {
   getAdminHomeLayoutSummary,
   getAdminOverviewMetrics,
 } from "@/lib/db/repositories/admin-repository";
 import { listAllAdminCatalogProducts } from "@/lib/db/repositories/catalog-admin-repository";
-import { serverEnv } from "@/lib/config/server";
+import {
+  listOrdersForAdmin,
+  listPaymentsForAdmin,
+} from "@/lib/db/repositories/orders-repository";
+
+function formatStatusLabel(value: string) {
+  return value.replace(/_/g, " ");
+}
 
 export default async function AdminPage() {
-  const [metrics, layoutSummary, products] = await Promise.all([
+  const [metrics, layoutSummary, products, orders, payments] = await Promise.all([
     getAdminOverviewMetrics(),
     getAdminHomeLayoutSummary(),
     listAllAdminCatalogProducts(),
+    listOrdersForAdmin(12),
+    listPaymentsForAdmin(12),
   ]);
-  const featuredProducts = products
-    .filter((product) => product.merchandisingState === "featured")
-    .map((product) => product.productMarketingName ?? product.productName);
-  const availableProducts = products
-    .filter((product) => product.isAvailable)
-    .map((product) => product.productMarketingName ?? product.productName);
+
+  const activeOrders = orders.filter(
+    (order) => !["delivered", "cancelled", "expired"].includes(order.status)
+  ).length;
+  const paymentAttention = payments.filter((payment) =>
+    ["submitted", "under_review"].includes(payment.status)
+  ).length;
+  const featuredProducts = products.filter(
+    (product) => product.merchandisingState === "featured"
+  );
+  const urgentOrders = orders.filter((order) =>
+    ["awaiting_transfer", "payment_under_review", "ready_for_dispatch"].includes(order.status)
+  );
 
   return (
-    <ScaffoldPage
-      badge="Admin Overview"
-      title="Operations now have live platform context."
-      description={`The admin access list starts with ${serverEnv.auth.adminEmails.join(", ")}. Aurora is now seeded, so this overview can reflect the real merchandising and layout state instead of a placeholder shell.`}
-      primaryAction={{ href: "/admin/orders", label: "Open Orders" }}
-      secondaryAction={{ href: "/admin/payments", label: "Open Payments" }}
-      summary={[
-        {
-          label: "Catalog",
-          value: metrics.activeProducts.toString(),
-          detail: `${metrics.availableProducts} available, ${metrics.featuredProducts} featured products are currently visible to operations.`,
-        },
-        {
-          label: "Homepage",
-          value: metrics.enabledHomeSections.toString(),
-          detail: `${layoutSummary.versionLabel ?? "No published version"} is live with ${metrics.homeBindingCount} active bindings.`,
-        },
-        {
-          label: "Admins",
-          value: serverEnv.auth.adminEmails.length.toString(),
-          detail: "Admin identities remain explicit and centralized before deeper role models are added.",
-        },
-      ]}
-      sections={[
-        {
-          title: "Merchandising State",
-          description: "Catalog visibility is now coming from Aurora.",
-          items:
-            availableProducts.length > 0
-              ? availableProducts.map((product) => `${product} is available for sale.`)
-              : ["No products are currently marked available."],
-        },
-        {
-          title: "Featured Focus",
-          description: "Homepage emphasis should stay deliberate, not accidental.",
-          items:
-            featuredProducts.length > 0
-              ? featuredProducts.map((product) => `${product} is marked featured.`)
-              : ["No products are currently flagged as featured."],
-        },
-        {
-          title: "Layout Snapshot",
-          description: "The published homepage can now be read as operational state.",
-          items: [
-            `${layoutSummary.sectionCount} total sections are in the published home version.`,
-            `${layoutSummary.bindingCount} bindings connect products into the home composition.`,
-            `${metrics.homeVersionLabel ?? "No published home version"} is the current live label.`,
-          ],
-        },
-      ]}
-    />
+    <div className="space-y-8 pb-20 md:space-y-10">
+      <section className="space-y-5">
+        <div className="rounded-[24px] bg-system-fill/42 p-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.04)] md:inline-flex">
+          <div className="grid grid-cols-3 gap-1.5">
+            <QuickLink href="/admin/orders" label="Orders" />
+            <QuickLink href="/admin/payments" label="Payments" />
+            <QuickLink href="/admin/delivery" label="Delivery" />
+          </div>
+        </div>
+
+        <MetricRail
+          items={[
+            {
+              label: "Active",
+              value: `${activeOrders}`,
+              detail: "Orders in motion",
+              icon: Clock3,
+            },
+            {
+              label: "Payments",
+              value: `${paymentAttention}`,
+              detail: "Need review",
+              icon: CreditCard,
+            },
+            {
+              label: "Featured",
+              value: `${metrics.featuredProducts}`,
+              detail: "Homepage picks",
+              icon: Sparkles,
+            },
+            {
+              label: "Live",
+              value: `${metrics.enabledHomeSections}`,
+              detail: layoutSummary.versionLabel ?? "No live version",
+              icon: Layers3,
+            },
+          ]}
+          columns={4}
+        />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr_0.85fr]">
+        <OverviewPanel
+          title="Attention"
+          badge={urgentOrders.length.toString()}
+          emptyLabel="Clear"
+        >
+          {urgentOrders.length > 0 ? (
+            urgentOrders.slice(0, 5).map((order) => (
+              <Link
+                key={order.orderId}
+                href={`/admin/orders/${order.orderId}`}
+                className="flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/42 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/58"
+              >
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-label">#{order.orderNumber}</div>
+                  <div className="mt-1 truncate text-xs text-secondary-label">
+                    {order.customerName}
+                  </div>
+                </div>
+                <span className="shrink-0 rounded-full bg-system-background px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                  {formatStatusLabel(order.status)}
+                </span>
+              </Link>
+            ))
+          ) : null}
+        </OverviewPanel>
+
+        <OverviewPanel
+          title="Merchandising"
+          badge={featuredProducts.length.toString()}
+          emptyLabel="Nothing featured"
+        >
+          {featuredProducts.length > 0 ? (
+            featuredProducts.slice(0, 5).map((product) => (
+              <Link
+                key={product.productId}
+                href={`/admin/catalog/products/${product.productId}`}
+                className="flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/42 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/58"
+              >
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold text-label">
+                    {product.productMarketingName ?? product.productName}
+                  </div>
+                  <div className="mt-1 truncate text-xs text-secondary-label">
+                    {product.isAvailable ? "Live" : "Hidden"}
+                  </div>
+                </div>
+                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                  Open
+                </span>
+              </Link>
+            ))
+          ) : null}
+        </OverviewPanel>
+
+        <OverviewPanel
+          title="Layout"
+          badge={layoutSummary.enabledSectionCount.toString()}
+          emptyLabel="No live layout"
+        >
+          <div className="grid gap-3">
+            <div className="rounded-[24px] bg-system-fill/42 px-4 py-4">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                Version
+              </div>
+              <div className="mt-1 text-sm font-semibold text-label">
+                {layoutSummary.versionLabel ?? "No live version"}
+              </div>
+            </div>
+            <div className="rounded-[24px] bg-system-fill/42 px-4 py-4">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                Bindings
+              </div>
+              <div className="mt-1 text-sm font-semibold text-label">
+                {metrics.homeBindingCount} active
+              </div>
+            </div>
+            <Link
+              href="/admin/layout"
+              className="flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/42 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/58"
+            >
+              <span className="text-sm font-semibold text-label">Open layout</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                Edit
+              </span>
+            </Link>
+          </div>
+        </OverviewPanel>
+      </section>
+    </div>
+  );
+}
+
+function OverviewPanel({
+  title,
+  badge,
+  children,
+  emptyLabel,
+}: {
+  title: string;
+  badge: string;
+  children: ReactNode;
+  emptyLabel: string;
+}) {
+  const hasChildren = Array.isArray(children) ? children.length > 0 : Boolean(children);
+
+  return (
+    <section className="glass-morphism rounded-[32px] bg-system-background/78 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-lg font-semibold tracking-tight text-label">{title}</h2>
+        <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+          {badge}
+        </span>
+      </div>
+
+          <div className="mt-4 grid gap-3">
+        {hasChildren ? children : (
+          <div className="rounded-[24px] bg-system-fill/42 px-4 py-4 text-sm text-secondary-label">
+            {emptyLabel}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function QuickLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-[40px] items-center justify-center rounded-[18px] px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label transition-colors duration-200 hover:bg-system-background hover:shadow-soft"
+    >
+      {label}
+    </Link>
   );
 }

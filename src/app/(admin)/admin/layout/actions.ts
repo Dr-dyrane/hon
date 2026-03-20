@@ -22,6 +22,7 @@ export async function updateSectionAction(formData: FormData) {
   const sectionId = formData.get("sectionId") as string;
   const eyebrow = formData.get("eyebrow") as string | null;
   const heading = formData.get("heading") as string | null;
+  const body = formData.get("body") as string | null;
   const isEnabled = formData.get("isEnabled") === "true";
 
   if (!sectionId) return { success: false, error: "Missing section ID" };
@@ -30,9 +31,11 @@ export async function updateSectionAction(formData: FormData) {
     await updateLayoutSection(sectionId, {
       eyebrow: eyebrow || null,
       heading: heading || null,
+      body: body || null,
       isEnabled,
     });
     revalidatePath("/admin/layout");
+    revalidatePath(`/admin/layout/sections/${sectionId}`);
     return { success: true };
   } catch (error) {
     console.error("Failed to update section:", error);

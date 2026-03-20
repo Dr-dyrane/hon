@@ -133,6 +133,26 @@ Desktop should not force mobile density when there is room.
 - top bar title must be route-aware
 - top bar should reflect the active section, not always the workspace root name
 - avoid duplicate naming where both sidebar and header say the same thing without adding context
+- deep routes should show hierarchy in the header, not a flat repeated workspace name
+- use a quiet breadcrumb or parent path for nested routes instead of adding loud secondary chrome
+- current route title should stay dominant; parent navigation should stay secondary
+
+### Hierarchical navigation
+
+Apple-style navigation here means:
+
+- the sidebar owns section-level movement
+- the top bar owns current place in the hierarchy
+- nested routes should expose a clear path back to the immediate parent list or editor surface
+- do not add heavy web-style breadcrumb bars when a subtle parent trail is enough
+
+For this repo:
+
+- root admin and portal routes show the workspace eyebrow plus the active route title
+- nested routes show clickable parent crumbs above the current title
+- the shell must derive this from route metadata, not hand-written one-off headers
+- page content can still carry a strong heading on root screens, but the shell must always know where the user is
+- nested page bodies should switch to a compact context strip, not a second route hero that repeats the shell title
 
 ### Narrow desktop threshold
 
@@ -161,11 +181,13 @@ Use:
 - horizontal KPI strips on mobile
 - compact cards on tablet
 - fuller metric panels on desktop
+- mobile KPI tiles should show only label, value, and icon
 
 Do not:
 
 - ship oversized metric cards on mobile
 - require scrolling before the user can absorb the state of the page
+- place descriptive support text inside mobile KPI tiles
 
 ### Action groups
 
@@ -266,10 +288,21 @@ Before shipping a new admin or portal screen, check:
 1. Does mobile have its own composition, not just smaller cards?
 2. Does tablet have its own intermediate layout?
 3. Does the top bar title reflect the active route?
-4. Does the screen avoid borders entirely?
-5. Is the sidebar sticky where it should be?
-6. Is there too much explanatory copy?
-7. Are KPI summaries readable at a glance without long scrolling?
-8. Are actions grouped calmly and hierarchically?
+4. Do nested routes expose a quiet parent path in the header?
+5. Does the screen avoid borders entirely?
+6. Is the sidebar sticky where it should be?
+7. Is there too much explanatory copy?
+8. Are KPI summaries readable at a glance without long scrolling?
+9. Are actions grouped calmly and hierarchically?
 
 If any answer is `no`, the screen is not ready.
+
+---
+
+## Apple References
+
+This doctrine follows Apple navigation guidance from official sources:
+
+- Apple HIG platform guidance on navigation structure and clear hierarchy
+- WWDC22 `The craft of SwiftUI API design: Progressive Disclosure`, especially the guidance that navigation titles should orient people and back affordances should preserve context
+- WWDC22 `Design for spatial user interfaces`, where Apple reinforces clear placement, hierarchy, and avoiding ornamental chrome that competes with content

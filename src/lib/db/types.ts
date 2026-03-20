@@ -40,9 +40,11 @@ export type AdminCatalogProduct = {
   variantSlug: string;
   variantName: string;
   sku: string;
+  variantStatus: "draft" | "active" | "archived";
   priceNgn: number;
   compareAtPriceNgn: number | null;
   ingredientCount: number;
+  inventoryOnHand: number | null;
   sortOrder: number;
 };
 
@@ -153,6 +155,11 @@ export type AdminDeliveryOrder = {
   riderVehicleType: string | null;
   latestDeliveryEventType: string | null;
   latestDeliveryEventAt: string | null;
+  latestTrackingLatitude: number | null;
+  latestTrackingLongitude: number | null;
+  latestTrackingHeading: number | null;
+  latestTrackingAccuracyMeters: number | null;
+  latestTrackingRecordedAt: string | null;
 };
 
 export type AdminDeliveryRider = {
@@ -163,6 +170,56 @@ export type AdminDeliveryRider = {
   isActive: boolean;
   activeAssignmentCount: number;
   activeOrderNumber: string | null;
+};
+
+export type DeliveryTrackingPoint = {
+  pointId: string;
+  assignmentId: string;
+  latitude: number;
+  longitude: number;
+  heading: number | null;
+  accuracyMeters: number | null;
+  recordedAt: string;
+};
+
+export type DeliveryTimelineEvent = {
+  eventId: string;
+  orderId: string;
+  assignmentId: string | null;
+  eventType: string;
+  actorType: string;
+  actorEmail: string | null;
+  note: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type DeliveryCourierSession = {
+  assignmentId: string;
+  orderId: string;
+  orderNumber: string;
+  assignmentStatus: string;
+  riderId: string | null;
+  riderName: string | null;
+  riderPhone: string | null;
+  deliveryAddressSnapshot: Record<string, unknown>;
+};
+
+export type PortalTrackingSnapshot = {
+  orderId: string;
+  orderNumber: string;
+  status: string;
+  fulfillmentStatus: string;
+  customerName: string;
+  customerPhone: string;
+  deliveryAddressSnapshot: Record<string, unknown>;
+  assignmentId: string | null;
+  assignmentStatus: string | null;
+  riderName: string | null;
+  riderPhone: string | null;
+  riderVehicleType: string | null;
+  latestPoint: DeliveryTrackingPoint | null;
+  events: DeliveryTimelineEvent[];
 };
 
 export type SiteSettingRow = {
@@ -210,6 +267,33 @@ export type PortalAccountSummary = {
   reviewCount: number;
   latestOrderNumber: string | null;
   latestOrderStatus: string | null;
+};
+
+export type PortalProfile = {
+  userId: string | null;
+  email: string;
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  preferredPhoneE164: string;
+  marketingOptIn: boolean;
+};
+
+export type PortalAddress = {
+  addressId: string;
+  label: string;
+  recipientName: string;
+  phoneE164: string;
+  line1: string;
+  line2: string | null;
+  landmark: string | null;
+  city: string;
+  state: string;
+  postalCode: string | null;
+  deliveryNotes: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  isDefault: boolean;
 };
 
 export type OrderListRow = {

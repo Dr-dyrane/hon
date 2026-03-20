@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { WorkspaceShell } from "@/components/shell/WorkspaceShell";
-import { ADMIN_NAV_ITEMS } from "@/lib/app-shell";
+import { ADMIN_HEADER_ROUTES, ADMIN_NAV_ITEMS } from "@/lib/app-shell";
 import { requireAdminSession } from "@/lib/auth/guards";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
@@ -12,6 +12,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       title="Admin"
       description="Orders, payments, delivery, merchandising, and customer support now have a dedicated shell."
       navItems={ADMIN_NAV_ITEMS}
+      headerRoutes={ADMIN_HEADER_ROUTES}
       mobileNav
       sessionEmail={session.email}
       sessionRoleLabel="Administrator"

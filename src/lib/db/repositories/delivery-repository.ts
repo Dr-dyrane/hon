@@ -1,7 +1,15 @@
 import "server-only";
 
 import { isDatabaseConfigured, query, withTransaction } from "@/lib/db/client";
-import type { AdminDeliveryOrder, AdminDeliveryRider } from "@/lib/db/types";
+import { readCourierAccessToken } from "@/lib/delivery/access";
+import type {
+  AdminDeliveryOrder,
+  AdminDeliveryRider,
+  DeliveryCourierSession,
+  DeliveryTimelineEvent,
+  DeliveryTrackingPoint,
+  PortalTrackingSnapshot,
+} from "@/lib/db/types";
 import { normalizePhoneToE164 } from "@/lib/phone";
 
 const ACTIVE_ORDER_ASSIGNMENT_STATUSES = [
@@ -384,7 +392,12 @@ export async function listAdminDeliveryBoardOrders(limit = 60) {
         da."riderPhone",
         da."riderVehicleType",
         de."latestDeliveryEventType",
-        de."latestDeliveryEventAt"
+        de."latestDeliveryEventAt",
+        tp."latestTrackingLatitude",
+        tp."latestTrackingLongitude",
+        tp."latestTrackingHeading",
+        tp."latestTrackingAccuracyMeters",
+        tp."latestTrackingRecordedAt"
       from delivery_orders do
       left join app.order_items oi
         on oi.order_id = do."orderId"
@@ -418,6 +431,18 @@ export async function listAdminDeliveryBoardOrders(limit = 60) {
         order by created_at desc
         limit 1
       ) de on true
+      left join lateral (
+        select
+          latitude::float8 as "latestTrackingLatitude",
+          longitude::float8 as "latestTrackingLongitude",
+          heading::float8 as "latestTrackingHeading",
+          accuracy_meters::float8 as "latestTrackingAccuracyMeters",
+          recorded_at as "latestTrackingRecordedAt"
+        from app.tracking_points
+        where assignment_id = da."assignmentId"
+        order by recorded_at desc
+        limit 1
+      ) tp on true
       group by
         do."orderId",
         do."orderNumber",
@@ -437,7 +462,12 @@ export async function listAdminDeliveryBoardOrders(limit = 60) {
         da."riderPhone",
         da."riderVehicleType",
         de."latestDeliveryEventType",
-        de."latestDeliveryEventAt"
+        de."latestDeliveryEventAt",
+        tp."latestTrackingLatitude",
+        tp."latestTrackingLongitude",
+        tp."latestTrackingHeading",
+        tp."latestTrackingAccuracyMeters",
+        tp."latestTrackingRecordedAt"
       order by
         case do."deliveryStage"
           when 'out_for_delivery' then 0
@@ -820,4 +850,319 @@ export async function updateDeliveryAssignmentStatus(input: {
       status: input.nextStatus,
     };
   });
+}
+
+function normalizeCoordinate(value: number, min: number, max: number, label: string) {
+  if (!Number.isFinite(value) || value < min || value > max) {
+    throw new Error(`Invalid ${label}.`);
+  }
+
+  return value;
+}
+
+function normalizeOptionalNumber(value: number | null | undefined) {
+  if (value == null) {
+    return null;
+  }
+
+  return Number.isFinite(value) ? value : null;
+}
+
+export async function getCourierSessionByToken(token: string) {
+  const payload = readCourierAccessToken(token);
+
+  if (!payload || !isDatabaseConfigured()) {
+    return null;
+  }
+
+  const result = await query<DeliveryCourierSession>(
+    `
+      select
+        a.id as "assignmentId",
+        a.order_id as "orderId",
+        o.public_order_number as "orderNumber",
+        a.status as "assignmentStatus",
+        r.id as "riderId",
+        r.name as "riderName",
+        r.phone_e164 as "riderPhone",
+        o.delivery_address_snapshot as "deliveryAddressSnapshot"
+      from app.delivery_assignments a
+      inner join app.orders o
+        on o.id = a.order_id
+      left join app.riders r
+        on r.id = a.rider_id
+      where a.id = $1
+        and a.order_id = $2
+      limit 1
+    `,
+    [payload.assignmentId, payload.orderId]
+  );
+
+  const session = result.rows[0] ?? null;
+
+  if (!session) {
+    return null;
+  }
+
+  if (payload.riderId && session.riderId && payload.riderId !== session.riderId) {
+    return null;
+  }
+
+  return session;
+}
+
+export async function recordCourierTrackingPoint(input: {
+  token: string;
+  latitude: number;
+  longitude: number;
+  heading?: number | null;
+  accuracyMeters?: number | null;
+  recordedAt?: string | null;
+}) {
+  requireDatabase();
+
+  const session = await getCourierSessionByToken(input.token);
+
+  if (!session) {
+    throw new Error("Courier link is not valid.");
+  }
+
+  if (!["assigned", "picked_up", "out_for_delivery"].includes(session.assignmentStatus)) {
+    throw new Error("Assignment is not accepting tracking.");
+  }
+
+  const latitude = normalizeCoordinate(input.latitude, -90, 90, "latitude");
+  const longitude = normalizeCoordinate(input.longitude, -180, 180, "longitude");
+  const heading = normalizeOptionalNumber(input.heading);
+  const accuracyMeters = normalizeOptionalNumber(input.accuracyMeters);
+  const recordedAt = input.recordedAt ? new Date(input.recordedAt) : new Date();
+
+  if (Number.isNaN(recordedAt.getTime())) {
+    throw new Error("Invalid tracking timestamp.");
+  }
+
+  return withTransaction(async (queryFn) => {
+    const assignment = await getAssignmentStateForUpdate(queryFn, session.assignmentId);
+
+    if (!assignment) {
+      throw new Error("Assignment not found.");
+    }
+
+    if (!["assigned", "picked_up", "out_for_delivery"].includes(assignment.status)) {
+      throw new Error("Assignment is not accepting tracking.");
+    }
+
+    const trackingCountResult = await queryFn<{ count: number }>(
+      `
+        select count(*)::int as count
+        from app.tracking_points
+        where assignment_id = $1
+      `,
+      [assignment.assignmentId]
+    );
+    const trackingCount = trackingCountResult.rows[0]?.count ?? 0;
+
+    const inserted = await queryFn<DeliveryTrackingPoint>(
+      `
+        insert into app.tracking_points (
+          assignment_id,
+          latitude,
+          longitude,
+          heading,
+          accuracy_meters,
+          recorded_at
+        )
+        values ($1, $2, $3, $4, $5, $6)
+        returning
+          id as "pointId",
+          assignment_id as "assignmentId",
+          latitude::float8 as latitude,
+          longitude::float8 as longitude,
+          heading::float8 as heading,
+          accuracy_meters::float8 as "accuracyMeters",
+          recorded_at as "recordedAt"
+      `,
+      [
+        assignment.assignmentId,
+        latitude,
+        longitude,
+        heading,
+        accuracyMeters,
+        recordedAt.toISOString(),
+      ]
+    );
+
+    if (trackingCount === 0) {
+      await queryFn(
+        `
+          insert into app.delivery_events (
+            order_id,
+            assignment_id,
+            event_type,
+            actor_type,
+            note,
+            metadata
+          )
+          values ($1, $2, 'tracking_started', 'rider', null, $3::jsonb)
+        `,
+        [
+          assignment.orderId,
+          assignment.assignmentId,
+          JSON.stringify({
+            riderId: session.riderId,
+            riderName: session.riderName,
+          }),
+        ]
+      );
+    }
+
+    return inserted.rows[0] ?? null;
+  });
+}
+
+export async function listDeliveryEventsForOrder(orderId: string, limit = 16) {
+  if (!orderId || !isDatabaseConfigured()) {
+    return [] satisfies DeliveryTimelineEvent[];
+  }
+
+  const result = await query<DeliveryTimelineEvent>(
+    `
+      select
+        id as "eventId",
+        order_id as "orderId",
+        assignment_id as "assignmentId",
+        event_type as "eventType",
+        actor_type as "actorType",
+        actor_email as "actorEmail",
+        note,
+        metadata,
+        created_at as "createdAt"
+      from app.delivery_events
+      where order_id = $1
+      order by created_at desc
+      limit $2
+    `,
+    [orderId, limit]
+  );
+
+  return result.rows;
+}
+
+export async function getPortalTrackingSnapshot(email: string, orderId: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (!normalizedEmail || !orderId || !isDatabaseConfigured()) {
+    return null;
+  }
+
+  const result = await query<
+    Omit<PortalTrackingSnapshot, "latestPoint" | "events"> & {
+      latestTrackingPointId: string | null;
+      latestTrackingLatitude: number | null;
+      latestTrackingLongitude: number | null;
+      latestTrackingHeading: number | null;
+      latestTrackingAccuracyMeters: number | null;
+      latestTrackingRecordedAt: string | null;
+    }
+  >(
+    `
+      with matched_user as (
+        select id
+        from app.users
+        where lower(email) = $1
+        limit 1
+      )
+      select
+        o.id as "orderId",
+        o.public_order_number as "orderNumber",
+        o.status,
+        o.fulfillment_status as "fulfillmentStatus",
+        o.customer_name as "customerName",
+        o.customer_phone_e164 as "customerPhone",
+        o.delivery_address_snapshot as "deliveryAddressSnapshot",
+        a.id as "assignmentId",
+        a.status as "assignmentStatus",
+        r.name as "riderName",
+        r.phone_e164 as "riderPhone",
+        r.vehicle_type as "riderVehicleType",
+        tp."pointId" as "latestTrackingPointId",
+        tp.latitude as "latestTrackingLatitude",
+        tp.longitude as "latestTrackingLongitude",
+        tp.heading as "latestTrackingHeading",
+        tp."accuracyMeters" as "latestTrackingAccuracyMeters",
+        tp."recordedAt" as "latestTrackingRecordedAt"
+      from app.orders o
+      left join matched_user mu
+        on mu.id = o.user_id
+      left join lateral (
+        select
+          id,
+          status,
+          rider_id
+        from app.delivery_assignments
+        where order_id = o.id
+        order by
+          case
+            when status in ('assigned', 'picked_up', 'out_for_delivery', 'failed', 'delivered') then 0
+            else 1
+          end asc,
+          updated_at desc
+        limit 1
+      ) a on true
+      left join app.riders r
+        on r.id = a.rider_id
+      left join lateral (
+        select
+          id as "pointId",
+          latitude::float8 as latitude,
+          longitude::float8 as longitude,
+          heading::float8 as heading,
+          accuracy_meters::float8 as "accuracyMeters",
+          recorded_at as "recordedAt"
+        from app.tracking_points
+        where assignment_id = a.id
+        order by recorded_at desc
+        limit 1
+      ) tp on true
+      where o.id = $2
+        and (mu.id is not null or lower(o.customer_email) = $1)
+      limit 1
+    `,
+    [normalizedEmail, orderId]
+  );
+
+  const row = result.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  const events = await listDeliveryEventsForOrder(orderId, 16);
+
+  return {
+    orderId: row.orderId,
+    orderNumber: row.orderNumber,
+    status: row.status,
+    fulfillmentStatus: row.fulfillmentStatus,
+    customerName: row.customerName,
+    customerPhone: row.customerPhone,
+    deliveryAddressSnapshot: row.deliveryAddressSnapshot,
+    assignmentId: row.assignmentId,
+    assignmentStatus: row.assignmentStatus,
+    riderName: row.riderName,
+    riderPhone: row.riderPhone,
+    riderVehicleType: row.riderVehicleType,
+    latestPoint: row.latestTrackingPointId
+      ? {
+          pointId: row.latestTrackingPointId,
+          assignmentId: row.assignmentId ?? "",
+          latitude: row.latestTrackingLatitude ?? 0,
+          longitude: row.latestTrackingLongitude ?? 0,
+          heading: row.latestTrackingHeading,
+          accuracyMeters: row.latestTrackingAccuracyMeters,
+          recordedAt: row.latestTrackingRecordedAt ?? new Date(0).toISOString(),
+        }
+      : null,
+    events,
+  } satisfies PortalTrackingSnapshot;
 }

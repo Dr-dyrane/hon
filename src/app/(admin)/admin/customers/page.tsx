@@ -1,3 +1,5 @@
+import { CircleUserRound, MapPinHouse, UserRoundCheck } from "lucide-react";
+import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { listAdminCustomerSummaries } from "@/lib/db/repositories/admin-repository";
 
@@ -12,16 +14,12 @@ function formatTimestamp(value?: string | null) {
   }).format(new Date(value));
 }
 
-function CustomerStatusChip({ value }: { value: string | null }) {
+function formatStatusLabel(value?: string | null) {
   if (!value) {
     return null;
   }
 
-  return (
-    <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[11px] font-semibold tracking-tight text-secondary-label">
-      {value.replace(/_/g, " ")}
-    </span>
-  );
+  return value.replace(/_/g, " ");
 }
 
 export default async function AdminCustomersPage() {
@@ -31,36 +29,31 @@ export default async function AdminCustomersPage() {
   const activeCustomers = customers.filter((customer) => customer.activeOrders > 0).length;
 
   return (
-    <div className="space-y-8">
-      <section className="glass-morphism rounded-[36px] bg-system-background/86 p-6 shadow-[0_28px_90px_rgba(15,23,42,0.08)]">
-        <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-          Customers
-        </p>
-        <h2 className="text-3xl font-bold tracking-display text-label">
-          Customer directory
-        </h2>
-
-        <div className="mt-6 grid gap-4 xl:grid-cols-3">
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Visible
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{customers.length}</p>
-          </article>
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Linked
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{accountLinked}</p>
-          </article>
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Active
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{activeCustomers}</p>
-          </article>
-        </div>
-      </section>
+    <div className="space-y-8 pb-20 md:space-y-10">
+      <MetricRail
+        items={[
+          {
+            label: "Visible",
+            value: `${customers.length}`,
+            detail: "Current list",
+            icon: CircleUserRound,
+          },
+          {
+            label: "Linked",
+            value: `${accountLinked}`,
+            detail: "Have accounts",
+            icon: UserRoundCheck,
+            tone: "success",
+          },
+          {
+            label: "Active",
+            value: `${activeCustomers}`,
+            detail: "Open orders",
+            icon: MapPinHouse,
+          },
+        ]}
+        columns={3}
+      />
 
       <section className="grid gap-4">
         {customers.map((customer) => (
@@ -68,59 +61,61 @@ export default async function AdminCustomersPage() {
             key={customer.customerKey}
             className="glass-morphism rounded-[32px] bg-system-background/72 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
           >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-1">
-                <p className="text-[11px] font-semibold uppercase tracking-headline text-secondary-label">
-                  Customer
-                </p>
-                <p className="text-2xl font-semibold tracking-tight text-label">
-                  {customer.fullName ?? customer.email ?? customer.phone ?? "Unnamed"}
-                </p>
-                <p className="text-sm text-secondary-label">
-                  {customer.email ?? "No email"}
-                </p>
-                <p className="text-sm text-secondary-label">
-                  {customer.phone ?? "No phone"}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {customer.userId ? (
-                  <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[11px] font-semibold tracking-tight text-secondary-label">
-                    account
+            <div className="flex flex-col gap-4 min-[980px]:flex-row min-[980px]:items-start min-[980px]:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="truncate text-lg font-semibold tracking-tight text-label">
+                    {customer.fullName ?? customer.email ?? customer.phone ?? "Unnamed"}
+                  </div>
+                  <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                    {customer.userId ? "Account" : "Guest"}
                   </span>
-                ) : (
-                  <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[11px] font-semibold tracking-tight text-secondary-label">
-                    guest
-                  </span>
-                )}
-                <CustomerStatusChip value={customer.latestOrderStatus} />
-              </div>
-            </div>
-
-            <div className="mt-4 grid gap-4 md:grid-cols-4">
-              <div className="text-sm text-secondary-label">
-                <div className="font-semibold text-label">{customer.totalOrders}</div>
-                <div>orders</div>
-              </div>
-              <div className="text-sm text-secondary-label">
-                <div className="font-semibold text-label">{customer.activeOrders}</div>
-                <div>active</div>
-              </div>
-              <div className="text-sm text-secondary-label">
-                <div className="font-semibold text-label">{customer.addressCount}</div>
-                <div>addresses</div>
-              </div>
-              <div className="text-sm text-secondary-label">
-                <div className="font-semibold text-label">
-                  {customer.latestOrderNumber ?? "-"}
+                  {formatStatusLabel(customer.latestOrderStatus) ? (
+                    <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                      {formatStatusLabel(customer.latestOrderStatus)}
+                    </span>
+                  ) : null}
                 </div>
-                <div>{formatTimestamp(customer.latestOrderAt)}</div>
+
+                <div className="mt-3 grid gap-3 text-sm text-secondary-label sm:grid-cols-2 xl:grid-cols-4">
+                  <MetaItem label="Email" value={customer.email ?? "No email"} />
+                  <MetaItem label="Phone" value={customer.phone ?? "No phone"} />
+                  <MetaItem label="Latest" value={customer.latestOrderNumber ?? "-"} />
+                  <MetaItem label="Seen" value={formatTimestamp(customer.latestOrderAt)} />
+                </div>
+              </div>
+
+              <div className="grid min-w-[180px] grid-cols-3 gap-3 text-center">
+                <CountPill label="Orders" value={customer.totalOrders} />
+                <CountPill label="Active" value={customer.activeOrders} />
+                <CountPill label="Places" value={customer.addressCount} />
               </div>
             </div>
           </article>
         ))}
       </section>
+    </div>
+  );
+}
+
+function MetaItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[22px] bg-system-fill/42 px-4 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+        {label}
+      </div>
+      <div className="mt-1 truncate text-sm font-medium text-label">{value}</div>
+    </div>
+  );
+}
+
+function CountPill({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-[22px] bg-system-fill/42 px-3 py-3">
+      <div className="text-lg font-semibold text-label">{value}</div>
+      <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+        {label}
+      </div>
     </div>
   );
 }

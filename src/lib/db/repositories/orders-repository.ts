@@ -307,6 +307,89 @@ export async function getPortalOrderDetail(email: string, orderId: string) {
   return buildOrderDetail(detailResult.rows[0] ?? null);
 }
 
+export async function preparePortalReorder(email: string, orderId: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (!normalizedEmail || !orderId || !isDatabaseConfigured()) {
+    return {
+      items: [],
+      unavailableItems: [],
+      changedPriceCount: 0,
+    };
+  }
+
+  const result = await query<{
+    productId: string | null;
+    quantity: number;
+    title: string;
+    previousUnitPriceNgn: number;
+    currentUnitPriceNgn: number | null;
+    canReorder: boolean;
+  }>(
+    `
+      with matched_user as (
+        select id
+        from app.users
+        where lower(email) = $1
+        limit 1
+      )
+      select
+        coalesce(oi.snapshot ->> 'productId', p.slug) as "productId",
+        oi.quantity,
+        oi.title,
+        oi.unit_price_ngn as "previousUnitPriceNgn",
+        cv.price_ngn as "currentUnitPriceNgn",
+        (cv.id is not null)::boolean as "canReorder"
+      from app.orders o
+      inner join app.order_items oi
+        on oi.order_id = o.id
+      left join app.product_variants ov
+        on ov.id = oi.variant_id
+      left join app.products p
+        on p.id = ov.product_id
+      left join lateral (
+        select v.id, v.price_ngn
+        from app.products cp
+        inner join app.product_variants v
+          on v.product_id = cp.id
+         and v.is_default = true
+         and v.status = 'active'
+        where cp.slug = coalesce(oi.snapshot ->> 'productId', p.slug)
+          and cp.status = 'active'
+          and cp.is_available = true
+        limit 1
+      ) cv on true
+      left join matched_user mu
+        on mu.id = o.user_id
+      where o.id = $2
+        and (mu.id is not null or lower(o.customer_email) = $1)
+    `,
+    [normalizedEmail, orderId]
+  );
+
+  const items = result.rows
+    .filter((row) => row.canReorder && row.productId)
+    .map((row) => ({
+      productId: row.productId as string,
+      quantity: row.quantity,
+    }));
+  const unavailableItems = result.rows
+    .filter((row) => !row.canReorder)
+    .map((row) => row.title);
+  const changedPriceCount = result.rows.filter(
+    (row) =>
+      row.canReorder &&
+      row.currentUnitPriceNgn != null &&
+      row.currentUnitPriceNgn !== row.previousUnitPriceNgn
+  ).length;
+
+  return {
+    items,
+    unavailableItems,
+    changedPriceCount,
+  };
+}
+
 export async function getGuestOrderDetail(orderId: string) {
   if (!orderId || !isDatabaseConfigured()) {
     return null;

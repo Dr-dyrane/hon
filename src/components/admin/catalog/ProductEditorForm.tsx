@@ -2,232 +2,361 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Save } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { type AdminCatalogProductDetail } from "@/lib/db/types";
+import type {
+  AdminCatalogCategory,
+  AdminCatalogProductDetail,
+} from "@/lib/db/types";
 import { updateProductAction } from "@/app/(admin)/admin/catalog/products/[productId]/actions";
-import { Save, AlertCircle, CheckCircle2, Package, Tag, Layers, Globe } from "lucide-react";
 
-export function ProductEditorForm({ product }: { product: AdminCatalogProductDetail }) {
+export function ProductEditorForm({
+  product,
+  categories,
+}: {
+  product: AdminCatalogProductDetail;
+  categories: AdminCatalogCategory[];
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageTone, setMessageTone] = useState<"success" | "error" | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(null);
-    setSuccess(false);
+    setMessage(null);
+    setMessageTone(null);
 
     const formData = new FormData(event.currentTarget);
-    
+
     startTransition(async () => {
       const result = await updateProductAction(formData);
-      if (result.success) {
-        setSuccess(true);
-        router.refresh();
-      } else {
-        setError(result.error || "An unexpected error occurred.");
+
+      if (!result.success) {
+        setMessage(result.error || "Unable to save.");
+        setMessageTone("error");
+        return;
       }
+
+      setMessage("Saved.");
+      setMessageTone("success");
+      router.refresh();
     });
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 pb-20">
+    <form onSubmit={handleSubmit} className="space-y-6 pb-24">
       <input type="hidden" name="productId" value={product.productId} />
-      
-      {/* Feedback Toast (Subtle) */}
-      {(success || error) && (
-        <div className={cn(
-          "fixed bottom-8 right-8 z-50 flex items-center gap-3 rounded-2xl px-6 py-4 shadow-float animate-in fade-in slide-in-from-bottom-4 duration-300",
-          success ? "bg-accent/10 text-accent backdrop-blur-xl" : "bg-red-500/10 text-red-500 backdrop-blur-xl"
-        )}>
-          {success ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-          <span className="text-sm font-medium">
-            {success ? "Changes saved successfully" : error}
-          </span>
-        </div>
-      )}
 
-      {/* Identity Section */}
-      <EditorSection 
-        title="Identity" 
-        description="The core brand and identifying information for this product family."
-        icon={<Tag size={20} className="text-accent" />}
-      >
-        <div className="grid gap-6 md:grid-cols-2">
-          <InputGroup label="Internal Name" name="productName" defaultValue={product.productName} required />
-          <InputGroup label="Marketing Name" name="marketingName" defaultValue={product.productMarketingName || ""} placeholder="e.g. Vanilla Power" />
-          <InputGroup label="Tagline" name="tagline" defaultValue={product.productTagline || ""} placeholder="e.g. Clean Energy for the Modern Mind" className="md:col-span-2" />
-        </div>
-        <div className="mt-6 space-y-6">
-          <TextAreaGroup label="Short Description" name="shortDescription" defaultValue={product.shortDescription} required rows={3} />
-          <TextAreaGroup label="Long Description" name="longDescription" defaultValue={product.longDescription || ""} rows={6} />
-        </div>
-      </EditorSection>
+      <div className="grid gap-6 min-[1500px]:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="space-y-6">
+          <EditorSection title="Identity">
+            <div className="grid gap-4 md:grid-cols-2">
+              <SelectGroup
+                label="Category"
+                name="categoryId"
+                defaultValue={product.categoryId ?? ""}
+                options={[
+                  { label: "Unsorted", value: "" },
+                  ...categories.map((category) => ({
+                    label: category.categoryName,
+                    value: category.categoryId,
+                  })),
+                ]}
+              />
+              <InputGroup
+                label="Internal"
+                name="productName"
+                defaultValue={product.productName}
+                required
+              />
+              <InputGroup
+                label="Marketing"
+                name="marketingName"
+                defaultValue={product.productMarketingName || ""}
+              />
+              <InputGroup
+                label="Tagline"
+                name="tagline"
+                defaultValue={product.productTagline || ""}
+                className="md:col-span-2"
+              />
+            </div>
 
-      {/* Pricing & Default Variant */}
-      <EditorSection 
-        title="Variant & Pricing" 
-        description="Settings for the default sellable unit. Currently, Rendezvous focused on single-variant products."
-        icon={<Layers size={20} className="text-accent" />}
-      >
-        <div className="grid gap-6 md:grid-cols-2">
-          <InputGroup label="Variant Name" name="variantName" defaultValue={product.variantName} required />
-          <InputGroup label="SKU" name="sku" defaultValue={product.sku} readOnly className="opacity-60" />
-          <InputGroup label="Price (NGN)" name="priceNgn" type="number" defaultValue={product.priceNgn} required />
-          <InputGroup label="Compare-at Price (NGN)" name="compareAtPriceNgn" type="number" defaultValue={product.compareAtPriceNgn || ""} />
+            <div className="mt-4 space-y-4">
+              <TextAreaGroup
+                label="Short"
+                name="shortDescription"
+                defaultValue={product.shortDescription}
+                required
+                rows={3}
+              />
+              <TextAreaGroup
+                label="Long"
+                name="longDescription"
+                defaultValue={product.longDescription || ""}
+                rows={5}
+              />
+            </div>
+          </EditorSection>
+
+          <EditorSection title="Sellable">
+            <div className="grid gap-4 md:grid-cols-2">
+              <InputGroup
+                label="Variant"
+                name="variantName"
+                defaultValue={product.variantName}
+                required
+              />
+              <InputGroup
+                label="SKU"
+                name="sku"
+                defaultValue={product.sku}
+                readOnly
+                className="opacity-60"
+              />
+              <InputGroup
+                label="Price"
+                name="priceNgn"
+                type="number"
+                defaultValue={product.priceNgn}
+                required
+              />
+              <InputGroup
+                label="Compare"
+                name="compareAtPriceNgn"
+                type="number"
+                defaultValue={product.compareAtPriceNgn || ""}
+              />
+              <InputGroup
+                label="Size"
+                name="sizeLabel"
+                defaultValue={product.sizeLabel || ""}
+              />
+              <InputGroup
+                label="Unit"
+                name="unitLabel"
+                defaultValue={product.unitLabel || ""}
+              />
+            </div>
+          </EditorSection>
+
+          <EditorSection title="State">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <SelectGroup
+                label="Product"
+                name="status"
+                defaultValue={product.status}
+                options={[
+                  { label: "Draft", value: "draft" },
+                  { label: "Active", value: "active" },
+                  { label: "Archived", value: "archived" },
+                ]}
+              />
+              <SelectGroup
+                label="Variant"
+                name="variantStatus"
+                defaultValue={product.variantStatus}
+                options={[
+                  { label: "Draft", value: "draft" },
+                  { label: "Active", value: "active" },
+                  { label: "Archived", value: "archived" },
+                ]}
+              />
+              <SelectGroup
+                label="Merchandising"
+                name="merchandisingState"
+                defaultValue={product.merchandisingState}
+                options={[
+                  { label: "Standard", value: "standard" },
+                  { label: "Featured", value: "featured" },
+                  { label: "Hidden", value: "hidden" },
+                ]}
+              />
+              <SelectGroup
+                label="Live"
+                name="isAvailable"
+                defaultValue={product.isAvailable ? "true" : "false"}
+                options={[
+                  { label: "Yes", value: "true" },
+                  { label: "No", value: "false" },
+                ]}
+              />
+              <InputGroup
+                label="Stock"
+                name="inventoryOnHand"
+                type="number"
+                defaultValue={product.inventoryOnHand || 0}
+                required
+              />
+              <InputGroup
+                label="Reorder"
+                name="reorderThreshold"
+                type="number"
+                defaultValue={product.reorderThreshold || ""}
+              />
+              <InputGroup
+                label="Sort"
+                name="sortOrder"
+                type="number"
+                defaultValue={product.sortOrder}
+                required
+              />
+            </div>
+          </EditorSection>
         </div>
-        <div className="mt-6 grid gap-6 md:grid-cols-3">
-          <SelectGroup 
-            label="Variant Status" 
-            name="variantStatus" 
-            defaultValue={product.variantStatus}
-            options={[
-              { label: "Draft", value: "draft" },
-              { label: "Active", value: "active" },
-              { label: "Archived", value: "archived" },
+
+        <aside className="space-y-4">
+          <SignalCard
+            title="Variant"
+            items={[
+              { label: "SKU", value: product.sku },
+              { label: "Slug", value: product.variantSlug },
             ]}
           />
-          <InputGroup label="Size Label" name="sizeLabel" defaultValue={product.sizeLabel || ""} placeholder="e.g. 500" />
-          <InputGroup label="Unit Label" name="unitLabel" defaultValue={product.unitLabel || ""} placeholder="e.g. g" />
-        </div>
-      </EditorSection>
-
-      {/* Inventory Management */}
-      <EditorSection 
-        title="Inventory" 
-        description="Stock levels and reorder triggers for this variant."
-        icon={<Package size={20} className="text-accent" />}
-      >
-        <div className="grid gap-6 md:grid-cols-2">
-          <InputGroup label="Available Stock" name="inventoryOnHand" type="number" defaultValue={product.inventoryOnHand || 0} required />
-          <InputGroup label="Reorder Threshold" name="reorderThreshold" type="number" defaultValue={product.reorderThreshold || ""} placeholder="Notify when below..." />
-        </div>
-      </EditorSection>
-
-      {/* Merchandising & Visibility */}
-      <EditorSection 
-        title="Merchandising" 
-        description="Control how this product is presented and ranked in the catalog."
-        icon={<Globe size={20} className="text-accent" />}
-      >
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <SelectGroup 
-            label="Product Status" 
-            name="status" 
-            defaultValue={product.status}
-            options={[
-              { label: "Draft", value: "draft" },
-              { label: "Active", value: "active" },
-              { label: "Archived", value: "archived" },
+          <SignalCard
+            title="Assets"
+            items={[
+              { label: "Ingredients", value: `${product.ingredientCount}` },
+              { label: "Media", value: `${product.mediaCount}` },
             ]}
           />
-          <SelectGroup 
-            label="Merchandising" 
-            name="merchandisingState" 
-            defaultValue={product.merchandisingState}
-            options={[
-              { label: "Standard", value: "standard" },
-              { label: "Featured", value: "featured" },
-              { label: "Hidden", value: "hidden" },
+          <SignalCard
+            title="Inventory"
+            items={[
+              { label: "On hand", value: `${product.inventoryOnHand ?? 0}` },
+              { label: "Reserved", value: `${product.inventoryReserved ?? 0}` },
             ]}
           />
-          <SelectGroup 
-            label="Available for Sale" 
-            name="isAvailable" 
-            defaultValue={product.isAvailable ? "true" : "false"}
-            options={[
-              { label: "Yes", value: "true" },
-              { label: "No", value: "false" },
-            ]}
-          />
-          <InputGroup label="Sort Order" name="sortOrder" type="number" defaultValue={product.sortOrder} required />
-        </div>
-      </EditorSection>
+        </aside>
+      </div>
 
-      {/* Actions */}
-      <div className="sticky bottom-8 z-40 mt-12 flex justify-end">
-        <button
-          type="submit"
-          disabled={isPending}
-          className={cn(
-            "button-primary h-14 min-w-[200px] gap-3 px-8 text-xs font-bold uppercase tracking-widest transition-all hover:scale-105 active:scale-95",
-            isPending && "opacity-50 pointer-events-none"
-          )}
-        >
-          {isPending ? (
-            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white" />
-          ) : (
-            <Save size={18} />
-          )}
-          {isPending ? "Saving..." : "Save Changes"}
-        </button>
+      <div className="sticky bottom-6 z-30">
+        <div className="flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/56 px-4 py-3 shadow-[0_12px_24px_rgba(15,23,42,0.06)] backdrop-blur-xl">
+          <p
+            className={cn(
+              "text-xs font-medium",
+              messageTone === "success" && "text-accent",
+              messageTone === "error" && "text-red-500",
+              !messageTone && "text-secondary-label"
+            )}
+          >
+            {message ?? "Draft safe."}
+          </p>
+          <button
+            type="submit"
+            disabled={isPending}
+            className={cn(
+              "button-primary min-h-[44px] min-w-[144px] gap-2 px-5 text-[11px] font-semibold uppercase tracking-[0.16em]",
+              isPending && "pointer-events-none opacity-50"
+            )}
+          >
+            <Save size={16} />
+            <span>{isPending ? "Saving" : "Save"}</span>
+          </button>
+        </div>
       </div>
     </form>
   );
 }
 
-function EditorSection({ title, description, icon, children }: { title: string; description: string; icon: React.ReactNode; children: React.ReactNode }) {
+function EditorSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="liquid-glass bg-system-background/60 p-8 md:p-10">
-      <div className="mb-8 flex items-start gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-system-fill/50">
-          {icon}
-        </div>
-        <div>
-          <h3 className="text-xl font-bold tracking-title text-label">{title}</h3>
-          <p className="mt-1 text-sm text-secondary-label">{description}</p>
-        </div>
-      </div>
-      <div>{children}</div>
-    </div>
+    <section className="rounded-[28px] bg-system-background/86 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
+      <h2 className="text-lg font-semibold tracking-tight text-label">{title}</h2>
+      <div className="mt-4">{children}</div>
+    </section>
   );
 }
 
-function InputGroup({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+function SignalCard({
+  title,
+  items,
+}: {
+  title: string;
+  items: { label: string; value: string }[];
+}) {
   return (
-    <div className={cn("space-y-2", props.className)}>
-      <label className="text-[10px] font-bold uppercase tracking-widest text-secondary-label ml-1">
+    <section className="rounded-[28px] bg-system-background/86 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+      <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-secondary-label">
+        {title}
+      </h2>
+      <div className="mt-4 space-y-3">
+        {items.map((item) => (
+          <div key={item.label} className="rounded-[18px] bg-system-fill/42 px-4 py-3">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+              {item.label}
+            </p>
+            <p className="mt-1 text-sm font-medium text-label">{item.value}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function InputGroup({
+  label,
+  className,
+  ...props
+}: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div className={cn("space-y-2", className)}>
+      <label className="ml-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
         {label}
       </label>
       <input
         {...props}
-        className={cn(
-          "flex w-full rounded-2xl bg-system-fill/40 px-5 py-4 text-sm text-label transition-all focus:bg-system-fill/60 focus:ring-2 focus:ring-accent/20",
-          props.className
-        )}
+        className="flex min-h-[48px] w-full rounded-[20px] bg-system-fill/42 px-4 text-sm text-label outline-none transition-all placeholder:text-tertiary-label focus:bg-system-fill/58"
       />
     </div>
   );
 }
 
-function TextAreaGroup({ label, ...props }: { label: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+function TextAreaGroup({
+  label,
+  ...props
+}: { label: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-bold uppercase tracking-widest text-secondary-label ml-1">
+      <label className="ml-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
         {label}
       </label>
       <textarea
         {...props}
-        className="flex w-full resize-none rounded-2xl bg-system-fill/40 px-5 py-4 text-sm text-label transition-all focus:bg-system-fill/60 focus:ring-2 focus:ring-accent/20"
+        className="flex w-full resize-none rounded-[20px] bg-system-fill/42 px-4 py-3 text-sm text-label outline-none transition-all placeholder:text-tertiary-label focus:bg-system-fill/58"
       />
     </div>
   );
 }
 
-function SelectGroup({ label, options, ...props }: { label: string; options: { label: string; value: string }[] } & React.SelectHTMLAttributes<HTMLSelectElement>) {
+function SelectGroup({
+  label,
+  options,
+  className,
+  ...props
+}: {
+  label: string;
+  options: { label: string; value: string }[];
+} & React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <div className="space-y-2">
-      <label className="text-[10px] font-bold uppercase tracking-widest text-secondary-label ml-1">
+    <div className={cn("space-y-2", className)}>
+      <label className="ml-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
         {label}
       </label>
       <select
         {...props}
-        className="flex w-full appearance-none rounded-2xl bg-system-fill/40 px-5 py-4 text-sm text-label transition-all focus:bg-system-fill/60 focus:ring-2 focus:ring-accent/20"
+        className="flex min-h-[48px] w-full appearance-none rounded-[20px] bg-system-fill/42 px-4 text-sm text-label outline-none transition-all focus:bg-system-fill/58"
       >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
           </option>
         ))}
       </select>

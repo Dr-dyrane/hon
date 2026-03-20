@@ -195,6 +195,45 @@ export async function getLayoutDraftDetail(pageKey: string): Promise<AdminLayout
   };
 }
 
+export async function getLayoutDraftSectionDetail(
+  sectionId: string
+): Promise<AdminLayoutSection | null> {
+  if (!isDatabaseConfigured() || !sectionId) {
+    return null;
+  }
+
+  const result = await query<AdminLayoutSection>(
+    `
+      select
+        ps.id as "sectionId",
+        ps.section_key as "sectionKey",
+        ps.section_type as "sectionType",
+        ps.sort_order as "sortOrder",
+        ps.is_enabled as "isEnabled",
+        ps.eyebrow,
+        ps.heading,
+        ps.body,
+        ps.settings,
+        count(distinct psp.id)::int as "presentationCount",
+        count(distinct psb.id)::int as "bindingCount"
+      from app.page_sections ps
+      inner join app.page_versions pv
+        on pv.id = ps.page_version_id
+       and pv.status = 'draft'
+      left join app.page_section_presentations psp
+        on psp.page_section_id = ps.id
+      left join app.page_section_bindings psb
+        on psb.page_section_id = ps.id
+      where ps.id = $1
+      group by ps.id
+      limit 1
+    `,
+    [sectionId]
+  );
+
+  return result.rows[0] ?? null;
+}
+
 export async function ensureLayoutDraft(pageKey: string): Promise<string> {
   return withTransaction(async (queryFn) => {
     // 1. Find the page
@@ -299,7 +338,7 @@ export async function updateLayoutSection(
   }
 
   const updates: string[] = [];
-  const values: any[] = [];
+  const values: unknown[] = [];
   let index = 1;
 
   if (data.eyebrow !== undefined) {

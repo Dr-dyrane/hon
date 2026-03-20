@@ -1,3 +1,5 @@
+import { CheckCircle2, PenSquare, Star } from "lucide-react";
+import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAuthenticatedSession } from "@/lib/auth/guards";
 import {
   listPendingReviewsForPortal,
@@ -29,38 +31,31 @@ export default async function ReviewsPage() {
   const approvedCount = reviews.filter((review) => review.status === "approved").length;
 
   return (
-    <div className="space-y-8">
-      <section className="glass-morphism rounded-[36px] bg-system-background/86 p-6 shadow-[0_28px_90px_rgba(15,23,42,0.08)]">
-        <div className="flex flex-col gap-1">
-          <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-            Reviews
-          </p>
-          <h2 className="text-3xl font-bold tracking-display text-label">Your reviews</h2>
-        </div>
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Pending
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">
-              {pendingReviews.length}
-            </p>
-          </article>
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Submitted
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{reviews.length}</p>
-          </article>
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Approved
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{approvedCount}</p>
-          </article>
-        </div>
-      </section>
+    <div className="space-y-8 pb-20 md:space-y-10">
+      <MetricRail
+        items={[
+          {
+            label: "Pending",
+            value: `${pendingReviews.length}`,
+            detail: "Ready to rate",
+            icon: PenSquare,
+          },
+          {
+            label: "Sent",
+            value: `${reviews.length}`,
+            detail: "Submitted",
+            icon: Star,
+          },
+          {
+            label: "Approved",
+            value: `${approvedCount}`,
+            detail: "Visible",
+            icon: CheckCircle2,
+            tone: "success",
+          },
+        ]}
+        columns={3}
+      />
 
       <section className="space-y-4">
         <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
@@ -86,7 +81,7 @@ export default async function ReviewsPage() {
 
       <section className="space-y-4">
         <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-          Submitted
+          Sent
         </div>
         {reviews.length === 0 ? (
           <div className="glass-morphism rounded-[32px] bg-system-background/80 p-6 text-sm text-secondary-label shadow-soft">
@@ -126,7 +121,9 @@ export default async function ReviewsPage() {
                   </div>
                 ) : null}
                 {review.body ? (
-                  <div className="mt-2 text-sm text-secondary-label">{review.body}</div>
+                  <div className="mt-2 text-sm leading-relaxed text-secondary-label">
+                    {review.body}
+                  </div>
                 ) : null}
 
                 <div className="mt-4 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">

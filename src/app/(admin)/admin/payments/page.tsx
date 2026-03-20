@@ -1,11 +1,13 @@
 import Link from "next/link";
+import { AlertCircle, CircleEllipsis, CreditCard } from "lucide-react";
+import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
 import { listPaymentsForAdmin } from "@/lib/db/repositories/orders-repository";
 
 function formatTimestamp(value?: string | null) {
   if (!value) {
-    return "—";
+    return "-";
   }
 
   return new Intl.DateTimeFormat("en-US", {
@@ -14,12 +16,8 @@ function formatTimestamp(value?: string | null) {
   }).format(new Date(value));
 }
 
-function PaymentStatusChip({ label }: { label: string }) {
-  return (
-    <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[11px] font-semibold tracking-tight text-secondary-label">
-      {label}
-    </span>
-  );
+function formatStatusLabel(value: string) {
+  return value.replace(/_/g, " ");
 }
 
 export default async function AdminPaymentsPage() {
@@ -29,137 +27,106 @@ export default async function AdminPaymentsPage() {
   const submitted = payments.filter((payment) => payment.status === "submitted").length;
 
   return (
-    <div className="space-y-8">
-      <section className="glass-morphism rounded-[36px] bg-system-background/86 p-6 shadow-[0_28px_90px_rgba(15,23,42,0.08)]">
-        <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-          Payments
-        </p>
-        <h2 className="text-3xl font-bold tracking-display text-label">
-          Transfer review queue
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-secondary-label">
-          Focus on submitted transfers and bank confirmations before marking an order ready for
-          dispatch.
-        </p>
-
-        <div className="mt-6 grid gap-4 xl:grid-cols-3">
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Under review
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{underReview}</p>
-            <p className="text-xs leading-snug text-secondary-label">Need explicit approval.</p>
-          </article>
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Submitted
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{submitted}</p>
-            <p className="text-xs leading-snug text-secondary-label">
-              Awaiting proof or match.
-            </p>
-          </article>
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Queue
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{payments.length}</p>
-            <p className="text-xs leading-snug text-secondary-label">
-              Showing most recent 50 payments.
-            </p>
-          </article>
+    <div className="space-y-8 pb-20 md:space-y-10">
+      <section className="space-y-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin/orders"
+            className="button-secondary min-h-[40px] px-4 text-[11px] font-semibold uppercase tracking-[0.16em]"
+          >
+            Orders
+          </Link>
         </div>
+
+        <MetricRail
+          items={[
+            {
+              label: "Review",
+              value: `${underReview}`,
+              detail: "Need decision",
+              icon: AlertCircle,
+            },
+            {
+              label: "Submitted",
+              value: `${submitted}`,
+              detail: "Proof sent",
+              icon: CircleEllipsis,
+            },
+            {
+              label: "Queue",
+              value: `${payments.length}`,
+              detail: "Recent transfers",
+              icon: CreditCard,
+              tone: "success",
+            },
+          ]}
+          columns={3}
+        />
       </section>
 
-      <section className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-              Bank transfers
-            </p>
-            <h3 className="text-2xl font-semibold tracking-title text-label">
-              Proofs and review notes
-            </h3>
-          </div>
-          <div className="text-sm text-secondary-label">
-            Payments stay tied to orders until marked confirmed or rejected.
-          </div>
-        </div>
-
-        <div className="grid gap-4">
-          {payments.map((payment) => (
-            <article
-              key={payment.paymentId}
-              className="glass-morphism rounded-[32px] bg-system-background/72 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
-            >
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-[11px] font-semibold tracking-headline text-secondary-label uppercase">
-                    Payment for {payment.orderNumber}
-                  </p>
-                  <p className="text-2xl font-semibold tracking-tight text-label">
-                    {formatNgn(payment.expectedAmountNgn)}
-                  </p>
+      <section className="grid gap-4">
+        {payments.map((payment) => (
+          <article
+            key={payment.paymentId}
+            className="glass-morphism rounded-[32px] bg-system-background/72 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
+          >
+            <div className="flex flex-col gap-4 min-[980px]:flex-row min-[980px]:items-start min-[980px]:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="text-lg font-semibold tracking-tight text-label">
+                    #{payment.orderNumber}
+                  </div>
+                  <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                    {formatStatusLabel(payment.status)}
+                  </span>
                 </div>
-                <PaymentStatusChip label={payment.status.replace(/_/g, " ")} />
+
+                <div className="mt-3 grid gap-3 text-sm text-secondary-label sm:grid-cols-2 xl:grid-cols-4">
+                  <MetaItem
+                    label="Account"
+                    value={[payment.bankName, payment.accountNumber].filter(Boolean).join(" · ") || "Pending"}
+                  />
+                  <MetaItem label="Payer" value={payment.payerName ?? "Missing proof"} />
+                  <MetaItem label="Submitted" value={formatTimestamp(payment.submittedAt)} />
+                  <MetaItem label="Expires" value={formatTimestamp(payment.expiresAt)} />
+                </div>
               </div>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div className="space-y-2 text-sm text-secondary-label">
-                  <p>
-                    <span className="font-semibold text-label">Bank account</span>
-                    <br />
-                    {payment.bankName ?? "N/A"} · {payment.accountName ?? "N/A"} ·
-                    {payment.accountNumber ?? "N/A"}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-label">Payer</span>
-                    <br />
-                    {payment.payerName ?? "Missing proof"}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-label">Submitted</span>
-                    <br />
-                    {formatTimestamp(payment.submittedAt)}
-                  </p>
-                </div>
-
-                <div className="space-y-2 text-sm text-secondary-label">
-                  <p>
-                    <span className="font-semibold text-label">Expected</span>
-                    <br />
+              <div className="min-w-[160px] shrink-0">
+                <div className="text-right text-sm text-secondary-label">
+                  <div className="text-lg font-semibold text-label">
                     {formatNgn(payment.expectedAmountNgn)}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-label">Received</span>
-                    <br />
+                  </div>
+                  <div className="mt-1">
                     {payment.submittedAmountNgn !== null
                       ? formatNgn(payment.submittedAmountNgn)
                       : "Awaiting proof"}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-label">Expires</span>
-                    <br />
-                    {formatTimestamp(payment.expiresAt)}
-                  </p>
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  <Link
+                    href={`/admin/orders/${payment.orderId}`}
+                    className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                  >
+                    Open
+                  </Link>
                 </div>
               </div>
-
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <Link
-                  href="/admin/orders"
-                  className="text-xs font-semibold uppercase tracking-headline text-secondary-label underline-offset-4 hover:text-label"
-                >
-                  Back to orders
-                </Link>
-                <span className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-                  Payment ID {payment.paymentId}
-                </span>
-              </div>
-            </article>
-          ))}
-        </div>
+            </div>
+          </article>
+        ))}
       </section>
+    </div>
+  );
+}
+
+function MetaItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[22px] bg-system-fill/42 px-4 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+        {label}
+      </div>
+      <div className="mt-1 truncate text-sm font-medium text-label">{value}</div>
     </div>
   );
 }

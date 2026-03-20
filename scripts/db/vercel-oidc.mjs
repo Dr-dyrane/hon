@@ -1,7 +1,12 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 const OIDC_REFRESH_BUFFER_MS = 300000;
+
+function getVercelCommand() {
+  return process.platform === "win32" ? "vercel.cmd" : "vercel";
+}
 
 function readJsonFile(filePath) {
   if (!existsSync(filePath)) {
@@ -130,6 +135,21 @@ function readLinkedProjectInfo(rootDir = process.cwd()) {
   };
 }
 
+function refreshPulledOidcTokenViaCli(rootDir = process.cwd()) {
+  const outputPath = path.join(rootDir, ".vercel", ".env.development.local");
+
+  try {
+    execFileSync(getVercelCommand(), ["env", "pull", "--yes", outputPath], {
+      cwd: rootDir,
+      stdio: "ignore",
+    });
+  } catch {
+    return null;
+  }
+
+  return readPulledOidcToken(rootDir);
+}
+
 async function requestFreshOidcToken(projectInfo, accessToken) {
   const query = projectInfo.teamId
     ? `?source=vercel-oidc-refresh&teamId=${projectInfo.teamId}`
@@ -172,6 +192,13 @@ export async function getRuntimeVercelOidcToken() {
     return pulledToken;
   }
 
+  const cliRefreshedToken = refreshPulledOidcTokenViaCli();
+
+  if (cliRefreshedToken) {
+    process.env.VERCEL_OIDC_TOKEN = cliRefreshedToken;
+    return cliRefreshedToken;
+  }
+
   const accessToken = readLocalVercelAccessToken();
   const projectInfo = readLinkedProjectInfo();
 
@@ -182,6 +209,13 @@ export async function getRuntimeVercelOidcToken() {
 
       return refreshedToken;
     } catch (error) {
+      const cliFallbackToken = refreshPulledOidcTokenViaCli();
+
+      if (cliFallbackToken) {
+        process.env.VERCEL_OIDC_TOKEN = cliFallbackToken;
+        return cliFallbackToken;
+      }
+
       const fallbackToken = readPulledOidcToken();
 
       if (fallbackToken) {

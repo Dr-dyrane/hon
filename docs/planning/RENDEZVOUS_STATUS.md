@@ -51,6 +51,16 @@ Current state:
 - admin delivery board now supports rider roster, assignment, and delivery-state actions from Aurora
 - review requests are created from delivered orders and both review surfaces now read and write against Aurora
 - catalog repositories tightened for draft-first creation, granular variant status, and inventory mutation
+- catalog creation, editing, and quick merchandising flows now run through real admin routes
+- layout section authoring now writes draft content correctly and publish flow remains active
+- tokenized courier links now open a real courier location-sharing route
+- delivery tracking points now ingest through the app and feed signed-in customer tracking
+- portal tracking now polls a real delivery snapshot instead of using a placeholder route
+- portal profile and saved address management now read and write against Aurora
+- portal reorder now rebuilds the cart from past orders using current availability and pricing
+- root admin overview, orders, payments, customers, reviews, delivery, and settings now use the quieter KPI-rail and compact-row shell direction instead of the earlier explanatory scaffold pattern
+- portal profile and addresses now use compact context panels instead of route-level hero repetition
+- portal home, reorder, and reviews now use the same KPI-rail and compact-root direction as the newer console screens
 
 This means the system has crossed into operational platform work.
 
@@ -162,7 +172,7 @@ Deliverables:
 
 Status:
 
-- `not started`
+- `in progress`
 
 Deliverables:
 
@@ -214,10 +224,10 @@ Completed:
 - [x] delivery assignment schema and repository path
 - [x] review request and review schema
 - [x] review repository and moderation write path
+- [x] rider tracking ingestion path
 
 Open:
 
-- [ ] rider tracking ingestion path
 - [ ] RLS policies for ownership and admin scopes
 - [ ] audit coverage review for write-heavy flows
 
@@ -247,10 +257,10 @@ Open:
 - [x] delivery board
 - [x] assignment-aware delivery operations
 - [x] review moderation
-- [x] catalog creation and editing flows (repository layer complete, UI in progress)
-- [x] availability and featured management actions (repository layer complete)
-- [ ] layout authoring flow
-- [ ] layout publishing flow
+- [x] catalog creation and editing flows
+- [x] availability and featured management actions
+- [x] layout authoring flow
+- [x] layout publishing flow
 - [ ] tighter Apple-style visual and copy pass across all admin pages
 
 ---
@@ -272,14 +282,14 @@ Completed:
 - [x] guest confirmation route for checkout-created orders
 - [x] quieter order history and confirmation surfaces
 - [x] review history
+- [x] signed-in tracking route
+- [x] addresses
+- [x] profile
+- [x] reorder
 
 Open:
 
-- [ ] addresses
-- [ ] profile
-- [ ] reorder
 - [ ] review history
-- [ ] signed-in tracking route
 - [ ] quieter Apple-style copy pass across portal screens
 
 ---
@@ -326,17 +336,19 @@ Current implementation:
 
 This is acceptable for the current pass, but a fuller focused checkout shell may still be introduced later if the flow needs more space.
 
-### Delivery is still snapshot-only
+### Delivery is polling-based, not streaming
 
 Current tracking behavior:
 
-- portal order detail can render a Mapbox snapshot when coordinates exist in the order snapshot
+- courier links can post tracking points into the platform
+- the signed-in portal tracking route polls a real delivery snapshot and latest rider position
+- admin dispatch map can prefer latest tracking points when available
 
 Missing:
 
-- live assignments
-- ingestion
-- streaming updates
+- SSE or socket streaming updates
+- richer route/ETA logic
+- guest tracking on the same live model
 
 ### RLS is not active yet
 
@@ -413,10 +425,10 @@ The active build block is Pass 5: admin console expansion.
 
 Implement in this order:
 
-1. Add richer catalog mutation flows.
-2. Add layout authoring and publishing.
-3. Add delivery tracking ingestion.
-4. Add addresses and profile.
+1. Harden admin and portal visual passes.
+2. Add stronger realtime delivery streaming.
+3. Add RLS and audit hardening.
+4. Review legacy lint debt outside platform work.
 
 After that:
 

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Clock3, PackageCheck } from "lucide-react";
+import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAuthenticatedSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
 import { listOrdersForPortal } from "@/lib/db/repositories/orders-repository";
@@ -35,28 +37,32 @@ export default async function OrdersPage() {
 
   return (
     <div className="space-y-8">
-      <section className="glass-morphism rounded-[36px] bg-system-background/86 p-6 shadow-[0_28px_90px_rgba(15,23,42,0.08)]">
-        <div className="flex flex-col gap-1">
+      <section className="space-y-5">
+        <div className="space-y-1">
           <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
             Orders
           </p>
           <h2 className="text-3xl font-bold tracking-display text-label">Your orders</h2>
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Active
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{activeOrders}</p>
-          </article>
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Total
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{orders.length}</p>
-          </article>
-        </div>
+        <MetricRail
+          items={[
+            {
+              label: "Active",
+              value: `${activeOrders}`,
+              detail: "In progress",
+              icon: Clock3,
+            },
+            {
+              label: "Total",
+              value: `${orders.length}`,
+              detail: "All orders",
+              icon: PackageCheck,
+              tone: "success",
+            },
+          ]}
+          columns={2}
+        />
       </section>
 
       <section className="space-y-4">

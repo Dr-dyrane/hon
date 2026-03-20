@@ -5,13 +5,14 @@ import { Logo } from "@/components/ui/Logo";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { WorkspaceHeaderTitle } from "@/components/shell/WorkspaceHeaderTitle";
 import { WorkspaceNav } from "@/components/shell/WorkspaceNav";
-import type { ShellNavItem } from "@/lib/app-shell";
+import type { ShellHeaderRoute, ShellNavItem } from "@/lib/app-shell";
 
 export function WorkspaceShell({
   eyebrow,
   title,
   description,
   navItems,
+  headerRoutes,
   children,
   mobileNav = false,
   sessionEmail,
@@ -21,6 +22,7 @@ export function WorkspaceShell({
   title: string;
   description: string;
   navItems: ShellNavItem[];
+  headerRoutes: ShellHeaderRoute[];
   children: ReactNode;
   mobileNav?: boolean;
   sessionEmail?: string;
@@ -29,7 +31,7 @@ export function WorkspaceShell({
   return (
     <div className="min-h-svh bg-[radial-gradient(circle_at_top,rgba(15,61,46,0.08),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,242,234,0.9)_100%)] dark:bg-[radial-gradient(circle_at_top,rgba(215,197,163,0.09),transparent_38%),linear-gradient(180deg,rgba(18,22,18,0.98)_0%,rgba(10,12,10,1)_100%)]">
       <div className="mx-auto min-h-svh max-w-[1600px] md:grid md:grid-cols-[300px_minmax(0,1fr)]">
-        <aside className="hidden bg-system-background/48 px-6 py-6 md:sticky md:top-0 md:flex md:h-svh md:flex-col md:self-start">
+        <aside className="hidden bg-system-background/48 px-6 py-6 md:sticky md:top-0 md:flex md:h-svh md:flex-col md:self-start md:overflow-hidden">
           <Link href="/" className="inline-flex">
             <Logo />
           </Link>
@@ -46,7 +48,7 @@ export function WorkspaceShell({
             </p>
           </div>
 
-          <div className="mt-10 flex-1">
+          <div className="mt-10 min-h-0 flex-1 overflow-y-auto pr-1 scrollbar-hide">
             <WorkspaceNav items={navItems} />
           </div>
 
@@ -74,12 +76,12 @@ export function WorkspaceShell({
             <div className="glass-morphism rounded-[30px] bg-system-background/78 px-5 py-4 shadow-soft">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label md:hidden">
-                    {eyebrow}
-                  </div>
-                  <div className="mt-1 text-xl font-semibold tracking-title text-label md:text-2xl">
-                    <WorkspaceHeaderTitle title={title} navItems={navItems} />
-                  </div>
+                  <WorkspaceHeaderTitle
+                    eyebrow={eyebrow}
+                    title={title}
+                    navItems={navItems}
+                    routes={headerRoutes}
+                  />
                 </div>
 
                 <div className="flex items-center gap-3">

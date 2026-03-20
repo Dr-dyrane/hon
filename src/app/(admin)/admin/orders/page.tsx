@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Clock3, Landmark, PackageCheck } from "lucide-react";
+import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
 import { listOrdersForAdmin } from "@/lib/db/repositories/orders-repository";
@@ -18,7 +20,7 @@ const friendlyStatusLabel: Record<string, string> = {
 
 function formatTimestamp(value?: string | null) {
   if (!value) {
-    return "—";
+    return "-";
   }
 
   return new Intl.DateTimeFormat("en-US", {
@@ -27,12 +29,8 @@ function formatTimestamp(value?: string | null) {
   }).format(new Date(value));
 }
 
-function OrderStatusChip({ label }: { label: string }) {
-  return (
-    <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[11px] font-semibold tracking-tight text-secondary-label">
-      {label}
-    </span>
-  );
+function formatStatusLabel(value: string) {
+  return friendlyStatusLabel[value] ?? value.replace(/_/g, " ");
 }
 
 export default async function AdminOrdersPage() {
@@ -44,151 +42,113 @@ export default async function AdminOrdersPage() {
   const activeOrders = orders.filter(
     (order) => !["delivered", "cancelled", "expired"].includes(order.status)
   ).length;
+  const dispatchReady = orders.filter(
+    (order) => ["payment_confirmed", "ready_for_dispatch"].includes(order.status)
+  ).length;
 
   return (
-    <div className="space-y-8">
-      <section className="glass-morphism overflow-hidden rounded-[36px] bg-system-background/86 p-6 shadow-[0_28px_90px_rgba(15,23,42,0.08)]">
-        <div className="flex flex-col gap-1">
-          <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-            Orders Console
-          </p>
-          <h2 className="text-3xl font-bold tracking-display text-label">
-            Operational order board
-          </h2>
-          <p className="text-sm leading-relaxed text-secondary-label">
-            Track what is pending, what is paid, and what still needs manual handling
-            before dispatch.
-          </p>
+    <div className="space-y-8 pb-20 md:space-y-10">
+      <section className="space-y-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin/payments"
+            className="button-secondary min-h-[40px] px-4 text-[11px] font-semibold uppercase tracking-[0.16em]"
+          >
+            Payments
+          </Link>
         </div>
 
-        <div className="mt-6 grid gap-4 xl:grid-cols-3">
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-sm font-semibold tracking-headline text-secondary-label uppercase">
-              Active
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{activeOrders}</p>
-            <p className="text-xs leading-snug text-secondary-label">
-              Orders still in progress.
-            </p>
-          </article>
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-sm font-semibold tracking-headline text-secondary-label uppercase">
-              Awaiting transfer
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{awaitingTransfer}</p>
-            <p className="text-xs leading-snug text-secondary-label">
-              Require manual confirmation.
-            </p>
-          </article>
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-sm font-semibold tracking-headline text-secondary-label uppercase">
-              Queue size
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{orders.length}</p>
-            <p className="text-xs leading-snug text-secondary-label">
-              Showing most recent 40 orders.
-            </p>
-          </article>
-        </div>
+        <MetricRail
+          items={[
+            {
+              label: "Active",
+              value: `${activeOrders}`,
+              detail: "In progress",
+              icon: Clock3,
+            },
+            {
+              label: "Awaiting",
+              value: `${awaitingTransfer}`,
+              detail: "Transfer pending",
+              icon: Landmark,
+            },
+            {
+              label: "Ready",
+              value: `${dispatchReady}`,
+              detail: "Prep or dispatch",
+              icon: PackageCheck,
+              tone: "success",
+            },
+          ]}
+          columns={3}
+        />
       </section>
 
-      <section className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-              Orders
-            </p>
-            <h3 className="text-2xl font-semibold tracking-title text-label">
-              Priority queue
-            </h3>
-          </div>
-          <div className="text-sm text-secondary-label">
-            Tap an order to inspect its payment and delivery context.
-          </div>
-        </div>
-
-        <div className="grid gap-4">
-          {orders.map((order) => (
-            <article
-              key={order.orderId}
-              className="glass-morphism rounded-[32px] bg-system-background/72 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
-            >
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-[11px] font-semibold tracking-headline text-secondary-label uppercase">
-                    Order
-                  </p>
-                  <p className="text-2xl font-semibold tracking-tight text-label">
-                    {order.orderNumber}
-                  </p>
-                </div>
+      <section className="grid gap-4">
+        {orders.map((order) => (
+          <article
+            key={order.orderId}
+            className="glass-morphism rounded-[32px] bg-system-background/72 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
+          >
+            <div className="flex flex-col gap-4 min-[980px]:flex-row min-[980px]:items-start min-[980px]:justify-between">
+              <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <OrderStatusChip
-                    label={
-                      friendlyStatusLabel[order.status] ?? order.status.replace(/_/g, " ")
-                    }
-                  />
-                  <OrderStatusChip
-                    label={
-                      friendlyStatusLabel[order.paymentStatus] ??
-                      order.paymentStatus.replace(/_/g, " ")
-                    }
-                  />
+                  <div className="text-lg font-semibold tracking-tight text-label">
+                    #{order.orderNumber}
+                  </div>
+                  <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                    {formatStatusLabel(order.status)}
+                  </span>
+                  <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                    {formatStatusLabel(order.paymentStatus)}
+                  </span>
+                </div>
+
+                <div className="mt-3 grid gap-3 text-sm text-secondary-label sm:grid-cols-2 xl:grid-cols-4">
+                  <MetaItem label="Customer" value={order.customerName} />
+                  <MetaItem label="Phone" value={order.customerPhone} />
+                  <MetaItem label="Placed" value={formatTimestamp(order.placedAt)} />
+                  <MetaItem label="Deadline" value={formatTimestamp(order.transferDeadlineAt)} />
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div className="space-y-2 text-sm text-secondary-label">
-                  <p>
-                    <span className="font-semibold text-label">Customer</span>
-                    <br />
-                    {order.customerName}
-                    <br />
-                    <span className="text-xs">{order.customerEmail ?? "No email"}</span>
-                    <br />
-                    <span className="text-xs">{order.customerPhone}</span>
-                  </p>
-                  <p>
-                    <span className="font-semibold text-label">Placed</span>
-                    <br />
-                    {formatTimestamp(order.placedAt)}
-                  </p>
+              <div className="min-w-[150px] shrink-0">
+                <div className="text-right text-sm text-secondary-label">
+                  <div className="text-lg font-semibold text-label">{formatNgn(order.totalNgn)}</div>
+                  <div className="mt-1">
+                    {order.itemCount} item{order.itemCount === 1 ? "" : "s"}
+                  </div>
                 </div>
-
-                <div className="space-y-2 text-sm text-secondary-label">
-                  <p>
-                    <span className="font-semibold text-label">Total</span>
-                    <br />
-                    {formatNgn(order.totalNgn)}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-label">Transfer deadline</span>
-                    <br />
-                    {formatTimestamp(order.transferDeadlineAt)}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-label">Line items</span>
-                    <br />
-                    {order.itemCount}
-                  </p>
+                <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  <Link
+                    href={`/admin/orders/${order.orderId}`}
+                    className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                  >
+                    Open
+                  </Link>
+                  <Link
+                    href="/admin/payments"
+                    className="rounded-full bg-system-fill/56 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label transition-colors duration-200 hover:text-label"
+                  >
+                    Payments
+                  </Link>
                 </div>
               </div>
-
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <span className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-                  {order.orderNumber} feeds the payment queue until confirmed.
-                </span>
-                <Link
-                  href="/admin/payments"
-                  className="text-xs font-semibold uppercase tracking-headline text-secondary-label underline-offset-4 hover:text-label"
-                >
-                  Jump to payments
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
+            </div>
+          </article>
+        ))}
       </section>
+    </div>
+  );
+}
+
+function MetaItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[22px] bg-system-fill/42 px-4 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+        {label}
+      </div>
+      <div className="mt-1 truncate text-sm font-medium text-label">{value}</div>
     </div>
   );
 }

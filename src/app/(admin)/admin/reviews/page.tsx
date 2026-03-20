@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { CheckCircle2, MessageCircleMore, Sparkles } from "lucide-react";
+import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { listReviewsForAdmin } from "@/lib/db/repositories/review-repository";
 import { AdminReviewModerationCard } from "@/components/reviews/AdminReviewModerationCard";
@@ -26,38 +28,31 @@ export default async function AdminReviewsPage() {
   const featuredCount = reviews.filter((review) => review.isFeatured).length;
 
   return (
-    <div className="space-y-8">
-      <section className="glass-morphism rounded-[36px] bg-system-background/86 p-6 shadow-[0_28px_90px_rgba(15,23,42,0.08)]">
-        <div className="flex flex-col gap-1">
-          <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-            Reviews
-          </p>
-          <h2 className="text-3xl font-bold tracking-display text-label">
-            Moderation
-          </h2>
-        </div>
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Pending
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{pendingCount}</p>
-          </article>
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Approved
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{approvedCount}</p>
-          </article>
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Featured
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{featuredCount}</p>
-          </article>
-        </div>
-      </section>
+    <div className="space-y-8 pb-20 md:space-y-10">
+      <MetricRail
+        items={[
+          {
+            label: "Pending",
+            value: `${pendingCount}`,
+            detail: "Need moderation",
+            icon: MessageCircleMore,
+          },
+          {
+            label: "Approved",
+            value: `${approvedCount}`,
+            detail: "Visible",
+            icon: CheckCircle2,
+            tone: "success",
+          },
+          {
+            label: "Featured",
+            value: `${featuredCount}`,
+            detail: "Promoted",
+            icon: Sparkles,
+          },
+        ]}
+        columns={3}
+      />
 
       <section className="space-y-4">
         {reviews.length === 0 ? (
@@ -65,74 +60,82 @@ export default async function AdminReviewsPage() {
             No reviews yet.
           </div>
         ) : (
-          <div className="grid gap-4">
-            {reviews.map((review) => (
-              <article
-                key={review.reviewId}
-                className="glass-morphism rounded-[32px] bg-system-background/78 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-headline text-secondary-label">
+          reviews.map((review) => (
+            <article
+              key={review.reviewId}
+              className="glass-morphism rounded-[32px] bg-system-background/78 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
+            >
+              <div className="flex flex-col gap-4 min-[980px]:flex-row min-[980px]:items-start min-[980px]:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="text-lg font-semibold tracking-tight text-label">
                       #{review.orderNumber}
                     </div>
-                    <div className="mt-1 text-2xl font-semibold text-label">
-                      {review.rating}/5
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                    <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
                       {formatStatusLabel(review.status)}
                     </span>
                     {review.isFeatured ? (
-                      <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                      <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
                         Featured
                       </span>
                     ) : null}
                   </div>
-                </div>
 
-                <div className="mt-4 grid gap-3 text-sm text-secondary-label md:grid-cols-[1fr_auto]">
-                  <div>
-                    <div className="font-semibold text-label">{review.customerName}</div>
-                    <div>{review.customerEmail ?? "No email"}</div>
-                  </div>
-                  <div className="md:text-right">
-                    <Link
-                      href={`/admin/orders/${review.orderId}`}
-                      className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
-                    >
-                      Open order
-                    </Link>
-                  </div>
-                </div>
+                  <div className="mt-2 text-2xl font-semibold text-label">{review.rating}/5</div>
 
-                {review.title ? (
-                  <div className="mt-4 text-lg font-semibold tracking-tight text-label">
-                    {review.title}
+                  <div className="mt-3 grid gap-3 text-sm text-secondary-label sm:grid-cols-2 xl:grid-cols-4">
+                    <MetaItem label="Customer" value={review.customerName} />
+                    <MetaItem label="Email" value={review.customerEmail ?? "No email"} />
+                    <MetaItem label="Created" value={formatTimestamp(review.createdAt)} />
+                    <MetaItem
+                      label="Moderated"
+                      value={review.moderatedAt ? formatTimestamp(review.moderatedAt) : "-"}
+                    />
                   </div>
-                ) : null}
-                {review.body ? (
-                  <div className="mt-2 text-sm text-secondary-label">{review.body}</div>
-                ) : null}
 
-                <div className="mt-4 flex flex-wrap items-center gap-3 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                  <span>{formatTimestamp(review.createdAt)}</span>
-                  {review.moderatedAt ? (
-                    <span>{formatTimestamp(review.moderatedAt)}</span>
+                  {review.title ? (
+                    <div className="mt-4 text-base font-semibold text-label">{review.title}</div>
+                  ) : null}
+                  {review.body ? (
+                    <div className="mt-2 text-sm leading-relaxed text-secondary-label">
+                      {review.body}
+                    </div>
                   ) : null}
                 </div>
 
-                <AdminReviewModerationCard
-                  reviewId={review.reviewId}
-                  status={review.status}
-                  isFeatured={review.isFeatured}
-                />
-              </article>
-            ))}
-          </div>
+                <div className="min-w-[160px] shrink-0">
+                  <div className="flex justify-end">
+                    <Link
+                      href={`/admin/orders/${review.orderId}`}
+                      className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                    >
+                      Open
+                    </Link>
+                  </div>
+                  <div className="mt-4">
+                    <AdminReviewModerationCard
+                      reviewId={review.reviewId}
+                      status={review.status}
+                      isFeatured={review.isFeatured}
+                    />
+                  </div>
+                </div>
+              </div>
+            </article>
+          ))
         )}
       </section>
+    </div>
+  );
+}
+
+function MetaItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[22px] bg-system-fill/42 px-4 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+        {label}
+      </div>
+      <div className="mt-1 truncate text-sm font-medium text-label">{value}</div>
     </div>
   );
 }

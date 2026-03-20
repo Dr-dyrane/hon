@@ -2,11 +2,48 @@
 
 import { revalidatePath } from "next/cache";
 import { 
+  createAdminCatalogProduct,
   updateAdminCatalogProduct, 
   updateAdminCatalogInventory,
   setAdminCatalogProductAvailability,
   setAdminCatalogProductMerchandising
 } from "@/lib/db/repositories/catalog-admin-repository";
+
+function revalidateCatalogPaths(productId?: string) {
+  revalidatePath("/");
+  revalidatePath("/admin/catalog/products");
+
+  if (productId) {
+    revalidatePath(`/admin/catalog/products/${productId}`);
+  }
+}
+
+export async function createProductAction(formData: FormData) {
+  const categoryId = (formData.get("categoryId") as string) || null;
+  const productName = formData.get("productName") as string;
+  const marketingName = (formData.get("marketingName") as string) || null;
+  const variantName = (formData.get("variantName") as string) || null;
+  const priceNgn = formData.get("priceNgn") as string;
+
+  try {
+    const productId = await createAdminCatalogProduct({
+      categoryId,
+      productName,
+      marketingName,
+      variantName,
+      priceNgn,
+    });
+
+    revalidateCatalogPaths(productId);
+
+    return {
+      success: true,
+      redirectTo: `/admin/catalog/products/${productId}`,
+    };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+}
 
 export async function updateProductAction(formData: FormData) {
   const productId = formData.get("productId") as string;
@@ -54,8 +91,7 @@ export async function updateProductAction(formData: FormData) {
       reorderThreshold,
     });
 
-    revalidatePath("/admin/catalog/products");
-    revalidatePath(`/admin/catalog/products/${productId}`);
+    revalidateCatalogPaths(productId);
     return { success: true };
   } catch (error) {
     return { success: false, error: (error as Error).message };
@@ -65,8 +101,20 @@ export async function updateProductAction(formData: FormData) {
 export async function toggleProductAvailabilityAction(productId: string, isAvailable: boolean) {
   try {
     await setAdminCatalogProductAvailability(productId, isAvailable);
-    revalidatePath("/admin/catalog/products");
-    revalidatePath(`/admin/catalog/products/${productId}`);
+    revalidateCatalogPaths(productId);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function setProductMerchandisingAction(
+  productId: string,
+  merchandisingState: "standard" | "featured" | "hidden"
+) {
+  try {
+    await setAdminCatalogProductMerchandising(productId, merchandisingState);
+    revalidateCatalogPaths(productId);
     return { success: true };
   } catch (error) {
     return { success: false, error: (error as Error).message };
@@ -76,7 +124,7 @@ export async function toggleProductAvailabilityAction(productId: string, isAvail
 export async function updateInventoryAction(variantId: string, onHand: number, reorderThreshold?: number | null) {
   try {
     await updateAdminCatalogInventory(variantId, { onHand, reorderThreshold });
-    revalidatePath("/admin/catalog/products");
+    revalidateCatalogPaths();
     // Note: revalidating by productId would be better if we had it here, but revalidatePath works on the route
     return { success: true };
   } catch (error) {

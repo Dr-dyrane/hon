@@ -1,58 +1,21 @@
-import { ScaffoldPage } from "@/components/shell/ScaffoldPage";
+import { requireAuthenticatedSession } from "@/lib/auth/guards";
+import { listPortalAddresses } from "@/lib/db/repositories/account-repository";
+import { AddressBook } from "@/components/account/AddressBook";
+import { WorkspaceContextPanel } from "@/components/shell/WorkspaceContextPanel";
 
-export default function AddressesPage() {
+export default async function AddressesPage() {
+  const session = await requireAuthenticatedSession("/account/addresses");
+  const addresses = await listPortalAddresses(session.email);
+
   return (
-    <ScaffoldPage
-      badge="Addresses"
-      title="Saved delivery places."
-      description="Address management is intentionally separated from checkout so returning customers can keep delivery details clean without friction."
-      primaryAction={{ href: "/account/profile", label: "Edit Profile" }}
-      summary={[
-        {
-          label: "Shape",
-          value: "Grouped",
-          detail: "The final UI will use grouped rows and sheet-based editing in the HIG style.",
-        },
-        {
-          label: "Data",
-          value: "Validated",
-          detail: "Phone, city, and location fields remain operationally useful for dispatch.",
-        },
-        {
-          label: "Default",
-          value: "One",
-          detail: "One address can be promoted to default for faster checkout.",
-        },
-      ]}
-      sections={[
-        {
-          title: "Stored Fields",
-          description: "Addresses are richer than simple form text because delivery needs context.",
-          items: [
-            "Recipient name and phone",
-            "Street, city, area, and landmark",
-            "Optional coordinates for improved dispatch accuracy",
-          ],
-        },
-        {
-          title: "Checkout Relationship",
-          description: "Saved addresses accelerate checkout but do not replace order snapshots.",
-          items: [
-            "Default address preloads into checkout",
-            "Order keeps its own address snapshot",
-            "Later edits do not rewrite historical orders",
-          ],
-        },
-        {
-          title: "Portal Intent",
-          description: "This route exists so the account flow remains complete from day one of implementation.",
-          items: [
-            "Create address",
-            "Edit address",
-            "Set default address",
-          ],
-        },
-      ]}
-    />
+    <div className="space-y-8 pb-20 md:space-y-10">
+      <WorkspaceContextPanel
+        title="Places"
+        detail="Save, edit, default."
+        tags={[{ label: `${addresses.length}`, tone: "muted" }]}
+      />
+
+      <AddressBook addresses={addresses} />
+    </div>
   );
 }

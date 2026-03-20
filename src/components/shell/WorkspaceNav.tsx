@@ -2,20 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ShellNavItem } from "@/lib/app-shell";
+import { isActiveShellPath, type ShellNavItem } from "@/lib/app-shell";
 import { cn } from "@/lib/utils";
-
-function isActivePath(currentPath: string, item: ShellNavItem) {
-  if (item.href === currentPath) {
-    return true;
-  }
-
-  if (item.match === "exact") {
-    return false;
-  }
-
-  return currentPath.startsWith(`${item.href}/`);
-}
 
 export function WorkspaceNav({
   items,
@@ -34,7 +22,7 @@ export function WorkspaceNav({
       >
         <ul className="scrollbar-hide flex gap-1 overflow-x-auto">
           {items.map((item) => {
-            const active = isActivePath(pathname, item);
+            const active = isActiveShellPath(pathname, item);
 
             return (
               <li key={item.href} className="shrink-0">
@@ -60,7 +48,7 @@ export function WorkspaceNav({
   return (
     <nav aria-label="Section navigation" className="space-y-2">
       {items.map((item) => {
-        const active = isActivePath(pathname, item);
+        const active = isActiveShellPath(pathname, item);
 
         return (
           <Link

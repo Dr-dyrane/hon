@@ -154,8 +154,10 @@ export async function listAllAdminCatalogProducts() {
         v.slug as "variantSlug",
         v.name as "variantName",
         v.sku,
+        v.status as "variantStatus",
         v.price_ngn as "priceNgn",
         v.compare_at_price_ngn as "compareAtPriceNgn",
+        ii.on_hand as "inventoryOnHand",
         p.sort_order as "sortOrder",
         count(vi.ingredient_id)::int as "ingredientCount"
       from app.products p
@@ -166,6 +168,8 @@ export async function listAllAdminCatalogProducts() {
        and v.is_default = true
       left join app.variant_ingredients vi
         on vi.variant_id = v.id
+      left join app.inventory_items ii
+        on ii.variant_id = v.id
       group by
         p.id,
         p.slug,
@@ -180,8 +184,10 @@ export async function listAllAdminCatalogProducts() {
         v.slug,
         v.name,
         v.sku,
+        v.status,
         v.price_ngn,
         v.compare_at_price_ngn,
+        ii.on_hand,
         p.sort_order,
         p.created_at,
         pc.sort_order

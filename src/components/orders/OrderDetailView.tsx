@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { PaymentProofUploadCard } from "@/components/orders/PaymentProofUploadCard";
+import { WorkspaceContextPanel } from "@/components/shell/WorkspaceContextPanel";
 import { formatNgn } from "@/lib/commerce";
 import type {
   OrderStatusEventRow,
@@ -69,12 +70,8 @@ function getDeliveryLine(snapshot: Record<string, unknown>) {
   return "Pending";
 }
 
-function StatusChip({ value }: { value: string }) {
-  return (
-    <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-      {formatStatusLabel(value)}
-    </span>
-  );
+function buildStatusTag(value: string) {
+  return { label: formatStatusLabel(value) };
 }
 
 export function OrderDetailView({
@@ -111,38 +108,31 @@ export function OrderDetailView({
 
   return (
     <div className="space-y-6">
-      <section className="glass-morphism rounded-[36px] bg-system-background/86 p-6 shadow-[0_28px_90px_rgba(15,23,42,0.08)]">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-              Order
-            </p>
-            <h2 className="text-3xl font-semibold tracking-title text-label">
-              #{order.orderNumber}
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              <StatusChip value={order.status} />
-              <StatusChip value={order.paymentStatus} />
-              <StatusChip value={order.fulfillmentStatus} />
-            </div>
-          </div>
-
-          <div className="grid gap-3 text-right text-sm text-secondary-label">
-            <div>
-              <div className="font-semibold text-label">{formatNgn(order.totalNgn)}</div>
-              <div>{formatTimestamp(order.placedAt)}</div>
-            </div>
-            <div>
-              <div className="font-semibold text-label">{order.transferReference}</div>
-              <div>
-                {order.transferDeadlineAt
-                  ? formatTimestamp(order.transferDeadlineAt)
-                  : "No deadline"}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <WorkspaceContextPanel
+        title={`#${order.orderNumber}`}
+        detail={formatNgn(order.totalNgn)}
+        tags={[
+          buildStatusTag(order.status),
+          buildStatusTag(order.paymentStatus),
+          buildStatusTag(order.fulfillmentStatus),
+        ]}
+        meta={[
+          {
+            label: "Placed",
+            value: formatTimestamp(order.placedAt),
+          },
+          {
+            label: "Transfer",
+            value: order.transferReference,
+          },
+          {
+            label: "Deadline",
+            value: order.transferDeadlineAt
+              ? formatTimestamp(order.transferDeadlineAt)
+              : "No deadline",
+          },
+        ]}
+      />
 
       <section className="glass-morphism rounded-[32px] bg-system-background/78 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -179,6 +169,18 @@ export function OrderDetailView({
               {getDeliveryLine(order.deliveryAddressSnapshot)}
             </div>
             <div className="text-sm text-secondary-label">{order.customerPhone}</div>
+            {["ready_for_dispatch", "out_for_delivery", "delivered"].includes(
+              order.fulfillmentStatus
+            ) ? (
+              <div className="pt-1">
+                <Link
+                  href={`/account/tracking/${order.orderId}`}
+                  className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
+                >
+                  Track
+                </Link>
+              </div>
+            ) : null}
             {order.notes ? (
               <div className="text-sm text-secondary-label">{order.notes}</div>
             ) : null}

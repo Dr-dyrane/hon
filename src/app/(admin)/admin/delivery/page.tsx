@@ -1,7 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Bike, Clock3, Truck } from "lucide-react";
+import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
+import { buildCourierAccessUrl, createCourierAccessToken } from "@/lib/delivery/access";
+import {
+  buildTrackingMapUrl,
+  getTrackingCoords as getSnapshotTrackingCoords,
+} from "@/lib/delivery/tracking";
 import {
   listAdminDeliveryBoardOrders,
   listAdminDeliveryRiders,
@@ -13,8 +20,6 @@ import {
   markReadyAction,
   updateAssignmentStatusAction,
 } from "./actions";
-
-const mapToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
 function formatTimestamp(value?: string | null) {
   if (!value) {
@@ -46,30 +51,21 @@ function getDeliveryLine(snapshot: Record<string, unknown>) {
 }
 
 function getTrackingCoords(snapshot: Record<string, unknown>) {
-  const lat =
-    (typeof snapshot.latitude === "number" && snapshot.latitude) ||
-    (typeof snapshot.lat === "number" && snapshot.lat) ||
-    null;
-  const lng =
-    (typeof snapshot.longitude === "number" && snapshot.longitude) ||
-    (typeof snapshot.lng === "number" && snapshot.lng) ||
-    null;
-
-  if (typeof lat === "number" && typeof lng === "number") {
-    return { lat, lng };
-  }
-
-  return null;
+  return getSnapshotTrackingCoords(snapshot);
 }
 
-function buildMapUrl(lat: number, lng: number) {
-  if (!mapToken) {
-    return null;
+function getOrderTrackingCoords(order: AdminDeliveryOrder) {
+  if (
+    typeof order.latestTrackingLatitude === "number" &&
+    typeof order.latestTrackingLongitude === "number"
+  ) {
+    return {
+      lat: order.latestTrackingLatitude,
+      lng: order.latestTrackingLongitude,
+    };
   }
 
-  const style = "mapbox/light-v10";
-  const pin = `pin-s+0f0(${lng},${lat})`;
-  return `https://api.mapbox.com/styles/v1/${style}/static/${pin}/${lng},${lat},12/1000x720@2x?access_token=${mapToken}`;
+  return getTrackingCoords(order.deliveryAddressSnapshot);
 }
 
 function StageChip({ value }: { value: string }) {
@@ -287,14 +283,25 @@ function OrderCard({
   order: AdminDeliveryOrder;
   riders: AdminDeliveryRider[];
 }) {
+  const courierUrl =
+    order.assignmentId && order.riderId
+      ? buildCourierAccessUrl(
+          createCourierAccessToken({
+            assignmentId: order.assignmentId,
+            orderId: order.orderId,
+            riderId: order.riderId,
+          })
+        )
+      : null;
+
   return (
     <article className="rounded-[26px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <div className="text-[11px] font-semibold uppercase tracking-headline text-secondary-label">
             #{order.orderNumber}
           </div>
-          <div className="mt-1 text-lg font-semibold text-label">
+          <div className="mt-1 truncate text-lg font-semibold text-label">
             {order.customerName}
           </div>
         </div>
@@ -331,6 +338,17 @@ function OrderCard({
           >
             Open
           </Link>
+          {courierUrl ? (
+            <div className="mt-2">
+              <Link
+                href={courierUrl}
+                target="_blank"
+                className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
+              >
+                Courier
+              </Link>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -470,44 +488,45 @@ export default async function AdminDeliveryPage() {
   );
   const mapOrder =
     [...liveOrders, ...readyOrders, ...preparingOrders].find((order) =>
-      Boolean(getTrackingCoords(order.deliveryAddressSnapshot))
+      Boolean(getOrderTrackingCoords(order))
     ) ?? null;
-  const mapCoords = mapOrder
-    ? getTrackingCoords(mapOrder.deliveryAddressSnapshot)
+  const mapCoords = mapOrder ? getOrderTrackingCoords(mapOrder) : null;
+  const mapSrc = mapCoords
+    ? buildTrackingMapUrl({
+        latitude: mapCoords.lat,
+        longitude: mapCoords.lng,
+        width: 1000,
+        height: 720,
+        zoom: mapOrder?.latestTrackingRecordedAt ? 14 : 12,
+      })
     : null;
-  const mapSrc = mapCoords ? buildMapUrl(mapCoords.lat, mapCoords.lng) : null;
 
   return (
-    <div className="space-y-8">
-      <section className="glass-morphism rounded-[36px] bg-system-background/86 p-6 shadow-[0_28px_90px_rgba(15,23,42,0.08)]">
-        <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-          Delivery
-        </p>
-        <h2 className="text-3xl font-bold tracking-display text-label">Dispatch board</h2>
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Preparing
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">
-              {preparingOrders.length}
-            </p>
-          </article>
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Ready
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{readyOrders.length}</p>
-          </article>
-          <article className="rounded-[28px] bg-system-fill/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-            <p className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-              Live
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-label">{liveOrders.length}</p>
-          </article>
-        </div>
-      </section>
+    <div className="space-y-8 pb-20 md:space-y-10">
+      <MetricRail
+        items={[
+          {
+            label: "Preparing",
+            value: `${preparingOrders.length}`,
+            detail: "Kitchen side",
+            icon: Clock3,
+          },
+          {
+            label: "Ready",
+            value: `${readyOrders.length}`,
+            detail: "Waiting rider",
+            icon: Bike,
+          },
+          {
+            label: "Live",
+            value: `${liveOrders.length}`,
+            detail: "On road",
+            icon: Truck,
+            tone: "success",
+          },
+        ]}
+        columns={3}
+      />
 
       <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="grid gap-4 xl:grid-cols-3">

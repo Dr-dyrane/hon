@@ -1,59 +1,43 @@
-import { ScaffoldPage } from "@/components/shell/ScaffoldPage";
+import { History, Repeat2, ShoppingBag } from "lucide-react";
+import { MetricRail } from "@/components/admin/MetricRail";
+import { requireAuthenticatedSession } from "@/lib/auth/guards";
+import { listOrdersForPortal } from "@/lib/db/repositories/orders-repository";
+import { ReorderBoard } from "@/components/account/ReorderBoard";
 
-export default function ReorderPage() {
+export default async function ReorderPage() {
+  const session = await requireAuthenticatedSession("/account/reorder");
+  const orders = await listOrdersForPortal(session.email);
+  const activeOrders = orders.filter((order) => order.active).length;
+  const completedOrders = orders.length - activeOrders;
+
   return (
-    <ScaffoldPage
-      badge="Reorder"
-      title="Repeat purchases should be faster than first purchases."
-      description="This route will convert previous orders into a clean, validated cart while respecting current prices and availability."
-      primaryAction={{ href: "/account/orders", label: "Open Order History" }}
-      secondaryAction={{ href: "/", label: "Back To Storefront" }}
-      summary={[
-        {
-          label: "Source",
-          value: "Past Orders",
-          detail: "Reorder begins with historical baskets, not a separate wishlist model.",
-        },
-        {
-          label: "Validation",
-          value: "Current",
-          detail: "Reorder checks live availability and current pricing before cart creation.",
-        },
-        {
-          label: "Outcome",
-          value: "Fast Checkout",
-          detail: "The result is a ready-to-confirm cart, not a fragile duplicate order copy.",
-        },
-      ]}
-      sections={[
-        {
-          title: "Business Logic",
-          description: "Reorder should be trustworthy instead of pretending nothing changed.",
-          items: [
-            "Unavailable items flagged clearly",
-            "Changed prices shown before checkout",
-            "Replacement or omission notices where needed",
-          ],
-        },
-        {
-          title: "Portal Fit",
-          description: "This route exists because repeat buying matters operationally and commercially.",
-          items: [
-            "One-tap basket recreation",
-            "Fast transition into checkout",
-            "Reduced friction for loyal customers",
-          ],
-        },
-        {
-          title: "Data Contract",
-          description: "Reorder builds from order snapshots but validates against current variants.",
-          items: [
-            "Historical line item snapshots",
-            "Current variant availability",
-            "Fresh cart creation with current totals",
-          ],
-        },
-      ]}
-    />
+    <div className="space-y-8 pb-20 md:space-y-10">
+      <MetricRail
+        items={[
+          {
+            label: "History",
+            value: `${orders.length}`,
+            detail: "Past orders",
+            icon: History,
+          },
+          {
+            label: "Ready",
+            value: `${completedOrders}`,
+            detail: "Can reload",
+            icon: Repeat2,
+            tone: "success",
+          },
+          {
+            label: "Active",
+            value: `${activeOrders}`,
+            detail: "Still moving",
+            icon: ShoppingBag,
+          },
+        ]}
+        columns={3}
+      />
+
+      <ReorderBoard orders={orders} />
+    </div>
   );
 }

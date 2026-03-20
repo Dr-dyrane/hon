@@ -1,5 +1,6 @@
 import "server-only";
 
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -10,6 +11,10 @@ type ProjectInfo = {
   projectId: string;
   teamId?: string;
 };
+
+function getVercelCommand() {
+  return process.platform === "win32" ? "vercel.cmd" : "vercel";
+}
 
 function readJsonFile<T>(filePath: string) {
   if (!existsSync(filePath)) {
@@ -140,13 +145,33 @@ function readLocalVercelAccessToken() {
 }
 
 function readLinkedProjectInfo(rootDir = process.cwd()) {
-  const project = readJsonFile<ProjectInfo>(path.join(rootDir, ".vercel", "project.json"));
+  const project = readJsonFile<{ projectId?: string; orgId?: string }>(
+    path.join(rootDir, ".vercel", "project.json")
+  );
 
   if (!project?.projectId) {
     return null;
   }
 
-  return project;
+  return {
+    projectId: project.projectId,
+    teamId: project.orgId,
+  } satisfies ProjectInfo;
+}
+
+function refreshPulledOidcTokenViaCli(rootDir = process.cwd()) {
+  const outputPath = path.join(rootDir, ".vercel", ".env.development.local");
+
+  try {
+    execFileSync(getVercelCommand(), ["env", "pull", "--yes", outputPath], {
+      cwd: rootDir,
+      stdio: "ignore",
+    });
+  } catch {
+    return null;
+  }
+
+  return readPulledOidcToken(rootDir);
 }
 
 async function requestFreshOidcToken(projectInfo: ProjectInfo, accessToken: string) {
@@ -198,6 +223,13 @@ export async function getRuntimeVercelOidcToken() {
     return pulledToken;
   }
 
+  const cliRefreshedToken = refreshPulledOidcTokenViaCli();
+
+  if (cliRefreshedToken) {
+    process.env.VERCEL_OIDC_TOKEN = cliRefreshedToken;
+    return cliRefreshedToken;
+  }
+
   const accessToken = readLocalVercelAccessToken();
   const projectInfo = readLinkedProjectInfo();
 
@@ -208,6 +240,13 @@ export async function getRuntimeVercelOidcToken() {
 
       return refreshedToken;
     } catch (error) {
+      const cliFallbackToken = refreshPulledOidcTokenViaCli();
+
+      if (cliFallbackToken) {
+        process.env.VERCEL_OIDC_TOKEN = cliFallbackToken;
+        return cliFallbackToken;
+      }
+
       const fallbackToken = readPulledOidcToken();
 
       if (fallbackToken) {

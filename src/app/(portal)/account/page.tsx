@@ -1,6 +1,8 @@
-import { ScaffoldPage } from "@/components/shell/ScaffoldPage";
+import type { ReactNode } from "react";
+import Link from "next/link";
+import { Bookmark, Receipt, Sparkles } from "lucide-react";
+import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAuthenticatedSession } from "@/lib/auth/guards";
-import { serverEnv } from "@/lib/config/server";
 import { listPublishedCatalogProducts } from "@/lib/db/repositories/catalog-repository";
 import { getPortalAccountSummary } from "@/lib/db/repositories/account-repository";
 
@@ -18,67 +20,146 @@ export default async function AccountPage() {
     accountSummary.fullName ?? session.email.split("@")[0] ?? "Customer";
 
   return (
-    <ScaffoldPage
-      badge="Portal Home"
-      title={`Account home for ${customerName}.`}
-      description="The portal now has a live account summary path. Where no customer record exists yet, the UI stays calm and explicit rather than pretending data exists."
-      primaryAction={{ href: "/account/orders", label: "View Orders" }}
-      secondaryAction={{ href: "/account/profile", label: "Open Profile" }}
-      summary={[
-        {
-          label: "Orders",
-          value: accountSummary.totalOrders.toString(),
-          detail:
-            accountSummary.latestOrderNumber && accountSummary.latestOrderStatus
-              ? `Latest order ${accountSummary.latestOrderNumber} is ${accountSummary.latestOrderStatus}.`
-              : "No linked orders exist for this signed-in identity yet.",
-        },
-        {
-          label: "Addresses",
-          value: accountSummary.addressCount.toString(),
-          detail: "Saved places will accumulate here once checkout writes into the account model.",
-        },
-        {
-          label: "Auth",
-          value: serverEnv.auth.mode === "email_otp" ? "Email OTP" : serverEnv.auth.mode,
-          detail: "The signed-in shell is already using the planned lightweight launch auth path.",
-        },
-      ]}
-      sections={[
-        {
-          title: "Order Visibility",
-          description: "The account home should state the truth of the customer record clearly.",
-          items: [
-            accountSummary.activeOrders > 0
-              ? `${accountSummary.activeOrders} active orders currently need attention.`
-              : "No active orders are currently attached to this account.",
-            accountSummary.latestOrderNumber
-              ? `Tracking will anchor from order ${accountSummary.latestOrderNumber}.`
-              : "Tracking will appear here after the first confirmed order.",
-            `${accountSummary.reviewCount} reviews are currently linked to this account.`,
-          ],
-        },
-        {
-          title: "Customer Memory",
-          description: "Repeat behavior should become easier without inventing fake state.",
-          items: [
-            accountSummary.userId
-              ? "A customer identity record already exists in Aurora."
-              : "No Aurora customer identity is linked to this email yet.",
-            `${accountSummary.addressCount} saved addresses are ready for future checkout integration.`,
-            "Guest-order claim remains part of the planned conversion path.",
-          ],
-        },
-        {
-          title: "Store Readiness",
-          description: "The portal can now speak to the live storefront state too.",
-          items: [
-            `${availableProductCount} products are currently available for sale.`,
-            `${featuredProductCount} products are currently featured on the storefront.`,
-            "Portal and storefront now depend on the same seeded database source.",
-          ],
-        },
-      ]}
-    />
+    <div className="space-y-8 pb-20 md:space-y-10">
+      <section className="space-y-5">
+        <div className="rounded-[24px] bg-system-fill/42 p-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.04)] md:inline-flex">
+          <div className="grid grid-cols-4 gap-1.5">
+            <QuickLink href="/account/orders" label="Orders" />
+            <QuickLink href="/account/addresses" label="Places" />
+            <QuickLink href="/account/profile" label="Profile" />
+            <QuickLink href="/" label="Store" />
+          </div>
+        </div>
+
+        <MetricRail
+          items={[
+            {
+              label: "Active",
+              value: `${accountSummary.activeOrders}`,
+              detail: "In progress",
+              icon: Receipt,
+            },
+            {
+              label: "Places",
+              value: `${accountSummary.addressCount}`,
+              detail: "Saved",
+              icon: Bookmark,
+            },
+            {
+              label: "Reviews",
+              value: `${accountSummary.reviewCount}`,
+              detail: "Submitted",
+              icon: Sparkles,
+              tone: "success",
+            },
+          ]}
+          columns={3}
+        />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-3">
+        <PortalPanel title="Latest" badge={accountSummary.latestOrderNumber ? "Live" : "None"}>
+          {accountSummary.latestOrderNumber ? (
+            <Link
+              href="/account/orders"
+              className="flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/42 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/58"
+            >
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-label">
+                  #{accountSummary.latestOrderNumber}
+                </div>
+                <div className="mt-1 truncate text-xs text-secondary-label">
+                  {(accountSummary.latestOrderStatus ?? "pending").replace(/_/g, " ")}
+                </div>
+              </div>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                Open
+              </span>
+            </Link>
+          ) : (
+            <EmptyRow label="No orders yet." />
+          )}
+        </PortalPanel>
+
+        <PortalPanel title="Account" badge={customerName.slice(0, 1).toUpperCase()}>
+          <div className="rounded-[24px] bg-system-fill/42 px-4 py-4">
+            <div className="text-sm font-semibold text-label">{customerName}</div>
+            <div className="mt-1 truncate text-xs text-secondary-label">{session.email}</div>
+          </div>
+          <Link
+            href="/account/profile"
+            className="flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/42 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/58"
+          >
+            <span className="text-sm font-semibold text-label">Open profile</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+              Edit
+            </span>
+          </Link>
+        </PortalPanel>
+
+        <PortalPanel title="Store" badge={`${availableProductCount}`}>
+          <div className="rounded-[24px] bg-system-fill/42 px-4 py-4">
+            <div className="text-sm font-semibold text-label">
+              {availableProductCount} available
+            </div>
+            <div className="mt-1 text-xs text-secondary-label">
+              {featuredProductCount} featured now
+            </div>
+          </div>
+          <Link
+            href={accountSummary.totalOrders > 0 ? "/account/reorder" : "/"}
+            className="flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/42 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/58"
+          >
+            <span className="text-sm font-semibold text-label">
+              {accountSummary.totalOrders > 0 ? "Load again" : "Browse store"}
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+              Open
+            </span>
+          </Link>
+        </PortalPanel>
+      </section>
+    </div>
+  );
+}
+
+function PortalPanel({
+  title,
+  badge,
+  children,
+}: {
+  title: string;
+  badge: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="glass-morphism rounded-[32px] bg-system-background/78 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-lg font-semibold tracking-tight text-label">{title}</h2>
+        <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+          {badge}
+        </span>
+      </div>
+      <div className="mt-4 grid gap-3">{children}</div>
+    </section>
+  );
+}
+
+function QuickLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-[40px] items-center justify-center rounded-[18px] px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label transition-colors duration-200 hover:bg-system-background hover:shadow-soft"
+    >
+      {label}
+    </Link>
+  );
+}
+
+function EmptyRow({ label }: { label: string }) {
+  return (
+    <div className="rounded-[24px] bg-system-fill/42 px-4 py-4 text-sm text-secondary-label">
+      {label}
+    </div>
   );
 }
