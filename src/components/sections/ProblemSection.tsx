@@ -68,6 +68,7 @@ import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
 import { BadgeList } from "@/components/ui/Badge";
 import { AlertTriangle } from "lucide-react";
 import { LiquidGlassCard } from "@/components/ui/LiquidGlassCard";
+import { useMobile } from "@/hooks/useMobile";
 
 const PROBLEMS = [
   "Artificial Sweeteners",
@@ -79,12 +80,59 @@ const PROBLEMS = [
 export function ProblemSection() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const isMobile = useMobile();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const isDark = mounted && resolvedTheme === "dark";
+
+  // Mobile-optimized card component
+  const MobileProblemCard = ({ problem, index }: { problem: string; index: number }) => (
+    <LiquidGlassCard
+      key={`mobile-${problem}`}
+      variant="default"
+      intensity="subtle"
+      interactive={true}
+      className="min-h-[140px] p-4 flex items-start gap-3 overflow-hidden squircle h-full w-full"
+      data-aos="zoom-in-up"
+      data-aos-duration="600"
+      data-aos-delay={400 + index * 100}
+    >
+      <div className="flex flex-col justify-between h-full w-full">
+        <div className="w-8 h-8 rounded-xl bg-accent/5 flex items-center justify-center text-accent text-[9px] font-semibold tracking-headline group-hover:scale-110 transition-transform flex-shrink-0">
+          0{index + 1}
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-lg font-headline font-bold text-label tracking-headline leading-tight group-hover:text-accent transition-colors">{problem}</h3>
+          <div className="h-[2px] w-0 bg-accent/20 mt-2 group-hover:w-full transition-all duration-700" />
+        </div>
+      </div>
+    </LiquidGlassCard>
+  );
+
+  // Desktop card component (original implementation)
+  const DesktopProblemCard = ({ problem, index }: { problem: string; index: number }) => (
+    <LiquidGlassCard
+      key={`desktop-${problem}`}
+      variant="default"
+      intensity="subtle"
+      interactive={true}
+      className="min-h-[220px] p-10 flex flex-col items-start justify-between overflow-hidden squircle"
+      data-aos="zoom-in-up"
+      data-aos-duration="600"
+      data-aos-delay={400 + index * 100}
+    >
+      <div className="w-10 h-10 rounded-xl bg-accent/5 flex items-center justify-center text-accent text-[10px] font-semibold tracking-headline group-hover:scale-110 transition-transform">
+        0{index + 1}
+      </div>
+      <div>
+        <h3 className="text-2xl font-headline font-bold text-label tracking-headline leading-tight group-hover:text-accent transition-colors">{problem}</h3>
+        <div className="h-[2px] w-0 bg-accent/20 mt-4 group-hover:w-full transition-all duration-700" />
+      </div>
+    </LiquidGlassCard>
+  );
 
   return (
     <SectionContainer variant="alt" id="problem" className="overflow-hidden">
@@ -123,27 +171,22 @@ export function ProblemSection() {
           />
         </div>
 
-        <div className="lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
-          {PROBLEMS.map((problem, i) => (
-            <LiquidGlassCard
-              key={problem}
-              variant="default"
-              intensity="subtle"
-              interactive={true}
-              className="min-h-[220px] p-10 flex flex-col items-start justify-between overflow-hidden squircle"
-              data-aos="zoom-in-up"
-              data-aos-duration="600"
-              data-aos-delay={400 + i * 100}
-            >
-              <div className="w-10 h-10 rounded-xl bg-accent/5 flex items-center justify-center text-accent text-[10px] font-semibold tracking-headline group-hover:scale-110 transition-transform">
-                0{i + 1}
-              </div>
-              <div>
-                <h3 className="text-2xl font-headline font-bold text-label tracking-headline leading-tight group-hover:text-accent transition-colors">{problem}</h3>
-                <div className="h-[2px] w-0 bg-accent/20 mt-4 group-hover:w-full transition-all duration-700" />
-              </div>
-            </LiquidGlassCard>
-          ))}
+        <div className="lg:w-1/2 w-full">
+          {isMobile ? (
+            // Mobile: 2x2 compact grid
+            <div className="grid grid-cols-2 gap-4 w-full">
+              {PROBLEMS.map((problem, i) => (
+                <MobileProblemCard key={problem} problem={problem} index={i} />
+              ))}
+            </div>
+          ) : (
+            // Desktop: Original 2-column layout
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
+              {PROBLEMS.map((problem, i) => (
+                <DesktopProblemCard key={problem} problem={problem} index={i} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

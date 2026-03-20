@@ -7,6 +7,7 @@ import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
 import { Badge } from "@/components/ui/Badge";
 import { LiquidGlassCard } from "@/components/ui/LiquidGlassCard";
 import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
+import { useMobile } from "@/hooks/useMobile";
 import { Zap, Wind, Activity, Leaf, Sparkles } from "lucide-react";
 
 const ICON_MAP = {
@@ -18,6 +19,78 @@ const ICON_MAP = {
 
 export function BenefitsGrid() {
   const { benefits } = useMarketingContent();
+  const isMobile = useMobile();
+
+  // Mobile-optimized benefit card component
+  const MobileBenefitCard = ({ benefit, index }: { benefit: any; index: number }) => {
+    const Icon = ICON_MAP[benefit.icon as keyof typeof ICON_MAP];
+    return (
+      <LiquidGlassCard
+        key={`mobile-${benefit.title}`}
+        variant="default"
+        intensity="subtle"
+        interactive={true}
+        className="min-h-[180px] p-4 flex flex-col justify-between overflow-hidden squircle h-full w-full"
+        data-aos="zoom-in-up"
+        data-aos-duration="600"
+        data-aos-delay={400 + index * 100}
+      >
+        <div className="absolute -right-10 -bottom-10 w-20 h-20 bg-accent/5 rounded-full blur-3xl group-hover:bg-accent/10 transition-colors" />
+
+        <div className="relative z-10 flex flex-col justify-between h-full w-full">
+          <div className="w-10 h-10 bg-system-fill rounded-2xl flex items-center justify-center text-accent shadow-sm group-hover:scale-110 group-hover:shadow-soft transition-all duration-700 squircle">
+            <Icon size={16} strokeWidth={1.5} />
+          </div>
+          <div className="flex flex-col gap-1">
+            <h3 className="text-lg font-headline font-bold text-label tracking-headline">{benefit.title}</h3>
+            <p className="text-secondary-label opacity-60 text-xs leading-tight tracking-body line-clamp-2">
+              {benefit.description}
+            </p>
+            <div className="flex items-center gap-1 overflow-hidden">
+              <div className="h-[1px] w-4 bg-accent/30 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
+              <span className="text-[8px] font-semibold uppercase tracking-headline text-accent opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-700">Result</span>
+            </div>
+          </div>
+        </div>
+      </LiquidGlassCard>
+    );
+  };
+
+  // Desktop benefit card component (original implementation)
+  const DesktopBenefitCard = ({ benefit }: { benefit: any }) => {
+    const Icon = ICON_MAP[benefit.icon as keyof typeof ICON_MAP];
+    return (
+      <LiquidGlassCard
+        key={`desktop-${benefit.title}`}
+        variant="default"
+        intensity="subtle"
+        interactive={true}
+        className="min-h-[300px] p-10 flex flex-col justify-between overflow-hidden squircle"
+        data-aos="zoom-in-up"
+        data-aos-duration="600"
+        data-aos-delay={400}
+      >
+        <div className="absolute -right-20 -bottom-20 w-40 h-40 bg-accent/5 rounded-full blur-3xl group-hover:bg-accent/10 transition-colors" />
+
+        <div className="relative z-10">
+          <div className="w-14 h-14 bg-system-fill rounded-2xl flex items-center justify-center mb-10 text-accent shadow-sm group-hover:scale-110 group-hover:shadow-soft transition-all duration-700 squircle">
+            <Icon size={24} strokeWidth={1.5} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <h3 className="text-2xl font-headline font-bold text-label tracking-headline">{benefit.title}</h3>
+            <p className="text-secondary-label opacity-60 text-sm leading-normal tracking-body">
+              {benefit.description}
+            </p>
+          </div>
+        </div>
+
+        <div className="relative z-10 flex items-center gap-2 overflow-hidden">
+          <div className="h-[1px] w-8 bg-accent/30 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
+          <span className="text-[9px] font-semibold uppercase tracking-headline text-accent opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-700">Measured Result</span>
+        </div>
+      </LiquidGlassCard>
+    );
+  };
 
   return (
     <SectionContainer variant="alt" id="benefits">
@@ -85,39 +158,21 @@ export function BenefitsGrid() {
         ADDED: flex flex-col gap-2 wrapper for title/description
         MAINTAINED: All original hover states and group interactions
       */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {benefits.map((benefit) => {
-          const Icon = ICON_MAP[benefit.icon as keyof typeof ICON_MAP];
-          return (
-            <LiquidGlassCard
-              key={benefit.title}
-              variant="default"
-              intensity="subtle"
-              interactive={true}
-              className="min-h-[300px] p-10 flex flex-col justify-between overflow-hidden squircle"
-            >
-              <div className="absolute -right-20 -bottom-20 w-40 h-40 bg-accent/5 rounded-full blur-3xl group-hover:bg-accent/10 transition-colors" />
-
-              <div className="relative z-10">
-                <div className="w-14 h-14 bg-system-fill rounded-2xl flex items-center justify-center mb-10 text-accent shadow-sm group-hover:scale-110 group-hover:shadow-soft transition-all duration-700 squircle">
-                  <Icon size={24} strokeWidth={1.5} />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-2xl font-headline font-bold text-label tracking-headline">{benefit.title}</h3>
-                  <p className="text-secondary-label opacity-60 text-sm leading-normal tracking-body">
-                    {benefit.description}
-                  </p>
-                </div>
-              </div>
-
-              <div className="relative z-10 flex items-center gap-2 overflow-hidden">
-                <div className="h-[1px] w-8 bg-accent/30 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
-                <span className="text-[9px] font-semibold uppercase tracking-headline text-accent opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-700">Measured Result</span>
-              </div>
-            </LiquidGlassCard>
-          );
-        })}
-      </div>
+      {isMobile ? (
+        // Mobile: 2x2 compact grid
+        <div className="grid grid-cols-2 gap-3">
+          {benefits.map((benefit, i) => (
+            <MobileBenefitCard key={benefit.title} benefit={benefit} index={i} />
+          ))}
+        </div>
+      ) : (
+        // Desktop: Original responsive grid
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {benefits.map((benefit) => (
+            <DesktopBenefitCard key={benefit.title} benefit={benefit} />
+          ))}
+        </div>
+      )}
     </SectionContainer>
   );
 }
