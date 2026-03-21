@@ -114,8 +114,8 @@ Current state:
 - mobile order detail now uses a compact top summary and simpler payment/rating actions instead of stacking full desktop chrome first
 - payments, delivery, and portal order history now switch into denser multi-column desktop layouts earlier instead of holding a narrow single-column web rhythm too long
 - return request and return-proof entry now use simpler phone-first controls instead of desktop-style quantity and upload actions
-- deployed code now self-detects runtime-version changes, clears app-owned stale state, unregisters legacy service workers, and reloads without manual browser cache resets
-- runtime-version drift now surfaces an in-app update prompt so users can refresh into the new app state deliberately instead of being surprised by a silent mismatch
+- deployed code now keeps a dedicated runtime service worker registered in production, prunes legacy workers, and can force a version refresh once a newer deployment is online
+- runtime-version drift now escalates through the runtime service worker first, with the in-app update prompt remaining as a non-worker fallback
 - admin order detail, product edit, and section edit now open with compact phone summaries instead of desktop-scale context chrome
 - customer checkout now keeps map pinning and delivery notes behind optional phone-first controls, and guest confirmation uses a calmer wider shell
 - admin payments now uses denser phone queue cards with compact amount stats and full-width action rows instead of a desktop-weight right rail

@@ -102,7 +102,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <UIProvider>
-            <DeploymentRefreshGuard currentVersion={runtimeVersion} />
+            <DeploymentRefreshGuard
+              currentVersion={runtimeVersion}
+              enableServiceWorker={process.env.NODE_ENV === "production"}
+            />
             {children}
           </UIProvider>
         </ThemeProvider>

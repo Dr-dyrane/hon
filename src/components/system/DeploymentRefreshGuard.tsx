@@ -6,6 +6,7 @@ const RUNTIME_VERSION_STORAGE_KEY = "hop-runtime-version";
 const RUNTIME_REFRESH_FLAG_KEY = "hop-runtime-refreshing";
 const RUNTIME_PROMPT_DISMISSED_KEY = "hop-runtime-prompt-dismissed";
 const SERVICE_WORKER_CLEANUP_KEY = "hop-runtime-sw-cleanup";
+const RUNTIME_SERVICE_WORKER_PATH = "/hop-runtime-sw.js";
 const STORAGE_PREFIXES = ["hop-", "hop_"];
 
 function collectMatchingKeys(storage: Storage) {
@@ -36,19 +37,51 @@ function clearAppStorage() {
   }
 }
 
-async function unregisterLegacyServiceWorkers() {
+function isRuntimeServiceWorkerRegistration(registration: ServiceWorkerRegistration) {
+  const urls = [
+    registration.active?.scriptURL,
+    registration.waiting?.scriptURL,
+    registration.installing?.scriptURL,
+  ].filter((value): value is string => Boolean(value));
+
+  return urls.some((url) => {
+    try {
+      return new URL(url).pathname === RUNTIME_SERVICE_WORKER_PATH;
+    } catch {
+      return false;
+    }
+  });
+}
+
+async function cleanupLegacyServiceWorkers() {
   if (!("serviceWorker" in navigator)) {
     return false;
   }
 
   const registrations = await navigator.serviceWorker.getRegistrations();
+  const legacyRegistrations = registrations.filter(
+    (registration) => !isRuntimeServiceWorkerRegistration(registration)
+  );
 
-  if (registrations.length === 0) {
+  if (legacyRegistrations.length === 0) {
     return false;
   }
 
-  await Promise.all(registrations.map((registration) => registration.unregister()));
+  await Promise.all(
+    legacyRegistrations.map((registration) => registration.unregister())
+  );
   return true;
+}
+
+async function registerRuntimeServiceWorker(version: string) {
+  if (!("serviceWorker" in navigator)) {
+    return null;
+  }
+
+  return navigator.serviceWorker.register(
+    `${RUNTIME_SERVICE_WORKER_PATH}?v=${encodeURIComponent(version)}`,
+    { scope: "/" }
+  );
 }
 
 async function clearCacheStorage() {
@@ -77,62 +110,144 @@ async function readRuntimeVersion() {
 
 export function DeploymentRefreshGuard({
   currentVersion,
+  enableServiceWorker = false,
 }: {
   currentVersion: string;
+  enableServiceWorker?: boolean;
 }) {
   const isRefreshingRef = useRef(false);
   const dismissedVersionRef = useRef<string | null>(null);
+  const pendingWorkerVersionRef = useRef<string | null>(null);
+  const activationTimeoutRef = useRef<number | null>(null);
   const [availableVersion, setAvailableVersion] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const refreshForVersion = useCallback(async (nextVersion: string) => {
-    if (isRefreshingRef.current) {
+  const clearActivationTimeout = useCallback(() => {
+    if (activationTimeoutRef.current !== null) {
+      window.clearTimeout(activationTimeoutRef.current);
+      activationTimeoutRef.current = null;
+    }
+  }, []);
+
+  const completeRefreshForVersion = useCallback(
+    async (nextVersion: string) => {
+      if (isRefreshingRef.current) {
+        return;
+      }
+
+      isRefreshingRef.current = true;
+      setIsUpdating(true);
+      setAvailableVersion(null);
+      pendingWorkerVersionRef.current = null;
+      clearActivationTimeout();
+      dismissedVersionRef.current = null;
+
+      window.sessionStorage.setItem(RUNTIME_REFRESH_FLAG_KEY, nextVersion);
+      window.sessionStorage.removeItem(RUNTIME_PROMPT_DISMISSED_KEY);
+
+      try {
+        await fetch("/api/runtime-reset", {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+      } catch {
+        // Best effort only. Client-side cleanup still runs.
+      }
+
+      clearAppStorage();
+      window.localStorage.setItem(RUNTIME_VERSION_STORAGE_KEY, nextVersion);
+      window.sessionStorage.setItem(RUNTIME_REFRESH_FLAG_KEY, nextVersion);
+
+      await clearCacheStorage();
+      window.location.reload();
+    },
+    [clearActivationTimeout]
+  );
+
+  const beginRefreshForVersion = useCallback(
+    async (nextVersion: string) => {
+      if (isRefreshingRef.current) {
+        return;
+      }
+
+      if (!enableServiceWorker || !("serviceWorker" in navigator)) {
+        await completeRefreshForVersion(nextVersion);
+        return;
+      }
+
+      setIsUpdating(true);
+      setAvailableVersion(null);
+      dismissedVersionRef.current = null;
+      pendingWorkerVersionRef.current = nextVersion;
+      window.sessionStorage.removeItem(RUNTIME_PROMPT_DISMISSED_KEY);
+
+      try {
+        await registerRuntimeServiceWorker(nextVersion);
+        clearActivationTimeout();
+        activationTimeoutRef.current = window.setTimeout(() => {
+          if (pendingWorkerVersionRef.current === nextVersion) {
+            void completeRefreshForVersion(nextVersion);
+          }
+        }, 2500);
+      } catch {
+        pendingWorkerVersionRef.current = null;
+        clearActivationTimeout();
+        await completeRefreshForVersion(nextVersion);
+      }
+    },
+    [clearActivationTimeout, completeRefreshForVersion, enableServiceWorker]
+  );
+
+  useEffect(() => {
+    if (!enableServiceWorker || !("serviceWorker" in navigator)) {
       return;
     }
 
-    isRefreshingRef.current = true;
-    setIsUpdating(true);
-    setAvailableVersion(null);
-    dismissedVersionRef.current = null;
+    const handleMessage = (event: MessageEvent) => {
+      const payload = event.data as
+        | { type?: string; version?: string }
+        | undefined;
 
-    window.sessionStorage.setItem(RUNTIME_REFRESH_FLAG_KEY, nextVersion);
-    window.sessionStorage.removeItem(RUNTIME_PROMPT_DISMISSED_KEY);
+      if (
+        payload?.type !== "HOP_RUNTIME_SW_ACTIVATED" ||
+        !payload.version ||
+        pendingWorkerVersionRef.current !== payload.version
+      ) {
+        return;
+      }
 
-    try {
-      await fetch("/api/runtime-reset", {
-        method: "POST",
-        credentials: "same-origin",
-        cache: "no-store",
-      });
-    } catch {
-      // Best effort only. Client-side cleanup still runs.
-    }
+      void completeRefreshForVersion(payload.version);
+    };
 
-    clearAppStorage();
-    window.localStorage.setItem(RUNTIME_VERSION_STORAGE_KEY, nextVersion);
-    window.sessionStorage.setItem(RUNTIME_REFRESH_FLAG_KEY, nextVersion);
+    navigator.serviceWorker.addEventListener("message", handleMessage);
 
-    await clearCacheStorage();
-    await unregisterLegacyServiceWorkers();
-
-    window.location.reload();
-  }, []);
+    return () => {
+      navigator.serviceWorker.removeEventListener("message", handleMessage);
+    };
+  }, [completeRefreshForVersion, enableServiceWorker]);
 
   useEffect(() => {
     let disposed = false;
 
-    async function ensureLegacyServiceWorkersAreGone() {
-      if (window.sessionStorage.getItem(SERVICE_WORKER_CLEANUP_KEY) === currentVersion) {
+    async function ensureServiceWorkersAreHealthy() {
+      if (!("serviceWorker" in navigator)) {
         return;
       }
 
-      const unregistered = await unregisterLegacyServiceWorkers();
+      if (window.sessionStorage.getItem(SERVICE_WORKER_CLEANUP_KEY) !== currentVersion) {
+        const unregistered = await cleanupLegacyServiceWorkers();
 
-      if (unregistered) {
-        await clearCacheStorage();
+        if (unregistered) {
+          await clearCacheStorage();
+        }
+
+        window.sessionStorage.setItem(SERVICE_WORKER_CLEANUP_KEY, currentVersion);
       }
 
-      window.sessionStorage.setItem(SERVICE_WORKER_CLEANUP_KEY, currentVersion);
+      if (enableServiceWorker) {
+        await registerRuntimeServiceWorker(currentVersion);
+      }
     }
 
     async function checkForRuntimeMismatch() {
@@ -148,6 +263,11 @@ export function DeploymentRefreshGuard({
 
       if (remoteVersion === currentVersion) {
         setAvailableVersion(null);
+        return;
+      }
+
+      if (enableServiceWorker && "serviceWorker" in navigator) {
+        await beginRefreshForVersion(remoteVersion);
         return;
       }
 
@@ -172,7 +292,7 @@ export function DeploymentRefreshGuard({
         storedVersion !== currentVersion &&
         activeRefreshVersion !== currentVersion
       ) {
-        await refreshForVersion(currentVersion);
+        await beginRefreshForVersion(currentVersion);
         return;
       }
 
@@ -184,7 +304,7 @@ export function DeploymentRefreshGuard({
         dismissedVersionRef.current = null;
       }
 
-      await ensureLegacyServiceWorkersAreGone();
+      await ensureServiceWorkersAreHealthy();
     }
 
     void boot();
@@ -210,11 +330,17 @@ export function DeploymentRefreshGuard({
 
     return () => {
       disposed = true;
+      clearActivationTimeout();
       window.clearInterval(intervalId);
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [currentVersion, refreshForVersion]);
+  }, [
+    beginRefreshForVersion,
+    clearActivationTimeout,
+    currentVersion,
+    enableServiceWorker,
+  ]);
 
   if (!availableVersion) {
     return null;
@@ -250,7 +376,7 @@ export function DeploymentRefreshGuard({
           </button>
           <button
             type="button"
-            onClick={() => void refreshForVersion(availableVersion)}
+            onClick={() => void beginRefreshForVersion(availableVersion)}
             disabled={isUpdating}
             className="button-primary min-h-[42px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em] disabled:pointer-events-none disabled:opacity-60"
           >
