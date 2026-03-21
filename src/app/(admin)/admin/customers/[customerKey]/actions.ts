@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/auth/guards";
-import { updateAdminCustomerProfile, saveAdminCustomerAddress, deleteAdminCustomerAddress } from "@/lib/db/repositories/admin-customer-repository";
+import {
+  deleteAdminCustomerAddress,
+  saveAdminCustomerAddress,
+  updateAdminCustomerProfile,
+  upsertAdminCustomerRecord,
+} from "@/lib/db/repositories/admin-customer-repository";
 import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
 
 async function getAdminActor() {
@@ -38,6 +43,31 @@ export async function updateAdminCustomerProfileAction(customerKey: string, form
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unable to update customer.",
+    };
+  }
+}
+
+export async function updateAdminCustomerRecordAction(customerKey: string, formData: FormData) {
+  try {
+    const actor = await getAdminActor();
+
+    await upsertAdminCustomerRecord({
+      customerKey,
+      userId: formData.get("userId")?.toString() ?? null,
+      email: formData.get("email")?.toString() ?? null,
+      phone: formData.get("phone")?.toString() ?? null,
+      supportState: formData.get("supportState")?.toString() ?? "standard",
+      tags: formData.get("tags")?.toString() ?? null,
+      notes: formData.get("notes")?.toString() ?? null,
+      ...actor,
+    });
+
+    revalidateCustomer(customerKey);
+    return { success: true, message: "CRM updated." };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unable to update CRM.",
     };
   }
 }

@@ -134,6 +134,7 @@ Current state:
 - admin order detail now shows stock readiness before request acceptance and blocks the accept action when inventory is missing or short
 - customers now open into a real customer detail view with contact context, recent orders, and delivery-place history instead of stopping at a read-only summary board
 - linked customer accounts can now be updated from admin customer detail for contact info and saved addresses, while guest checkout snapshots remain read-only
+- customer CRM metadata is now real through admin-only notes, tags, and support-state records keyed to the platform customer rollup identity
 
 This means the system has crossed into operational platform work.
 

@@ -3,22 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  CreditCard,
-  Handbag,
-  Home,
-  LayoutTemplate,
-  MapPinned,
-  Package2,
-  Plus,
-  Save,
-  Settings2,
-  ShoppingBag,
-  Sparkles,
-  Truck,
-  UserRound,
-  UsersRound,
-} from "lucide-react";
-import {
   getShellMatchedRoute,
   isActiveShellPath,
   type ShellFabIcon,
@@ -29,37 +13,41 @@ import {
 import { useFeedback } from "@/components/providers/FeedbackProvider";
 import { useUI } from "@/components/providers/UIProvider";
 import { cn } from "@/lib/utils";
+import { Icon, type IconName } from "@/components/ui/Icon";
 
-const NAV_ICON_MAP: Record<ShellNavIcon, typeof Home> = {
-  store: ShoppingBag,
-  cart: ShoppingBag,
-  orders: Package2,
-  addresses: MapPinned,
-  reviews: Sparkles,
-  profile: UserRound,
-  overview: Home,
-  payments: CreditCard,
-  delivery: Truck,
-  catalog: ShoppingBag,
-  layout: LayoutTemplate,
-  customers: UsersRound,
-  settings: Settings2,
+const NAV_ICON_MAP: Record<ShellNavIcon, IconName> = {
+  store: "store",
+  cart: "bag",
+  orders: "orders",
+  addresses: "map-pin",
+  reviews: "sparkles",
+  profile: "account",
+  overview: "home",
+  payments: "credit-card",
+  delivery: "truck",
+  catalog: "store",
+  layout: "layout",
+  customers: "users",
+  settings: "settings",
 };
-const FAB_ICON_MAP: Record<ShellFabIcon, typeof Home> = {
+
+const FAB_ICON_MAP: Record<ShellFabIcon, IconName> = {
   ...NAV_ICON_MAP,
-  cart: Handbag,
-  add: Plus,
-  save: Save,
+  cart: "bag",
+  add: "plus",
+  save: "save",
 };
 
 export function WorkspaceNav({
   items,
   headerRoutes = [],
   mode = "sidebar",
+  isCompact = false,
 }: {
   items: ShellNavItem[];
   headerRoutes?: ShellHeaderRoute[];
   mode?: "sidebar" | "mobile";
+  isCompact?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -114,7 +102,6 @@ export function WorkspaceNav({
           <ul className="scrollbar-hide flex min-w-0 items-center gap-1 overflow-x-auto">
             {items.map((item) => {
               const active = isActiveShellPath(pathname, item);
-              const Icon = NAV_ICON_MAP[item.icon];
 
               return (
                 <li key={item.href} className="shrink-0">
@@ -138,7 +125,7 @@ export function WorkspaceNav({
                         : undefined
                     }
                   >
-                    <Icon className="h-[17px] w-[17px]" strokeWidth={1.9} />
+                    <Icon name={NAV_ICON_MAP[item.icon]} className="h-[17px] w-[17px]" strokeWidth={1.9} />
                     <span
                       className={cn(
                         "overflow-hidden whitespace-nowrap leading-none transition-all duration-200",
@@ -164,10 +151,7 @@ export function WorkspaceNav({
               hasActiveOverlay && "pointer-events-none translate-y-4 opacity-0"
             )}
           >
-            {(() => {
-              const ActionIcon = FAB_ICON_MAP[mobileFab.icon];
-              return <ActionIcon className="h-[20px] w-[20px]" strokeWidth={1.9} />;
-            })()}
+            <Icon name={FAB_ICON_MAP[mobileFab.icon]} className="h-[20px] w-[20px]" strokeWidth={1.9} />
           </button>
         ) : null}
       </>
@@ -178,7 +162,6 @@ export function WorkspaceNav({
     <nav aria-label="Section navigation" className="space-y-2">
       {items.map((item) => {
         const active = isActiveShellPath(pathname, item);
-        const Icon = NAV_ICON_MAP[item.icon];
 
         return (
           <Link
@@ -186,25 +169,27 @@ export function WorkspaceNav({
             href={item.href}
             onClick={() => feedback.selection()}
             className={cn(
-              "motion-press-soft block rounded-[28px] px-4 py-4 transition-all duration-200",
+              "motion-press-soft block rounded-[28px] transition-all duration-200",
+              isCompact ? "px-0 py-2" : "px-4 py-4 md:max-lg:px-0 md:max-lg:py-2",
               active
                 ? "bg-[var(--accent)] text-[var(--accent-label)] shadow-button"
                 : "glass-morphism bg-system-fill/56 text-label hover:bg-system-fill/76"
             )}
           >
-            <div className="flex items-center gap-3">
+            <div className={cn("flex items-center gap-3", (isCompact || mode === "sidebar") && "md:max-lg:justify-center md:max-lg:gap-0", isCompact && "justify-center gap-0")}>
               <div
                 className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-full",
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
                   active ? "bg-white/12 text-[var(--accent-label)]" : "bg-system-background/78 text-label"
                 )}
               >
-                <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} />
+                <Icon name={NAV_ICON_MAP[item.icon]} className="h-[18px] w-[18px]" strokeWidth={1.8} />
               </div>
               <div
                 className={cn(
-                  "text-sm font-semibold tracking-tight",
-                  active ? "text-[var(--accent-label)]" : "text-label"
+                  "text-sm font-semibold tracking-tight transition-all duration-200",
+                  active ? "text-[var(--accent-label)]" : "text-label",
+                  (isCompact || mode === "sidebar") && "md:max-lg:hidden"
                 )}
               >
                 {item.label}

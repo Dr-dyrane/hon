@@ -78,6 +78,19 @@ export default async function AdminCustomersPage() {
                       {formatStatusLabel(customer.latestOrderStatus)}
                     </span>
                   ) : null}
+                  {customer.supportState !== "standard" ? (
+                    <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                      {formatSupportState(customer.supportState)}
+                    </span>
+                  ) : null}
+                  {customer.tags.slice(0, 2).map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-system-fill/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label"
+                    >
+                      {tag}
+                    </span>
+                  ))}
                 </div>
 
                 <div className="mt-3 grid gap-3 text-sm text-secondary-label sm:grid-cols-2 xl:grid-cols-4">
@@ -86,6 +99,11 @@ export default async function AdminCustomersPage() {
                   <MetaItem label="Latest" value={customer.latestOrderNumber ?? "-"} />
                   <MetaItem label="Seen" value={formatTimestamp(customer.latestOrderAt)} />
                 </div>
+                {customer.notePreview ? (
+                  <p className="mt-3 rounded-[22px] bg-system-fill/32 px-4 py-3 text-sm text-secondary-label">
+                    {customer.notePreview}
+                  </p>
+                ) : null}
               </div>
 
               <div className="grid min-w-[180px] grid-cols-3 gap-3 text-center">
@@ -99,6 +117,14 @@ export default async function AdminCustomersPage() {
       </section>
     </div>
   );
+}
+
+function formatSupportState(value: "standard" | "priority" | "follow_up" | "hold") {
+  if (value === "follow_up") {
+    return "Follow up";
+  }
+
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function MetaItem({ label, value }: { label: string; value: string }) {

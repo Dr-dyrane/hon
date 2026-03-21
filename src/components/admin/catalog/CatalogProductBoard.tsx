@@ -3,16 +3,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Archive,
-  Eye,
-  EyeOff,
-  Pencil,
-  Sparkles,
-  Tag,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { useTheme } from "next-themes";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Product3DViewer } from "@/components/3d/Product3DViewer";
@@ -140,7 +131,7 @@ export function CatalogProductBoard({
                 {!product.imageUrl && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-xl border border-white/30 text-white">
-                      <Tag className="h-6 w-6" strokeWidth={1.5} />
+                      <Icon name="tag" size={24} />
                     </div>
                   </div>
                 )}
@@ -343,7 +334,7 @@ function CatalogProductModal({
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-system-fill/72 text-label transition-colors duration-200 hover:bg-system-fill"
               aria-label="Close product"
             >
-              <X className="h-[18px] w-[18px]" strokeWidth={1.9} />
+              <Icon name="close" size={18} />
             </button>
           </div>
 
@@ -369,7 +360,7 @@ function CatalogProductModal({
                   ) : (
                     <div className="flex h-[420px] items-center justify-center">
                       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-system-background/72 text-accent shadow-soft">
-                        <Tag className="h-9 w-9" strokeWidth={1.8} />
+                        <Icon name="tag" size={36} />
                       </div>
                     </div>
                   )}
@@ -435,13 +426,13 @@ function CatalogProductModal({
               <section className="rounded-[32px] bg-system-background/86 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
                 <div className="grid gap-2 sm:grid-cols-2">
                   <QuickActionButton
-                    icon={product.isAvailable ? EyeOff : Eye}
+                    icon={product.isAvailable ? "info" : "search"}
                     label={product.isAvailable ? "Hide" : "Live"}
                     pending={isPending && busyKey === availabilityKey}
                     onClick={() => onToggleAvailability(product)}
                   />
                   <QuickActionButton
-                    icon={Sparkles}
+                    icon="sparkles"
                     label={
                       product.merchandisingState === "featured" ? "Standard" : "Feature"
                     }
@@ -450,14 +441,14 @@ function CatalogProductModal({
                   />
                   {product.status !== "archived" ? (
                     <QuickActionButton
-                      icon={Archive}
+                      icon="archive"
                       label="Archive"
                       pending={isPending && busyKey === archiveKey}
                       onClick={() => onArchive(product)}
                     />
                   ) : (
                     <QuickActionButton
-                      icon={Trash2}
+                      icon="trash"
                       label="Delete"
                       pending={isPending && busyKey === deleteKey}
                       onClick={() => onDelete(product)}
@@ -469,7 +460,7 @@ function CatalogProductModal({
                     className="button-primary min-h-[44px] justify-center text-[11px] font-semibold uppercase tracking-[0.16em]"
                   >
                     <span className="inline-flex items-center gap-2">
-                      <Pencil size={15} />
+                      <Icon name="edit" size={15} />
                       Edit
                     </span>
                   </Link>
@@ -520,13 +511,13 @@ function MetaCell({
 }
 
 function QuickActionButton({
-  icon: Icon,
+  icon,
   label,
   onClick,
   pending,
   tone = "default",
 }: {
-  icon: typeof Eye;
+  icon: IconName;
   label: string;
   onClick: () => void;
   pending: boolean;
@@ -543,7 +534,7 @@ function QuickActionButton({
         pending && "pointer-events-none opacity-50"
       )}
     >
-      <Icon size={15} />
+      <Icon name={icon} size={15} />
       <span>{pending ? "..." : label}</span>
     </button>
   );

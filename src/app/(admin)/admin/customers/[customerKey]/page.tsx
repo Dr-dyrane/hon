@@ -53,6 +53,9 @@ export default async function AdminCustomerDetailPage({
             label: customer.userId ? "Account" : "Guest",
             tone: customer.userId ? "success" : "muted",
           },
+          ...(customer.supportState !== "standard"
+            ? [{ label: formatSupportState(customer.supportState), tone: "default" as const }]
+            : []),
           ...(customer.latestOrderStatus
             ? [{ label: formatFlowStatusLabel(customer.latestOrderStatus), tone: "default" as const }]
             : []),
@@ -142,4 +145,12 @@ export default async function AdminCustomerDetailPage({
       </div>
     </div>
   );
+}
+
+function formatSupportState(value: "standard" | "priority" | "follow_up" | "hold") {
+  if (value === "follow_up") {
+    return "Follow up";
+  }
+
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

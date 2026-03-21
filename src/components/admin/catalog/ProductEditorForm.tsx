@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Archive, Save, Trash2 } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import { ProductMediaManager } from "@/components/admin/catalog/ProductMediaManager";
 import { ProgressiveFormSection } from "@/components/forms/ProgressiveFormSection";
 import { useUI } from "@/components/providers/UIProvider";
@@ -411,7 +411,7 @@ export function ProductEditorForm({
                 )}
               >
                 <span className="inline-flex items-center gap-2">
-                  <Archive size={15} />
+                  <Icon name="archive" size={15} />
                   Archive
                 </span>
               </button>
@@ -427,7 +427,7 @@ export function ProductEditorForm({
                 )}
               >
                 <span className="inline-flex items-center gap-2">
-                  <Trash2 size={15} />
+                  <Icon name="trash" size={15} />
                   Delete
                 </span>
               </button>
@@ -440,7 +440,7 @@ export function ProductEditorForm({
                 isPending && "pointer-events-none opacity-50"
               )}
             >
-              <Save size={16} />
+              <Icon name="save" size={16} />
               <span>{isPending ? "Saving" : "Save"}</span>
             </button>
           </div>

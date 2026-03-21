@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { CheckCircle2, Clock3, CreditCard, Truck } from "lucide-react";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { PaymentProofUploadCard } from "@/components/orders/PaymentProofUploadCard";
 import { OrderReviewCard } from "@/components/orders/OrderReviewCard";
 import { OrderReturnRequestCard } from "@/components/orders/OrderReturnRequestCard";
@@ -74,15 +74,15 @@ function getDeliveryLine(snapshot: Record<string, unknown>) {
   return "Pending";
 }
 
-const STAGE_ICONS = {
-  requested: Clock3,
-  awaiting_transfer: CreditCard,
-  money_sent: CreditCard,
-  preparing: CheckCircle2,
-  out_for_delivery: Truck,
-  delivered: CheckCircle2,
-  cancelled: Clock3,
-  expired: Clock3,
+const STAGE_ICONS: Record<string, IconName> = {
+  requested: "history",
+  awaiting_transfer: "credit-card",
+  money_sent: "credit-card",
+  preparing: "check-circle",
+  out_for_delivery: "truck",
+  delivered: "check-circle",
+  cancelled: "history",
+  expired: "history",
 } as const;
 
 export function OrderDetailView({
@@ -242,7 +242,7 @@ export function OrderDetailView({
             title="Transfer"
             action={
               <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                <StageIcon className="h-4 w-4" strokeWidth={1.8} />
+                <Icon name={StageIcon} size={16} strokeWidth={1.8} />
                 <span>{stage.label}</span>
               </div>
             }

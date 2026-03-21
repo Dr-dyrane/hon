@@ -183,6 +183,9 @@ export type AdminCustomerSummary = {
   email: string | null;
   fullName: string | null;
   phone: string | null;
+  supportState: "standard" | "priority" | "follow_up" | "hold";
+  tags: string[];
+  notePreview: string | null;
   totalOrders: number;
   activeOrders: number;
   addressCount: number;
@@ -221,6 +224,7 @@ export type AdminCustomerAddressRow = {
 };
 
 export type AdminCustomerDetail = AdminCustomerSummary & {
+  notes: string | null;
   recentOrders: AdminCustomerOrderRow[];
   addresses: AdminCustomerAddressRow[];
 };

@@ -18,6 +18,44 @@ function normalizeRequiredText(value: string | null | undefined, minimumLength: 
   return trimmed;
 }
 
+function normalizeCustomerKey(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function normalizeTags(rawValue: string | null | undefined) {
+  const seen = new Set<string>();
+  const tags: string[] = [];
+
+  for (const token of (rawValue ?? "").split(",")) {
+    const trimmed = token.trim().replace(/\s+/g, " ");
+
+    if (!trimmed) {
+      continue;
+    }
+
+    const normalized = trimmed.toLowerCase();
+
+    if (seen.has(normalized)) {
+      continue;
+    }
+
+    seen.add(normalized);
+    tags.push(trimmed.slice(0, 32));
+  }
+
+  return tags.slice(0, 8);
+}
+
+function normalizeSupportState(value: string | null | undefined) {
+  const normalized = value?.trim().toLowerCase() ?? "standard";
+
+  if (!["standard", "priority", "follow_up", "hold"].includes(normalized)) {
+    throw new Error("Unsupported support state.");
+  }
+
+  return normalized as "standard" | "priority" | "follow_up" | "hold";
+}
+
 function buildAdminActor(input: {
   actorUserId?: string | null;
   actorEmail?: string | null;
@@ -98,6 +136,89 @@ export async function updateAdminCustomerProfile(input: {
           updated_at = timezone('utc', now())
       `,
       [userId, fullName, preferredPhoneE164]
+    );
+  }, { actor: buildAdminActor(input) });
+}
+
+export async function upsertAdminCustomerRecord(input: {
+  customerKey: string;
+  userId?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  supportState: string;
+  tags?: string | null;
+  notes?: string | null;
+  actorUserId?: string | null;
+  actorEmail?: string | null;
+}) {
+  if (!isDatabaseConfigured()) {
+    throw new Error("Customer CRM is unavailable.");
+  }
+
+  const customerKey = normalizeCustomerKey(input.customerKey);
+  const supportState = normalizeSupportState(input.supportState);
+  const tags = normalizeTags(input.tags);
+  const notes = normalizeOptionalText(input.notes);
+  const normalizedEmail = normalizeOptionalText(input.email)?.toLowerCase() ?? null;
+  const phoneE164 = input.phone ? normalizePhoneToE164(input.phone) : null;
+  const userId = normalizeOptionalText(input.userId);
+
+  if (!customerKey) {
+    throw new Error("Customer is required.");
+  }
+
+  if (input.phone && !phoneE164) {
+    throw new Error(getPhoneValidationMessage());
+  }
+
+  await withTransaction(async (queryFn) => {
+    const isDefaultRecord =
+      supportState === "standard" &&
+      tags.length === 0 &&
+      !notes;
+
+    if (isDefaultRecord) {
+      await queryFn(
+        `
+          delete from app.customer_records
+          where customer_key = $1
+        `,
+        [customerKey]
+      );
+      return;
+    }
+
+    await queryFn(
+      `
+        insert into app.customer_records (
+          customer_key,
+          user_id,
+          normalized_email,
+          phone_e164,
+          support_state,
+          tags,
+          notes
+        )
+        values ($1, $2, $3, $4, $5, $6::text[], $7)
+        on conflict (customer_key)
+        do update set
+          user_id = excluded.user_id,
+          normalized_email = excluded.normalized_email,
+          phone_e164 = excluded.phone_e164,
+          support_state = excluded.support_state,
+          tags = excluded.tags,
+          notes = excluded.notes,
+          updated_at = timezone('utc', now())
+      `,
+      [
+        customerKey,
+        userId,
+        normalizedEmail,
+        phoneE164,
+        supportState,
+        tags,
+        notes,
+      ]
     );
   }, { actor: buildAdminActor(input) });
 }

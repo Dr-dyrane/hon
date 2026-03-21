@@ -249,6 +249,9 @@ export async function listAdminCustomerSummaries(
         r.email as email,
         coalesce(p.full_name, r.customer_name) as "fullName",
         coalesce(p.preferred_phone_e164, r.phone) as phone,
+        coalesce(cr.support_state, 'standard') as "supportState",
+        coalesce(cr.tags, '{}'::text[]) as tags,
+        nullif(left(trim(coalesce(cr.notes, '')), 120), '') as "notePreview",
         r.total_orders as "totalOrders",
         r.active_orders as "activeOrders",
         coalesce(ac.address_count, 0)::int as "addressCount",
@@ -258,6 +261,8 @@ export async function listAdminCustomerSummaries(
       from rollup r
       left join app.profiles p
         on p.user_id = r.user_id
+      left join app.customer_records cr
+        on lower(cr.customer_key) = lower(r.customer_key)
       left join address_counts ac
         on ac.user_id = r.user_id
       left join latest_order lo
@@ -285,7 +290,7 @@ export async function getAdminCustomerDetail(
   const normalizedKey = customerKey.trim().toLowerCase();
   const actor = buildAdminActor(actorEmail);
 
-  const summaryResult = await query<AdminCustomerSummary>(
+  const summaryResult = await query<AdminCustomerDetail>(
     `
       with order_people as (
         select
@@ -338,6 +343,10 @@ export async function getAdminCustomerDetail(
         r.email as email,
         coalesce(p.full_name, r.customer_name) as "fullName",
         coalesce(p.preferred_phone_e164, r.phone) as phone,
+        coalesce(cr.support_state, 'standard') as "supportState",
+        coalesce(cr.tags, '{}'::text[]) as tags,
+        nullif(left(trim(coalesce(cr.notes, '')), 120), '') as "notePreview",
+        cr.notes as notes,
         r.total_orders as "totalOrders",
         r.active_orders as "activeOrders",
         coalesce(ac.address_count, 0)::int as "addressCount",
@@ -347,6 +356,8 @@ export async function getAdminCustomerDetail(
       from rollup r
       left join app.profiles p
         on p.user_id = r.user_id
+      left join app.customer_records cr
+        on lower(cr.customer_key) = lower(r.customer_key)
       left join address_counts ac
         on ac.user_id = r.user_id
       left join latest_order lo

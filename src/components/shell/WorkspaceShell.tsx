@@ -34,13 +34,14 @@ export function WorkspaceShell({
 }) {
   return (
     <div className="min-h-svh bg-[radial-gradient(circle_at_top,rgba(15,61,46,0.08),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,242,234,0.9)_100%)] dark:bg-[radial-gradient(circle_at_top,rgba(215,197,163,0.09),transparent_38%),linear-gradient(180deg,rgba(18,22,18,0.98)_0%,rgba(10,12,10,1)_100%)]">
-      <div className="min-h-svh w-full md:grid md:grid-cols-[300px_minmax(0,1fr)]">
-        <aside className="hidden bg-system-background/48 px-6 py-6 md:sticky md:top-0 md:flex md:h-svh md:flex-col md:self-start md:overflow-hidden">
-          <Link href="/" className="inline-flex">
-            <Logo />
+      <div className="min-h-svh w-full md:grid md:grid-cols-[80px_minmax(0,1fr)] lg:grid-cols-[300px_minmax(0,1fr)] transition-all duration-300">
+        <aside className="hidden bg-system-background/48 px-3 py-6 md:sticky md:top-0 md:flex md:h-svh md:flex-col md:self-start md:overflow-hidden lg:px-6">
+          <Link href="/" className="inline-flex items-center justify-center lg:justify-start">
+            <Logo showWordmark={false} className="lg:hidden" />
+            <Logo showWordmark={true} className="hidden lg:flex" />
           </Link>
 
-          <div className="mt-10">
+          <div className="mt-10 md:max-lg:hidden">
             <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
               {eyebrow}
             </div>
@@ -58,9 +59,9 @@ export function WorkspaceShell({
             <WorkspaceNav items={navItems} />
           </div>
 
-          <div className="glass-morphism squircle bg-system-fill/56 px-4 py-3 shadow-soft">
+          <div className="glass-morphism squircle bg-system-fill/56 px-2 py-3 shadow-soft lg:px-4">
             <div className="flex items-start justify-between gap-4">
-              <div>
+              <div className="md:max-lg:hidden">
                 <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
                   {sessionRoleLabel ?? "Appearance"}
                 </div>
@@ -69,7 +70,7 @@ export function WorkspaceShell({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-1 items-center justify-center gap-2 lg:flex-none">
                 {sessionEmail ? <SignOutButton /> : null}
                 {/* <ThemeToggle /> */}
               </div>

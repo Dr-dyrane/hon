@@ -2,13 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  Minus,
-  Plus,
-  ShoppingBag,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import { useCommerce } from "@/components/providers/CommerceProvider";
 import {
   SHOT_BUNDLE,
@@ -126,7 +120,7 @@ export function CartDrawer() {
               className="motion-press-soft flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-system-fill/80 text-label transition-colors duration-300 hover:bg-system-fill"
               aria-label="Close cart"
             >
-              <X className="h-5 w-5" strokeWidth={1.7} />
+              <Icon name="close" size={24} />
             </button>
           </div>
 
@@ -148,7 +142,7 @@ export function CartDrawer() {
           ) : showEmptyState ? (
             <div className="flex flex-1 flex-col items-center justify-center px-3 text-center">
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-system-fill/80 text-accent shadow-soft">
-                <ShoppingBag className="h-9 w-9" strokeWidth={1.7} />
+                <Icon name="bag" size={48} />
               </div>
               <h3 className="mt-8 text-2xl font-headline font-semibold tracking-title text-label">
                 Cart is empty.
@@ -208,7 +202,7 @@ export function CartDrawer() {
                           className="motion-press-soft flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-system-fill/80 text-secondary-label transition-colors duration-300 hover:bg-system-fill hover:text-label"
                           aria-label={`Remove ${line.displayName}`}
                         >
-                          <Trash2 className="h-[18px] w-[18px]" strokeWidth={1.7} />
+                          <Icon name="trash" size={18} />
                         </button>
                       </div>
 
@@ -222,7 +216,7 @@ export function CartDrawer() {
                             className="motion-press-soft flex h-9 w-9 items-center justify-center rounded-full bg-system-background text-label transition-transform duration-300 hover:scale-[1.03]"
                             aria-label={`Decrease ${line.displayName}`}
                           >
-                            <Minus className="h-4 w-4" strokeWidth={1.7} />
+                            <Icon name="minus" size={16} />
                           </button>
                           <span className="min-w-[2rem] text-center text-sm font-semibold text-label">
                             {line.quantity}
@@ -235,7 +229,7 @@ export function CartDrawer() {
                             className="motion-press-soft flex h-9 w-9 items-center justify-center rounded-full bg-system-background text-label transition-transform duration-300 hover:scale-[1.03]"
                             aria-label={`Increase ${line.displayName}`}
                           >
-                            <Plus className="h-4 w-4" strokeWidth={1.7} />
+                            <Icon name="plus" size={16} />
                           </button>
                         </div>
 

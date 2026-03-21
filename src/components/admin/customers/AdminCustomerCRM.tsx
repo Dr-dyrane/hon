@@ -7,6 +7,7 @@ import type { AdminCustomerAddressRow, AdminCustomerDetail } from "@/lib/db/type
 import {
   deleteAdminCustomerAddressAction,
   saveAdminCustomerAddressAction,
+  updateAdminCustomerRecordAction,
   updateAdminCustomerProfileAction,
 } from "@/app/(admin)/admin/customers/[customerKey]/actions";
 import { cn } from "@/lib/utils";
@@ -48,11 +49,54 @@ function createAddressDraft(address?: AdminCustomerAddressRow | null): AddressDr
 }
 
 export function AdminCustomerCRM({ customer }: { customer: AdminCustomerDetail }) {
+  const [supportOpen, setSupportOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [addressDraft, setAddressDraft] = useState<AddressDraft | null>(null);
 
   return (
     <div className="space-y-4">
+      <section className="glass-morphism rounded-[32px] bg-system-background/78 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
+              CRM
+            </div>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-label">Support state</h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSupportOpen(true)}
+            className="min-h-[40px] rounded-full bg-system-fill/42 px-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-label"
+          >
+            Edit
+          </button>
+        </div>
+
+        <div className="mt-5 space-y-3">
+          <InfoTile label="State" value={formatSupportState(customer.supportState)} />
+          <div className="rounded-[24px] bg-system-fill/42 px-4 py-4">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
+              Tags
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {customer.tags.length > 0 ? (
+                customer.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full bg-system-fill/56 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label"
+                  >
+                    {tag}
+                  </span>
+                ))
+              ) : (
+                <span className="text-sm text-secondary-label">No tags</span>
+              )}
+            </div>
+          </div>
+          <InlineStatus message={customer.notes ?? "No support note yet."} />
+        </div>
+      </section>
+
       <section className="glass-morphism rounded-[32px] bg-system-background/78 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -168,6 +212,12 @@ export function AdminCustomerCRM({ customer }: { customer: AdminCustomerDetail }
         </CustomerSheet>
       ) : null}
 
+      {supportOpen ? (
+        <CustomerSheet title="Customer CRM" onClose={() => setSupportOpen(false)}>
+          <CustomerSupportForm customer={customer} onClose={() => setSupportOpen(false)} />
+        </CustomerSheet>
+      ) : null}
+
       {addressDraft && customer.userId ? (
         <CustomerSheet
           title={addressDraft.addressId ? "Edit address" : "Add address"}
@@ -181,6 +231,90 @@ export function AdminCustomerCRM({ customer }: { customer: AdminCustomerDetail }
         </CustomerSheet>
       ) : null}
     </div>
+  );
+}
+
+function CustomerSupportForm({
+  customer,
+  onClose,
+}: {
+  customer: AdminCustomerDetail;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [message, setMessage] = useState<string | null>(null);
+
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        setMessage(null);
+        const formData = new FormData(event.currentTarget);
+
+        startTransition(async () => {
+          const result = await updateAdminCustomerRecordAction(customer.customerKey, formData);
+
+          if (!result.success) {
+            setMessage(result.error || "Unable to update CRM.");
+            return;
+          }
+
+          router.refresh();
+          onClose();
+        });
+      }}
+      className="space-y-5"
+    >
+      <input type="hidden" name="userId" value={customer.userId ?? ""} />
+      <input type="hidden" name="email" value={customer.email ?? ""} />
+      <input type="hidden" name="phone" value={customer.phone ?? ""} />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <label className="ml-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
+            Support state
+          </label>
+          <select
+            name="supportState"
+            defaultValue={customer.supportState}
+            className="flex min-h-[48px] w-full appearance-none rounded-[20px] bg-system-fill/42 px-4 text-sm text-label outline-none transition-all focus:bg-system-fill/58"
+          >
+            <option value="standard">Standard</option>
+            <option value="priority">Priority</option>
+            <option value="follow_up">Follow up</option>
+            <option value="hold">Hold</option>
+          </select>
+        </div>
+        <Field
+          label="Tags"
+          name="tags"
+          defaultValue={customer.tags.join(", ")}
+          placeholder="vip, wholesale, callback"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="ml-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
+          Notes
+        </label>
+        <textarea
+          name="notes"
+          defaultValue={customer.notes ?? ""}
+          rows={5}
+          className="flex w-full rounded-[20px] bg-system-fill/42 px-4 py-3 text-sm text-label outline-none transition-all placeholder:text-tertiary-label focus:bg-system-fill/58"
+        />
+      </div>
+
+      <InlineStatus
+        message={
+          message ??
+          "Tags are comma-separated. Leave everything blank with Standard to clear CRM metadata."
+        }
+      />
+
+      <SheetActionRow pending={isPending} onClose={onClose} submitLabel="Save" />
+    </form>
   );
 }
 
@@ -492,6 +626,14 @@ function InlineStatus({ message }: { message: string }) {
       {message}
     </p>
   );
+}
+
+function formatSupportState(value: AdminCustomerDetail["supportState"]) {
+  if (value === "follow_up") {
+    return "Follow up";
+  }
+
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function Field({
