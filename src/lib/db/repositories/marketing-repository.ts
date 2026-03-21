@@ -44,7 +44,7 @@ function resolveMarketingMediaUrl(storageKey: string | null) {
     return null;
   }
 
-  if (storageKey.startsWith("/")) {
+  if (/^https?:\/\//i.test(storageKey) || storageKey.startsWith("/")) {
     return storageKey;
   }
 

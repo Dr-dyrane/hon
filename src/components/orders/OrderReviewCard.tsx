@@ -45,6 +45,7 @@ export function OrderReviewCard({
   const [body, setBody] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const ratingOptions = ["1", "2", "3", "4", "5"];
 
   const canSubmit = orderStatus === "delivered" && !!reviewRequest && !review;
 
@@ -128,26 +129,33 @@ export function OrderReviewCard({
         Delivered. Rate it.
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-[160px_minmax(0,1fr)]">
-        <select
-          value={rating}
-          onChange={(event) => setRating(event.target.value)}
-          className="min-h-[44px] rounded-[22px] bg-system-fill/52 px-4 text-sm text-label focus:outline-none"
-        >
-          <option value="5">5 stars</option>
-          <option value="4">4 stars</option>
-          <option value="3">3 stars</option>
-          <option value="2">2 stars</option>
-          <option value="1">1 star</option>
-        </select>
+      <div className="grid grid-cols-5 gap-2">
+        {ratingOptions.map((value) => {
+          const active = rating === value;
 
-        <input
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          placeholder="Title"
-          className="min-h-[44px] w-full rounded-[22px] bg-system-fill/52 px-4 text-sm text-label placeholder:text-tertiary-label focus:outline-none"
-        />
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setRating(value)}
+              className={
+                active
+                  ? "min-h-[48px] rounded-[20px] bg-[var(--accent)] text-[var(--accent-label)] text-sm font-semibold"
+                  : "min-h-[48px] rounded-[20px] bg-system-fill/52 text-sm font-semibold text-label"
+              }
+            >
+              {value}
+            </button>
+          );
+        })}
       </div>
+
+      <input
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+        placeholder="Title"
+        className="min-h-[44px] w-full rounded-[22px] bg-system-fill/52 px-4 text-sm text-label placeholder:text-tertiary-label focus:outline-none"
+      />
 
       <textarea
         value={body}

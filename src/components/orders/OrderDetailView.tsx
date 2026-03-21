@@ -145,63 +145,96 @@ export function OrderDetailView({
 
   return (
     <div className="space-y-6">
-      <WorkspaceContextPanel
-        title={`#${order.orderNumber}`}
-        detail={formatNgn(order.totalNgn)}
-        tags={[{ label: stage.label, tone: stage.tone }]}
-        meta={[
-          {
-            label: "Placed",
-            value: formatTimestamp(order.placedAt),
-          },
-          {
-            label: "Ref",
-            value: isRequestPending ? "Pending" : order.transferReference,
-          },
-          {
-            label: "Address",
-            value: getDeliveryLine(order.deliveryAddressSnapshot),
-          },
-        ]}
-      />
+      <div className="space-y-3 md:hidden">
+        <div className="rounded-[24px] bg-system-fill/40 px-4 py-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                Order
+              </div>
+              <div className="mt-1 truncate text-lg font-semibold tracking-tight text-label">
+                #{order.orderNumber}
+              </div>
+              <div className="mt-1 text-sm text-secondary-label">
+                {formatTimestamp(order.placedAt)}
+              </div>
+            </div>
+            <div className="rounded-full bg-system-background px-3 py-1 text-[10px] font-semibold uppercase tracking-headline text-label">
+              {stage.label}
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <CompactTopStat label="Due" value={formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn)} />
+            <CompactTopStat
+              label="Items"
+              value={`${order.items.reduce((total, item) => total + item.quantity, 0)}`}
+            />
+            <CompactTopStat label="Proofs" value={`${proofs.length}`} />
+          </div>
+        </div>
+      </div>
 
-      <QuietValueStrip
-        items={[
-          {
-            label: "Stage",
-            value: stage.label,
-            detail: stage.detail,
-          },
-          {
-            label: "Due",
-            value: formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn),
-            detail: isRequestPending
-              ? "Request pending"
-              : order.payment?.status
-                ? paymentState.label
-                : "Pending",
-          },
-          {
-            label: "Deadline",
-            value: isRequestPending
-              ? "Pending"
-              : order.transferDeadlineAt
-              ? formatTimestamp(order.transferDeadlineAt)
-              : "Open",
-          },
-          {
-            label: "Items",
-            value: `${order.items.length}`,
-            detail: `${order.items.reduce((total, item) => total + item.quantity, 0)} units`,
-          },
-          {
-            label: "Proofs",
-            value: `${proofs.length}`,
-            detail: isRequestPending ? "Locked" : proofs.length > 0 ? "Received" : "Waiting",
-          },
-        ]}
-        columns={4}
-      />
+      <div className="hidden md:block">
+        <WorkspaceContextPanel
+          title={`#${order.orderNumber}`}
+          detail={formatNgn(order.totalNgn)}
+          tags={[{ label: stage.label, tone: stage.tone }]}
+          meta={[
+            {
+              label: "Placed",
+              value: formatTimestamp(order.placedAt),
+            },
+            {
+              label: "Ref",
+              value: isRequestPending ? "Pending" : order.transferReference,
+            },
+            {
+              label: "Address",
+              value: getDeliveryLine(order.deliveryAddressSnapshot),
+            },
+          ]}
+        />
+      </div>
+
+      <div className="hidden md:block">
+        <QuietValueStrip
+          items={[
+            {
+              label: "Stage",
+              value: stage.label,
+              detail: stage.detail,
+            },
+            {
+              label: "Due",
+              value: formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn),
+              detail: isRequestPending
+                ? "Request pending"
+                : order.payment?.status
+                  ? paymentState.label
+                  : "Pending",
+            },
+            {
+              label: "Deadline",
+              value: isRequestPending
+                ? "Pending"
+                : order.transferDeadlineAt
+                ? formatTimestamp(order.transferDeadlineAt)
+                : "Open",
+            },
+            {
+              label: "Items",
+              value: `${order.items.length}`,
+              detail: `${order.items.reduce((total, item) => total + item.quantity, 0)} units`,
+            },
+            {
+              label: "Proofs",
+              value: `${proofs.length}`,
+              detail: isRequestPending ? "Locked" : proofs.length > 0 ? "Received" : "Waiting",
+            },
+          ]}
+          columns={4}
+        />
+      </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
         <div className="space-y-4">
@@ -446,6 +479,23 @@ export function OrderDetailView({
           ) : null}
         </div>
       </div>
+    </div>
+  );
+}
+
+function CompactTopStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[18px] bg-system-background/80 px-3 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-semibold text-label">{value}</div>
     </div>
   );
 }

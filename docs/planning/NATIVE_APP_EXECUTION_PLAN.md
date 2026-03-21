@@ -139,6 +139,7 @@ These are now non-negotiable.
 Current correction:
 
 - profile and address flows now use compact mobile intros instead of full context panels before the task surface
+- order detail now uses a compact phone summary and simpler payment/rating controls instead of leading with desktop-weight chrome
 
 ### Preferred phone rhythm
 

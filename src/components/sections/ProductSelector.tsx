@@ -281,7 +281,7 @@ export function ProductSelector({
                       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                       className="product-frame relative z-10 flex h-full items-center justify-center px-2 sm:px-5"
                     >
-                      {stageProduct.model && scrollActive ? (
+                      {stageProduct.model && (scrollActive || !stageProduct.image) ? (
                         <Product3DViewer
                           modelPath={stageProduct.model}
                           theme={isDark ? "dark" : "light"}

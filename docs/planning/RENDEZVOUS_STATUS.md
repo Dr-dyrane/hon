@@ -110,6 +110,7 @@ Current state:
 - mobile cart and notifications now present as bottom sheets on phone instead of side drawers
 - mobile shell header now uses a denser title treatment so the first viewport reaches the task faster
 - portal profile and addresses now use compact mobile task intros instead of large context panels before the form work starts
+- mobile order detail now uses a compact top summary and simpler payment/rating actions instead of stacking full desktop chrome first
 
 This means the system has crossed into operational platform work.
 
@@ -391,6 +392,7 @@ Open:
 - [ ] enforce viewport-native mobile, tablet, and desktop compositions across admin and portal
 - [x] move mobile cart and notification overlays away from side-drawer behavior
 - [x] reduce mobile context chrome ahead of profile and address task surfaces
+- [x] reduce mobile chrome on the customer order detail and simplify payment/rating actions
 - [x] ensure selected navigation states remain legible in every shell
 - [ ] finish no-border, Apple-HIG-consistent surface treatment review
 - [ ] tighten the checkout drawer and confirmation route further toward the marketing-page visual bar

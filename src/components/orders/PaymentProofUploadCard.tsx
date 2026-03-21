@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Landmark, Upload } from "lucide-react";
+import { CheckCircle2, Landmark, Paperclip, Upload } from "lucide-react";
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Try again.";
@@ -55,6 +55,7 @@ export function PaymentProofUploadCard({
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [showReceiptField, setShowReceiptField] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   if (!paymentId) {
@@ -191,24 +192,39 @@ export function PaymentProofUploadCard({
           </div>
         </div>
       </div>
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*,application/pdf"
-          className="min-w-0 flex-1 rounded-[24px] bg-system-fill/70 px-3 py-3 text-xs text-label file:mr-3 file:rounded-full file:bg-system-background file:px-3 file:py-2 file:text-[10px] file:font-semibold file:text-label"
-        />
-        <button
-          type="button"
-          onClick={() => void handleUpload()}
-          disabled={isPending}
-          className="button-primary min-h-[44px] shrink-0 text-xs font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:shadow-none md:px-5"
-        >
-          <Upload className="h-4 w-4" strokeWidth={1.8} />
-          {isPending ? "Sending" : "I sent the money"}
-        </button>
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={() => void handleUpload()}
+            disabled={isPending}
+            className="button-primary min-h-[48px] flex-1 justify-center text-xs font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:shadow-none"
+          >
+            <Upload className="h-4 w-4" strokeWidth={1.8} />
+            {isPending ? "Sending" : "I sent the money"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowReceiptField((current) => !current)}
+            className="flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-system-fill/46 px-4 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label"
+          >
+            <Paperclip className="h-4 w-4" strokeWidth={1.8} />
+            {showReceiptField ? "Hide receipt" : "Add receipt"}
+          </button>
+        </div>
+
+        {showReceiptField ? (
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*,application/pdf"
+            className="min-w-0 w-full rounded-[24px] bg-system-fill/70 px-3 py-3 text-xs text-label file:mr-3 file:rounded-full file:bg-system-background file:px-3 file:py-2 file:text-[10px] file:font-semibold file:text-label"
+          />
+        ) : null}
+
         {message ? (
-          <p className="text-xs text-secondary-label md:min-w-[72px] md:text-right">
+          <p className="text-xs text-secondary-label">
             {message}
           </p>
         ) : null}

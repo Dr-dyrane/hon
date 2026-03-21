@@ -4,6 +4,7 @@ import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } fr
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, PerspectiveCamera, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { Box } from "lucide-react";
 import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
 import { ProductFallback } from "./ProductFallback";
 import { SceneEnvironment } from "./SceneEnvironment";
@@ -195,6 +196,7 @@ export function Product3DCarousel({
   const [hasWebGLError, setHasWebGLError] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const stageYOffset = 0.14;
+  const activeProduct = productsById[activeId];
 
   // Delay rendering to prevent WebGL context conflicts
   useEffect(() => {
@@ -301,11 +303,19 @@ export function Product3DCarousel({
         "absolute inset-0 transition-all duration-1000",
         isReady ? "opacity-0 scale-95" : "opacity-100 scale-100"
       )}>
-        <ProductFallback
-          imagePath={productsById[activeId]?.image ?? ""}
-          className="w-full h-full"
-          priority
-        />
+        {activeProduct?.image ? (
+          <ProductFallback
+            imagePath={activeProduct.image}
+            className="w-full h-full"
+            priority
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-system-fill/72 text-label/72 dark:bg-white/[0.06] dark:text-white/72">
+              <Box className="h-10 w-10" strokeWidth={1.6} />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 3D Canvas Layer: Only render when ready */}
@@ -355,13 +365,14 @@ export function Product3DCarousel({
             <group position={[0, stageYOffset, 0]}>
               {productIds.map((key, index) => {
                 const relativeIndex = getRelativeIndex(index, activeIndex, productIds.length);
+                const modelPath = productsById[key].model;
                 // Only render active model and immediate neighbors
-                if (Math.abs(relativeIndex) > 1) return null;
+                if (Math.abs(relativeIndex) > 1 || !modelPath) return null;
 
                 return (
                   <StageModel
                     key={key}
-                    modelPath={productsById[key].model}
+                    modelPath={modelPath}
                     index={index}
                     activeIndex={activeIndex}
                     totalProducts={productIds.length}
