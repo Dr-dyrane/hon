@@ -10,6 +10,7 @@ import { formatNgn } from "@/lib/commerce";
 import type {
   OrderReturnCaseRow,
   OrderReturnEventRow,
+  OrderReturnProofRow,
   OrderReviewRequestRow,
   OrderReviewRow,
   OrderStatusEventRow,
@@ -91,6 +92,7 @@ export function OrderDetailView({
   review,
   returnCase,
   returnEvents,
+  returnProofs,
   backHref,
   accessToken,
   trackingHref,
@@ -102,6 +104,7 @@ export function OrderDetailView({
   review: OrderReviewRow | null;
   returnCase: OrderReturnCaseRow | null;
   returnEvents: OrderReturnEventRow[];
+  returnProofs: OrderReturnProofRow[];
   backHref: string;
   accessToken?: string;
   trackingHref?: string | null;
@@ -352,6 +355,7 @@ export function OrderDetailView({
                 orderStatus={order.status}
                 returnCase={returnCase}
                 returnEvents={returnEvents}
+                proofs={returnProofs}
               />
             </OrderSurface>
           ) : null}

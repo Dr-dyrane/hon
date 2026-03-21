@@ -3,6 +3,7 @@ import { OrderDetailView } from "@/components/orders/OrderDetailView";
 import {
   getLatestOrderReturnCase,
   listOrderReturnEvents,
+  listOrderReturnProofs,
 } from "@/lib/db/repositories/order-returns-repository";
 import {
   getOrderReview,
@@ -50,13 +51,14 @@ export default async function GuestCheckoutOrderPage({
     role: "customer" as const,
     guestOrderId: orderId,
   };
-  const [timeline, proofs, reviewRequest, review, returnCase, returnEvents] = await Promise.all([
+  const [timeline, proofs, reviewRequest, review, returnCase, returnEvents, returnProofs] = await Promise.all([
     listOrderStatusEvents(orderId, guestActor),
     listPaymentProofs(order?.paymentId ?? "", guestActor),
     getOrderReviewRequest(orderId, guestActor),
     getOrderReview(orderId, guestActor),
     getLatestOrderReturnCase(orderId, guestActor),
     listOrderReturnEvents(orderId, guestActor),
+    listOrderReturnProofs(orderId, guestActor),
   ]);
 
   return (
@@ -87,6 +89,7 @@ export default async function GuestCheckoutOrderPage({
         review={review}
         returnCase={returnCase}
         returnEvents={returnEvents}
+        returnProofs={returnProofs}
         backHref="/"
         accessToken={accessToken}
       />

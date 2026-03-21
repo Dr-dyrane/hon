@@ -6,7 +6,9 @@ import { formatNgn } from "@/lib/commerce";
 import type {
   OrderReturnCaseRow,
   OrderReturnEventRow,
+  OrderReturnProofRow,
 } from "@/lib/db/types";
+import { OrderReturnProofUploadCard } from "@/components/orders/OrderReturnProofUploadCard";
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Try again.";
@@ -33,12 +35,14 @@ export function OrderReturnRequestCard({
   orderStatus,
   returnCase,
   returnEvents,
+  proofs,
 }: {
   orderId: string;
   accessToken?: string;
   orderStatus: string;
   returnCase: OrderReturnCaseRow | null;
   returnEvents: OrderReturnEventRow[];
+  proofs: OrderReturnProofRow[];
 }) {
   const router = useRouter();
   const [reason, setReason] = useState("");
@@ -152,6 +156,30 @@ export function OrderReturnRequestCard({
         {returnCase.resolutionNote ? (
           <div className="rounded-[22px] bg-system-fill/36 px-4 py-3 text-sm text-secondary-label">
             {returnCase.resolutionNote}
+          </div>
+        ) : null}
+
+        <OrderReturnProofUploadCard
+          orderId={orderId}
+          returnCaseId={returnCase.returnCaseId}
+          accessToken={accessToken}
+          disabled={["rejected", "refunded"].includes(returnCase.status)}
+        />
+
+        {proofs.length > 0 ? (
+          <div className="grid gap-2 text-sm text-secondary-label">
+            {proofs.map((proof) => (
+              <a
+                key={proof.proofId}
+                href={proof.publicUrl ?? "#"}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between gap-4 rounded-[22px] bg-system-fill/36 px-4 py-3 transition-colors duration-300 hover:text-label"
+              >
+                <span>{proof.mimeType}</span>
+                <span>{formatTimestamp(proof.createdAt)}</span>
+              </a>
+            ))}
           </div>
         ) : null}
 

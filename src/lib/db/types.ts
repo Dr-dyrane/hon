@@ -532,6 +532,17 @@ export type OrderReturnEventRow = {
   createdAt: string;
 };
 
+export type OrderReturnProofRow = {
+  proofId: string;
+  returnCaseId: string;
+  orderId: string;
+  storageKey: string;
+  publicUrl: string | null;
+  mimeType: string;
+  submittedByEmail: string | null;
+  createdAt: string;
+};
+
 export type PortalPendingReview = {
   requestId: string;
   orderId: string;

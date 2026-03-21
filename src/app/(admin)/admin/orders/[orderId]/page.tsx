@@ -14,6 +14,7 @@ import {
 import {
   getLatestOrderReturnCase,
   listOrderReturnEvents,
+  listOrderReturnProofs,
 } from "@/lib/db/repositories/order-returns-repository";
 import {
   getOrderReview,
@@ -117,7 +118,7 @@ export default async function AdminOrderDetailPage({
     email: session.email,
     role: "admin" as const,
   };
-  const [orderEvents, paymentReviews, paymentProofs, reviewRequest, customerReview, returnCase, returnEvents] = await Promise.all([
+  const [orderEvents, paymentReviews, paymentProofs, reviewRequest, customerReview, returnCase, returnEvents, returnProofs] = await Promise.all([
     listOrderStatusEvents(orderId, adminActor),
     order.paymentId ? listPaymentReviewEvents(order.paymentId, session.email) : [],
     order.paymentId ? listPaymentProofs(order.paymentId, adminActor) : [],
@@ -125,6 +126,7 @@ export default async function AdminOrderDetailPage({
     getOrderReview(orderId, adminActor),
     getLatestOrderReturnCase(orderId, adminActor),
     listOrderReturnEvents(orderId, adminActor),
+    listOrderReturnProofs(orderId, adminActor),
   ]);
   const stage = getOrderStagePresentation(order);
   const paymentState = getPaymentStatusPresentation(order.payment?.status ?? order.paymentStatus);
@@ -412,6 +414,23 @@ export default async function AdminOrderDetailPage({
                       label="Number"
                       value={returnCase.refundAccountNumber ?? "Pending"}
                     />
+                  </div>
+                ) : null}
+
+                {returnProofs.length > 0 ? (
+                  <div className="grid gap-2 text-sm text-secondary-label">
+                    {returnProofs.map((proof) => (
+                      <Link
+                        key={proof.proofId}
+                        href={proof.publicUrl ?? "#"}
+                        className="flex items-center justify-between gap-4 rounded-[22px] bg-system-fill/36 px-4 py-3 text-xs font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <span>{proof.mimeType}</span>
+                        <span>{formatTimestamp(proof.createdAt)}</span>
+                      </Link>
+                    ))}
                   </div>
                 ) : null}
 

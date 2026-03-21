@@ -16,6 +16,7 @@ import type {
   AdminOrderReturnQueueRow,
   OrderReturnCaseRow,
   OrderReturnEventRow,
+  OrderReturnProofRow,
 } from "@/lib/db/types";
 
 const OPEN_RETURN_STATUSES = ["requested", "approved", "received"] as const;
@@ -185,6 +186,36 @@ export async function listOrderReturnEvents(
   return result.rows;
 }
 
+export async function listOrderReturnProofs(
+  orderId: string,
+  actor?: DatabaseActorContext
+) {
+  if (!orderId || !isDatabaseConfigured()) {
+    return [] satisfies OrderReturnProofRow[];
+  }
+
+  const result = await query<OrderReturnProofRow>(
+    `
+      select
+        id as "proofId",
+        return_case_id as "returnCaseId",
+        order_id as "orderId",
+        storage_key as "storageKey",
+        public_url as "publicUrl",
+        mime_type as "mimeType",
+        submitted_by_email as "submittedByEmail",
+        created_at as "createdAt"
+      from app.order_return_proofs
+      where order_id = $1
+      order by created_at desc
+    `,
+    [orderId],
+    { actor }
+  );
+
+  return result.rows;
+}
+
 export async function requestOrderReturn(input: {
   orderId: string;
   reason: string;
@@ -339,6 +370,78 @@ export async function requestOrderReturn(input: {
   }
 
   return createdReturnCaseId;
+}
+
+export async function createOrderReturnProof(input: {
+  returnCaseId: string;
+  storageKey: string;
+  publicUrl: string | null;
+  mimeType: string;
+  submittedByEmail: string | null;
+  actorUserId?: string | null;
+  guestOrderId?: string | null;
+}) {
+  if (!isDatabaseConfigured()) {
+    return;
+  }
+
+  await withTransaction(async (queryFn) => {
+    const caseResult = await queryFn<{
+      returnCaseId: string;
+      orderId: string;
+      status: OrderReturnCaseRow["status"];
+    }>(
+      `
+        select
+          id as "returnCaseId",
+          order_id as "orderId",
+          status
+        from app.order_return_cases
+        where id = $1
+        limit 1
+        for update
+      `,
+      [input.returnCaseId]
+    );
+
+    const returnCase = caseResult.rows[0] ?? null;
+
+    if (!returnCase) {
+      throw new Error("Return case not found.");
+    }
+
+    if (["rejected", "refunded"].includes(returnCase.status)) {
+      throw new Error("Return proof is closed.");
+    }
+
+    await queryFn(
+      `
+        insert into app.order_return_proofs (
+          return_case_id,
+          order_id,
+          storage_key,
+          public_url,
+          mime_type,
+          submitted_by_email
+        )
+        values ($1, $2, $3, $4, $5, $6)
+      `,
+      [
+        returnCase.returnCaseId,
+        returnCase.orderId,
+        input.storageKey,
+        input.publicUrl,
+        input.mimeType,
+        normalizeEmail(input.submittedByEmail),
+      ]
+    );
+  }, {
+    actor: buildCustomerActor({
+      email: input.submittedByEmail,
+      guestOrderId: input.guestOrderId,
+      userId: input.actorUserId,
+    }),
+  });
 }
 
 export async function advanceOrderReturnCase(input: {

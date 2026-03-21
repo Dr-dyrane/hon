@@ -100,6 +100,7 @@ Current state:
 - admin can now cancel pre-dispatch orders from the order detail flow, with stock release and assignment cleanup handled transactionally
 - delivered order detail now exposes direct rating submission for signed-in and guest order access, instead of relying only on the separate reviews page
 - delivered-order email now links straight back into the order surface so the review handoff is part of the post-delivery automation
+- return-proof uploads now work through direct S3 upload for signed-in and guest order access, and Praxy can review them from admin order detail
 
 This means the system has crossed into operational platform work.
 
@@ -450,7 +451,7 @@ Current return/refund behavior:
 Remaining gaps:
 
 - partial returns are not supported yet
-- customer-uploaded proof or media for returns is still not supported
+- deployed smoke test still has not been run end to end against the return-proof path
 
 ### RLS is active on the first protected slice
 Current protection model:
