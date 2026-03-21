@@ -11,7 +11,7 @@ import React, {
   type ReactNode,
 } from "react";
 
-type FeedbackKind = "tap" | "selection" | "success" | "blocked";
+type FeedbackKind = "tap" | "selection" | "success" | "blocked" | "paymentReceived";
 
 type FeedbackContextType = {
   isReducedMotion: boolean;
@@ -20,6 +20,7 @@ type FeedbackContextType = {
   selection: () => void;
   success: () => void;
   blocked: () => void;
+  paymentReceived: () => void;
 };
 
 type ToneStep = {
@@ -114,6 +115,36 @@ const FEEDBACK_PATTERNS: Record<FeedbackKind, FeedbackPattern> = {
       },
     ],
   },
+  paymentReceived: {
+    vibration: [14, 100, 24],
+    minIntervalMs: 500,
+    tones: [
+      {
+        delayMs: 0,
+        durationMs: 80,
+        frequency: 440,
+        endFrequency: 440,
+        gain: 0.015,
+        type: "sine",
+      },
+      {
+        delayMs: 150,
+        durationMs: 80,
+        frequency: 660,
+        endFrequency: 660,
+        gain: 0.015,
+        type: "sine",
+      },
+      {
+        delayMs: 300,
+        durationMs: 120,
+        frequency: 880,
+        endFrequency: 1100,
+        gain: 0.02,
+        type: "sine",
+      },
+    ],
+  },
 };
 
 const FeedbackContext = createContext<FeedbackContextType | undefined>(undefined);
@@ -158,6 +189,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     selection: 0,
     success: 0,
     blocked: 0,
+    paymentReceived: 0,
   });
 
   const ensureAudioContext = useCallback(async () => {
@@ -255,6 +287,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
       selection: () => triggerFeedback("selection"),
       success: () => triggerFeedback("success"),
       blocked: () => triggerFeedback("blocked"),
+      paymentReceived: () => triggerFeedback("paymentReceived"),
     }),
     [isReducedMotion, triggerFeedback]
   );

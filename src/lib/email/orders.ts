@@ -20,18 +20,21 @@ function buildShell(input: {
   footer?: string;
 }) {
   return `
-    <div style="background:#f7f4ec;padding:32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#161616;">
-      <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:30px;padding:32px;box-shadow:0 18px 50px rgba(15,23,42,0.08);">
+    <div style="background:#f7f4ec;padding:48px 24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#161616;margin:0;">
+      <div style="max-width:540px;margin:0 auto;background:#ffffff;border-radius:32px;padding:40px;box-shadow:0 24px 60px rgba(15,23,42,0.06);">
         ${buildEmailBrandLockup()}
-        <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#6b7280;font-weight:600;">${input.eyebrow}</div>
-        <h1 style="margin:16px 0 10px;font-size:32px;line-height:1.05;color:#111827;">${input.title}</h1>
-        <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#4b5563;">${input.intro}</p>
+        <div style="font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:#6b7280;font-weight:700;margin-bottom:12px;">${input.eyebrow}</div>
+        <h1 style="margin:0 0 12px;font-size:36px;line-height:1.05;color:#111827;font-weight:900;letter-spacing:-0.02em;">${input.title}</h1>
+        <p style="margin:0 0 28px;font-size:16px;line-height:1.5;color:#4b5563;">${input.intro}</p>
         ${input.bodyHtml}
         ${
           input.footer
-            ? `<p style="margin:20px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">${input.footer}</p>`
+            ? `<div style="margin-top:32px;padding-top:24px;border-top:1px solid #f3f4f6;font-size:13px;line-height:1.6;color:#9ca3af;">${input.footer}</div>`
             : ""
         }
+      </div>
+      <div style="max-width:540px;margin:24px auto 0;text-align:center;font-size:12px;color:#9ca3af;">
+        &copy; ${new Date().getFullYear()} House of Prax. All rights reserved.
       </div>
     </div>
   `;
@@ -134,30 +137,45 @@ function buildOrderItems(order: OrderNotificationSnapshot) {
 function buildOrderFacts(order: OrderNotificationSnapshot) {
   return `
     <div style="display:grid;gap:12px;">
-      <div style="border-radius:24px;background:#eef2ef;padding:16px 18px;">
-        <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:600;">Order</div>
-        <div style="margin-top:6px;font-size:26px;font-weight:700;color:#111827;">#${order.orderNumber}</div>
+      <div style="border-radius:24px;background:#f3f1e9;padding:20px;border:1px solid rgba(0,0,0,0.02);">
+        <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;font-weight:700;margin-bottom:6px;">Order</div>
+        <div style="font-size:28px;font-weight:900;color:#111827;letter-spacing:-0.03em;">#${order.orderNumber}</div>
       </div>
-      <div style="display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr));">
-        <div style="border-radius:22px;background:#f4f2ea;padding:14px 16px;">
-          <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:600;">Total</div>
-          <div style="margin-top:6px;font-size:18px;font-weight:600;color:#111827;">${formatNgn(order.totalNgn)}</div>
-        </div>
-        <div style="border-radius:22px;background:#f4f2ea;padding:14px 16px;">
-          <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:600;">Items</div>
-          <div style="margin-top:6px;font-size:18px;font-weight:600;color:#111827;">${order.itemCount}</div>
-        </div>
-      </div>
-      <div style="display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr));">
-        <div style="border-radius:22px;background:#f4f2ea;padding:14px 16px;">
-          <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:600;">Reference</div>
-          <div style="margin-top:6px;font-size:18px;font-weight:600;color:#111827;">${order.transferReference}</div>
-        </div>
-        <div style="border-radius:22px;background:#f4f2ea;padding:14px 16px;">
-          <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:600;">Placed</div>
-          <div style="margin-top:6px;font-size:15px;font-weight:600;color:#111827;">${formatEmailTimestamp(order.placedAt)}</div>
-        </div>
-      </div>
+      
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:separate;border-spacing:12px 0;margin:0 -12px;">
+        <tr>
+          <td width="50%" style="padding:0 12px;vertical-align:top;">
+            <div style="border-radius:20px;background:#f8f7f2;padding:14px 16px;border:1px solid rgba(0,0,0,0.01);">
+              <div style="font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#9ca3af;font-weight:700;margin-bottom:4px;">Total</div>
+              <div style="font-size:17px;font-weight:700;color:#111827;">${formatNgn(order.totalNgn)}</div>
+            </div>
+          </td>
+          <td width="50%" style="padding:0 12px;vertical-align:top;">
+            <div style="border-radius:20px;background:#f8f7f2;padding:14px 16px;border:1px solid rgba(0,0,0,0.01);">
+              <div style="font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#9ca3af;font-weight:700;margin-bottom:4px;">Items</div>
+              <div style="font-size:17px;font-weight:700;color:#111827;">${order.itemCount}</div>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:separate;border-spacing:12px 0;margin:8px -12px 0;">
+        <tr>
+          <td width="50%" style="padding:0 12px;vertical-align:top;">
+            <div style="border-radius:20px;background:#f8f7f2;padding:14px 16px;border:1px solid rgba(0,0,0,0.01);">
+              <div style="font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#9ca3af;font-weight:700;margin-bottom:4px;">Reference</div>
+              <div style="font-size:15px;font-weight:700;color:#111827;word-break:break-all;">${order.transferReference}</div>
+            </div>
+          </td>
+          <td width="50%" style="padding:0 12px;vertical-align:top;">
+            <div style="border-radius:20px;background:#f8f7f2;padding:14px 16px;border:1px solid rgba(0,0,0,0.01);">
+              <div style="font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#9ca3af;font-weight:700;margin-bottom:4px;">Placed</div>
+              <div style="font-size:14px;font-weight:700;color:#111827;">${formatEmailTimestamp(order.placedAt)}</div>
+            </div>
+          </td>
+        </tr>
+      </table>
+
       ${buildProductSpotlight(order)}
       ${buildOrderItems(order)}
     </div>

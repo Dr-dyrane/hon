@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Landmark, Paperclip, Upload } from "lucide-react";
+import { useFeedback } from "@/components/providers/FeedbackProvider";
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Try again.";
@@ -56,6 +57,7 @@ export function PaymentProofUploadCard({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [showReceiptField, setShowReceiptField] = useState(false);
+  const { tap, paymentReceived, blocked } = useFeedback();
   const [isPending, startTransition] = useTransition();
 
   if (!paymentId) {
@@ -174,9 +176,11 @@ export function PaymentProofUploadCard({
         setMessage(
           file && !storagePayload ? "Money sent. Add proof later." : "Money sent."
         );
+        paymentReceived();
         router.refresh();
       } catch (error) {
         setMessage(getErrorMessage(error));
+        blocked();
       }
     });
   }
@@ -206,7 +210,10 @@ export function PaymentProofUploadCard({
 
           <button
             type="button"
-            onClick={() => setShowReceiptField((current) => !current)}
+            onClick={() => {
+              tap();
+              setShowReceiptField((current) => !current);
+            }}
             className="flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-system-fill/46 px-4 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label sm:w-auto"
           >
             <Paperclip className="h-4 w-4" strokeWidth={1.8} />

@@ -373,7 +373,7 @@ export async function getAdminCustomerDetail(
           o.status,
           o.payment_status as "paymentStatus",
           o.fulfillment_status as "fulfillmentStatus",
-          o.total_amount_ngn as "totalNgn",
+          o.total_ngn as "totalNgn",
           count(oi.id)::int as "itemCount",
           o.placed_at as "placedAt"
         from app.orders o
@@ -386,7 +386,7 @@ export async function getAdminCustomerDetail(
           o.status,
           o.payment_status,
           o.fulfillment_status,
-          o.total_amount_ngn,
+          o.total_ngn,
           o.placed_at
         order by o.placed_at desc, o.created_at desc
         limit 12
@@ -402,8 +402,8 @@ export async function getAdminCustomerDetail(
               coalesce(nullif(a.label, ''), 'Saved address') as label,
               a.recipient_name as "recipientName",
               a.phone_e164 as "phoneE164",
-              a.line1,
-              a.line2,
+              a.line_1 as line1,
+              a.line_2 as line2,
               a.landmark,
               a.city,
               a.state,

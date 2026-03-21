@@ -1,7 +1,6 @@
 import "server-only";
 
-import { query, withTransaction } from "@/lib/db/client";
-import { isDatabaseConfigured } from "@/lib/db/client";
+import { isDatabaseConfigured, withTransaction } from "@/lib/db/client";
 import { getPhoneValidationMessage, normalizePhoneToE164 } from "@/lib/phone";
 
 function normalizeOptionalText(value: string | null | undefined) {
