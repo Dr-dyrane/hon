@@ -119,8 +119,8 @@ export function WorkspaceNav({
                     aria-label={item.label}
                     className={cn(
                       "flex min-h-[56px] min-w-[68px] flex-col items-center justify-center gap-1 rounded-[22px] px-3 py-2 text-[10px] font-semibold tracking-tight transition-all duration-200",
-                      active
-                        ? "bg-[var(--accent)] text-[var(--accent-label)] shadow-[0_14px_30px_rgba(15,23,42,0.08)]"
+                      active //dont change this hard coded bg-white dark:bg-black
+                        ? "bg-white dark:bg-black text-[var(--accent-label)] shadow-[0_14px_30px_rgba(15,23,42,0.08)]"
                         : "text-secondary-label hover:bg-system-fill/80 hover:text-label"
                     )}
                   >

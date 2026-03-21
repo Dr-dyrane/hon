@@ -1,6 +1,7 @@
 import "server-only";
 
 import { query } from "@/lib/db/client";
+import { getStoragePublicUrl } from "@/lib/storage/s3";
 
 type CategoryRow = {
   id: string;
@@ -38,6 +39,22 @@ type SiteSettingRow = {
   value: unknown;
 };
 
+function resolveMarketingMediaUrl(storageKey: string | null) {
+  if (!storageKey) {
+    return null;
+  }
+
+  if (storageKey.startsWith("/")) {
+    return storageKey;
+  }
+
+  try {
+    return getStoragePublicUrl(storageKey);
+  } catch {
+    return null;
+  }
+}
+
 export async function listMarketingCategories() {
   const result = await query<CategoryRow>(
     `
@@ -59,7 +76,7 @@ export async function listMarketingProducts() {
       select
         p.slug as id,
         pc.slug as "categoryId",
-        p.name,
+        coalesce(p.marketing_name, p.name) as name,
         nullif(v.attributes ->> 'flavor', '') as flavor,
         p.short_description as description,
         v.price_ngn as "priceNgn",
@@ -86,17 +103,31 @@ export async function listMarketingProducts() {
       left join lateral (
         select storage_key
         from app.product_media
-        where product_id = p.id
+        where (
+            product_id = p.id
+            or variant_id = v.id
+          )
           and media_type = 'image'
-        order by is_primary desc, sort_order asc, created_at asc
+        order by
+          case when variant_id = v.id then 0 else 1 end asc,
+          is_primary desc,
+          sort_order asc,
+          created_at asc
         limit 1
       ) image_media on true
       left join lateral (
         select storage_key
         from app.product_media
-        where product_id = p.id
+        where (
+            product_id = p.id
+            or variant_id = v.id
+          )
           and media_type = 'model_3d'
-        order by is_primary desc, sort_order asc, created_at asc
+        order by
+          case when variant_id = v.id then 0 else 1 end asc,
+          is_primary desc,
+          sort_order asc,
+          created_at asc
         limit 1
       ) model_media on true
       where p.status = 'active'
@@ -121,7 +152,11 @@ export async function listMarketingProducts() {
     `
   );
 
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    image: resolveMarketingMediaUrl(row.image),
+    model: resolveMarketingMediaUrl(row.model),
+  }));
 }
 
 export async function listMarketingIngredients() {

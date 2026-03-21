@@ -2,11 +2,12 @@ import Link from "next/link";
 import { FileStack, LayoutTemplate, Package2, Plus, Sparkles, Store } from "lucide-react";
 import { MetricRail } from "@/components/admin/MetricRail";
 import { CatalogProductBoard } from "@/components/admin/catalog/CatalogProductBoard";
+import { isStorefrontVisibleProduct } from "@/lib/catalog/storefront";
 import { listAllAdminCatalogProducts } from "@/lib/db/repositories/catalog-admin-repository";
 
 export default async function AdminProductsPage() {
   const products = await listAllAdminCatalogProducts();
-  const liveProducts = products.filter((product) => product.isAvailable);
+  const liveProducts = products.filter((product) => isStorefrontVisibleProduct(product));
   const featuredProducts = products.filter(
     (product) => product.merchandisingState === "featured"
   );

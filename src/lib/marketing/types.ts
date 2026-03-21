@@ -45,8 +45,8 @@ export type MarketingProduct = {
   priceNgn: number;
   stats: Record<string, string>;
   ingredients: string[];
-  image: string;
-  model: string;
+  image: string | null;
+  model: string | null;
   sortOrder: number;
   isAvailable: boolean;
   merchandisingState: "featured" | "standard" | "hidden";

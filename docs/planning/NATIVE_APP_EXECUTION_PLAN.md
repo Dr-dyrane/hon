@@ -136,6 +136,10 @@ These are now non-negotiable.
 - do not let sticky bottom bars fight the bottom nav
 - do not render operational desktop cards as tall mobile blocks
 
+Current correction:
+
+- profile and address flows now use compact mobile intros instead of full context panels before the task surface
+
 ### Preferred phone rhythm
 
 - title

@@ -9,11 +9,21 @@ export default async function AddressesPage() {
 
   return (
     <div className="space-y-8 pb-20 md:space-y-10">
-      <WorkspaceContextPanel
-        title="Places"
-        detail={`${addresses.length} saved`}
-        tags={[{ label: `${addresses.length}`, tone: "muted" }]}
-      />
+      <div className="rounded-[24px] bg-system-fill/40 px-4 py-4 md:hidden">
+        <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+          Addresses
+        </div>
+        <div className="mt-2 text-lg font-semibold tracking-tight text-label">Places</div>
+        <div className="mt-1 text-sm text-secondary-label">{addresses.length} saved</div>
+      </div>
+
+      <div className="hidden md:block">
+        <WorkspaceContextPanel
+          title="Places"
+          detail={`${addresses.length} saved`}
+          tags={[{ label: `${addresses.length}`, tone: "muted" }]}
+        />
+      </div>
 
       <AddressBook addresses={addresses} />
     </div>

@@ -304,6 +304,7 @@ export async function getAdminCatalogProductDetail(productId: string) {
         on vi.variant_id = v.id
       left join app.product_media pm
         on pm.product_id = p.id
+        or pm.variant_id = v.id
       left join app.inventory_items ii
         on ii.variant_id = v.id
       where p.id = $1
@@ -911,6 +912,11 @@ export async function deleteAdminCatalogProduct(
         select storage_key as "storageKey"
         from app.product_media
         where product_id = $1
+           or variant_id in (
+             select id
+             from app.product_variants
+             where product_id = $1
+           )
       `,
       [productId]
     );
@@ -1202,13 +1208,17 @@ export async function deleteAdminCatalogProductMedia(input: {
       mediaType: "image" | "model_3d" | "video";
       storageKey: string;
       isPrimary: boolean;
+      productId: string | null;
+      variantId: string | null;
     }>(
       `
         select
           id as "mediaId",
           media_type as "mediaType",
           storage_key as "storageKey",
-          is_primary as "isPrimary"
+          is_primary as "isPrimary",
+          product_id as "productId",
+          variant_id as "variantId"
         from app.product_media
         where id = $1
           and (
@@ -1244,7 +1254,10 @@ export async function deleteAdminCatalogProductMedia(input: {
           with next_media as (
             select id
             from app.product_media
-            where product_id = $1
+            where (
+                (product_id = $1 and $3::uuid is null)
+                or (variant_id = $3 and $3::uuid is not null)
+              )
               and media_type = $2
             order by sort_order asc, created_at asc
             limit 1
@@ -1253,7 +1266,7 @@ export async function deleteAdminCatalogProductMedia(input: {
           set is_primary = true
           where id = (select id from next_media)
         `,
-        [productId, media.mediaType]
+        [media.productId, media.mediaType, media.variantId]
       );
     }
 

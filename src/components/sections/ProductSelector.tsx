@@ -4,6 +4,7 @@ import React, { useDeferredValue, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { Box } from "lucide-react";
 import { useTheme } from "next-themes";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
@@ -30,6 +31,20 @@ function getProductFlavor(product: MarketingProduct) {
 
 function getProductStats(product: MarketingProduct) {
   return Object.entries(product.stats);
+}
+
+function ProductArtFallback({
+  className,
+}: {
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex items-center justify-center", className)}>
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-system-fill/72 text-label/72 shadow-[0_18px_40px_rgba(15,23,42,0.08)] dark:bg-white/[0.06] dark:text-white/72">
+        <Box className="h-7 w-7" strokeWidth={1.6} />
+      </div>
+    </div>
+  );
 }
 
 export function ProductSelector({
@@ -180,13 +195,17 @@ export function ProductSelector({
                                 : "bg-system-fill shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
                             )}
                           >
-                            <Image
-                              src={product.image}
-                              alt={product.name}
-                              width={88}
-                              height={88}
-                              className="h-full w-full object-contain drop-shadow-xl"
-                            />
+                            {product.image ? (
+                              <Image
+                                src={product.image}
+                                alt={product.name}
+                                width={88}
+                                height={88}
+                                className="h-full w-full object-contain drop-shadow-xl"
+                              />
+                            ) : (
+                              <ProductArtFallback className="h-full w-full" />
+                            )}
                           </div>
 
                           <div className="min-w-0 flex-1">
@@ -270,7 +289,7 @@ export function ProductSelector({
                           sectionId={`shop-${safeSelectedProduct}`}
                           scrollActive={scrollActive}
                         />
-                      ) : (
+                      ) : stageProduct.image ? (
                         <Image
                           src={stageProduct.image}
                           alt={stageProduct.name}
@@ -278,6 +297,8 @@ export function ProductSelector({
                           height={720}
                           className="h-auto w-full max-w-[360px] drop-shadow-[0_28px_80px_rgba(0,0,0,0.24)] animate-float"
                         />
+                      ) : (
+                        <ProductArtFallback className="h-full w-full" />
                       )}
                     </motion.div>
                   </AnimatePresence>

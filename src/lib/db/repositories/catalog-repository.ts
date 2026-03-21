@@ -60,17 +60,31 @@ export async function listPublishedCatalogProducts() {
       left join lateral (
         select pm.storage_key
         from app.product_media pm
-        where pm.product_id = p.id
+        where (
+            pm.product_id = p.id
+            or pm.variant_id = v.id
+          )
           and pm.media_type = 'image'
-        order by pm.is_primary desc, pm.sort_order asc, pm.created_at asc
+        order by
+          case when pm.variant_id = v.id then 0 else 1 end asc,
+          pm.is_primary desc,
+          pm.sort_order asc,
+          pm.created_at asc
         limit 1
       ) image_media on true
       left join lateral (
         select pm.storage_key
         from app.product_media pm
-        where pm.product_id = p.id
+        where (
+            pm.product_id = p.id
+            or pm.variant_id = v.id
+          )
           and pm.media_type = 'model_3d'
-        order by pm.is_primary desc, pm.sort_order asc, pm.created_at asc
+        order by
+          case when pm.variant_id = v.id then 0 else 1 end asc,
+          pm.is_primary desc,
+          pm.sort_order asc,
+          pm.created_at asc
         limit 1
       ) model_media on true
       where p.status = 'active'

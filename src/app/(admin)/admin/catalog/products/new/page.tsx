@@ -2,6 +2,7 @@ import { FileStack, Package2, Shapes, Store } from "lucide-react";
 import { MetricRail } from "@/components/admin/MetricRail";
 import { ProductComposerForm } from "@/components/admin/catalog/ProductComposerForm";
 import { WorkspaceContextPanel } from "@/components/shell/WorkspaceContextPanel";
+import { isStorefrontVisibleProduct } from "@/lib/catalog/storefront";
 import {
   listAdminCatalogCategories,
   listAllAdminCatalogProducts,
@@ -12,7 +13,7 @@ export default async function AdminNewProductPage() {
     listAdminCatalogCategories(),
     listAllAdminCatalogProducts(),
   ]);
-  const liveProducts = products.filter((product) => product.isAvailable).length;
+  const liveProducts = products.filter((product) => isStorefrontVisibleProduct(product)).length;
   const draftProducts = products.filter((product) => product.status === "draft").length;
 
   return (

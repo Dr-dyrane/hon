@@ -86,14 +86,10 @@ export const getMarketingSnapshot = cache(async (mode: "published" | "draft" = "
           marketingBootstrap.socialProof
         ),
         categories,
-        products: products
-          .filter((product) => product.image && product.model)
-          .map((product) => ({
-            ...product,
-            flavor: product.flavor ?? undefined,
-            image: product.image ?? "",
-            model: product.model ?? "",
-          })),
+        products: products.map((product) => ({
+          ...product,
+          flavor: product.flavor ?? undefined,
+        })),
         ingredients: ingredients
           .filter((ingredient) => ingredient.image)
           .map((ingredient) => ({
