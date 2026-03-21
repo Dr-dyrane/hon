@@ -37,7 +37,7 @@ export function SectionList({ sections, isEditable }: SectionListProps) {
           <div
             key={sectionId}
             className={cn(
-              "group overflow-hidden rounded-[26px] bg-system-fill/45 p-4 transition-all hover:bg-system-fill/65 md:p-5",
+              "glass-morphism group overflow-hidden rounded-[26px] p-4 transition-all hover:bg-system-fill/60 md:p-5",
               !section.isEnabled && "opacity-50 grayscale-[0.5]"
             )}
           >
@@ -48,7 +48,7 @@ export function SectionList({ sections, isEditable }: SectionListProps) {
                 </div>
               ) : null}
 
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] bg-system-background text-accent shadow-soft">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] bg-system-fill/56 text-accent shadow-soft">
                 {getSectionIcon(section.sectionType)}
               </div>
 
@@ -87,7 +87,7 @@ export function SectionList({ sections, isEditable }: SectionListProps) {
                   <Link
                     href={`/admin/layout/sections/${sectionId}`}
                     aria-label={`Open ${section.heading || section.sectionKey}`}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-system-fill/60 text-secondary-label transition-all hover:bg-system-background hover:text-label"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-system-fill/60 text-secondary-label transition-all hover:bg-system-fill/82 hover:text-label"
                   >
                     <Settings2 size={18} />
                   </Link>

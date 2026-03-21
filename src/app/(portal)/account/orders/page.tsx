@@ -38,13 +38,6 @@ export default async function OrdersPage() {
   return (
     <div className="space-y-8">
       <section className="space-y-5">
-        <div className="space-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-            Orders
-          </p>
-          <h2 className="text-3xl font-bold tracking-display text-label">Your orders</h2>
-        </div>
-
         <MetricRail
           items={[
             {

@@ -43,7 +43,7 @@ export function ProductComposerForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 pb-20">
-      <section className="rounded-[28px] bg-system-background/86 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
+      <section className="glass-morphism rounded-[28px] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
         <div className="grid gap-4 md:grid-cols-2">
           <InputGroup
             label="Product"

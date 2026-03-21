@@ -3,6 +3,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { getShotBundlePricing } from "@/lib/commerce";
 import { isDatabaseConfigured, query, withTransaction } from "@/lib/db/client";
+import { getDeliveryDefaultsSetting } from "@/lib/db/repositories/settings-repository";
 import type { CartSnapshot } from "@/lib/db/types";
 
 type CartContext = {
@@ -575,7 +576,10 @@ export async function createOrderFromCart(input: CheckoutInput) {
   if (!isDatabaseConfigured()) {
     throw new Error("Database is not configured.");
   }
-  const transferDeadlineAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  const deliveryDefaults = await getDeliveryDefaultsSetting();
+  const transferDeadlineAt = new Date(
+    Date.now() + deliveryDefaults.staleTransferWindowMinutes * 60 * 1000
+  ).toISOString();
   const normalizedNotes = normalizeOptionalText(input.notes);
   const normalizedEmail = normalizeOptionalText(input.customerEmail)?.toLowerCase() ?? null;
 

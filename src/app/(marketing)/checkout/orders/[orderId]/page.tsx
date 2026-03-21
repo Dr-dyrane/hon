@@ -26,7 +26,7 @@ export default async function GuestCheckoutOrderPage({
               href="/"
               className="text-xs font-semibold uppercase tracking-headline text-secondary-label underline-offset-4 hover:text-label"
             >
-              Back
+              Home
             </Link>
           </div>
         </div>
@@ -51,10 +51,10 @@ export default async function GuestCheckoutOrderPage({
           href="/"
           className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
         >
-          Back
+          Home
         </Link>
         <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-          Checkout
+          Order
         </div>
         <Link
           href="/auth/sign-in?returnTo=/account/orders"

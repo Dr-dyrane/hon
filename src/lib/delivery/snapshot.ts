@@ -2,6 +2,7 @@ import type { AdminDeliveryOrder, AdminDeliveryRider } from "@/lib/db/types";
 import { buildTrackingMapUrl, getTrackingCoords as getSnapshotTrackingCoords } from "@/lib/delivery/tracking";
 
 export type AdminDeliveryLiveSnapshot = {
+  trackingEnabled: boolean;
   preparingCount: number;
   readyCount: number;
   liveCount: number;
@@ -47,6 +48,7 @@ export function getOrderTrackingCoords(order: AdminDeliveryOrder) {
 export function buildAdminDeliveryLiveSnapshot(input: {
   orders: AdminDeliveryOrder[];
   riders: AdminDeliveryRider[];
+  trackingEnabled?: boolean;
 }): AdminDeliveryLiveSnapshot {
   const preparingOrders = input.orders.filter((order) => order.deliveryStage === "preparing");
   const readyOrders = input.orders.filter(
@@ -62,12 +64,13 @@ export function buildAdminDeliveryLiveSnapshot(input: {
   const mapCoords = mapOrder ? getOrderTrackingCoords(mapOrder) : null;
 
   return {
+    trackingEnabled: input.trackingEnabled ?? true,
     preparingCount: preparingOrders.length,
     readyCount: readyOrders.length,
     liveCount: liveOrders.length,
     riderCount: input.riders.length,
     busyRiderCount: input.riders.filter((rider) => rider.activeAssignmentCount > 0).length,
-    mapOrder: mapOrder
+    mapOrder: mapOrder && (input.trackingEnabled ?? true)
       ? {
           orderId: mapOrder.orderId,
           orderNumber: mapOrder.orderNumber,

@@ -6,6 +6,7 @@ import {
   type DatabaseActorContext,
   withTransaction,
 } from "@/lib/db/client";
+import { getDeliveryDefaultsSetting } from "@/lib/db/repositories/settings-repository";
 import { readCourierAccessToken } from "@/lib/delivery/access";
 import type {
   AdminDeliveryOrder,
@@ -411,18 +412,18 @@ export async function listAdminDeliveryBoardOrders(
            or o.fulfillment_status in ('preparing', 'ready_for_dispatch', 'out_for_delivery')
       )
       select
-        do."orderId",
-        do."orderNumber",
-        do."customerName",
-        do."customerPhone",
-        do.status,
-        do."fulfillmentStatus",
-        do."deliveryStage",
-        do."totalNgn",
-        do."placedAt",
-        do."transferReference",
+        delivery_order."orderId",
+        delivery_order."orderNumber",
+        delivery_order."customerName",
+        delivery_order."customerPhone",
+        delivery_order.status,
+        delivery_order."fulfillmentStatus",
+        delivery_order."deliveryStage",
+        delivery_order."totalNgn",
+        delivery_order."placedAt",
+        delivery_order."transferReference",
         coalesce(sum(oi.quantity), 0)::int as "itemCount",
-        do."deliveryAddressSnapshot",
+        delivery_order."deliveryAddressSnapshot",
         da."assignmentId",
         da."assignmentStatus",
         da."riderId",
@@ -436,9 +437,9 @@ export async function listAdminDeliveryBoardOrders(
         tp."latestTrackingHeading",
         tp."latestTrackingAccuracyMeters",
         tp."latestTrackingRecordedAt"
-      from delivery_orders do
+      from delivery_orders delivery_order
       left join app.order_items oi
-        on oi.order_id = do."orderId"
+        on oi.order_id = delivery_order."orderId"
       left join lateral (
         select
           a.id as "assignmentId",
@@ -450,7 +451,7 @@ export async function listAdminDeliveryBoardOrders(
         from app.delivery_assignments a
         left join app.riders r
           on r.id = a.rider_id
-        where a.order_id = do."orderId"
+        where a.order_id = delivery_order."orderId"
         order by
           case
             when a.status = any($2::text[]) then 0
@@ -465,7 +466,7 @@ export async function listAdminDeliveryBoardOrders(
           event_type as "latestDeliveryEventType",
           created_at as "latestDeliveryEventAt"
         from app.delivery_events
-        where order_id = do."orderId"
+        where order_id = delivery_order."orderId"
         order by created_at desc
         limit 1
       ) de on true
@@ -482,17 +483,17 @@ export async function listAdminDeliveryBoardOrders(
         limit 1
       ) tp on true
       group by
-        do."orderId",
-        do."orderNumber",
-        do."customerName",
-        do."customerPhone",
-        do.status,
-        do."fulfillmentStatus",
-        do."deliveryStage",
-        do."totalNgn",
-        do."placedAt",
-        do."transferReference",
-        do."deliveryAddressSnapshot",
+        delivery_order."orderId",
+        delivery_order."orderNumber",
+        delivery_order."customerName",
+        delivery_order."customerPhone",
+        delivery_order.status,
+        delivery_order."fulfillmentStatus",
+        delivery_order."deliveryStage",
+        delivery_order."totalNgn",
+        delivery_order."placedAt",
+        delivery_order."transferReference",
+        delivery_order."deliveryAddressSnapshot",
         da."assignmentId",
         da."assignmentStatus",
         da."riderId",
@@ -507,12 +508,12 @@ export async function listAdminDeliveryBoardOrders(
         tp."latestTrackingAccuracyMeters",
         tp."latestTrackingRecordedAt"
       order by
-        case do."deliveryStage"
+        case delivery_order."deliveryStage"
           when 'out_for_delivery' then 0
           when 'ready_for_dispatch' then 1
           else 2
         end asc,
-        do."placedAt" asc
+        delivery_order."placedAt" asc
       limit $1
     `,
     [limit, ACTIVE_ORDER_ASSIGNMENT_STATUSES],
@@ -567,14 +568,16 @@ export async function getAdminDeliveryBoardSnapshot(input?: {
 }) {
   const orderLimit = input?.orderLimit ?? 60;
   const riderLimit = input?.riderLimit ?? 24;
-  const [orders, riders] = await Promise.all([
+  const [orders, riders, deliveryDefaults] = await Promise.all([
     listAdminDeliveryBoardOrders(orderLimit, input?.actorEmail),
     listAdminDeliveryRiders(riderLimit, input?.actorEmail),
+    getDeliveryDefaultsSetting(),
   ]);
 
   return {
     orders,
     riders,
+    trackingEnabled: deliveryDefaults.trackingEnabled,
   };
 }
 
@@ -1005,6 +1008,11 @@ export async function recordCourierTrackingPoint(input: {
   recordedAt?: string | null;
 }) {
   requireDatabase();
+  const deliveryDefaults = await getDeliveryDefaultsSetting();
+
+  if (!deliveryDefaults.trackingEnabled) {
+    throw new Error("Tracking is off.");
+  }
 
   const session = await getCourierSessionByToken(input.token);
 
@@ -1139,6 +1147,7 @@ export async function getPortalTrackingSnapshot(email: string, orderId: string) 
   if (!normalizedEmail || !orderId || !isDatabaseConfigured()) {
     return null;
   }
+  const deliveryDefaults = await getDeliveryDefaultsSetting();
 
   const result = await query<
     Omit<PortalTrackingSnapshot, "latestPoint" | "events"> & {
@@ -1230,6 +1239,7 @@ export async function getPortalTrackingSnapshot(email: string, orderId: string) 
     orderNumber: row.orderNumber,
     status: row.status,
     fulfillmentStatus: row.fulfillmentStatus,
+    trackingEnabled: deliveryDefaults.trackingEnabled,
     customerName: row.customerName,
     customerPhone: row.customerPhone,
     deliveryAddressSnapshot: row.deliveryAddressSnapshot,
@@ -1238,7 +1248,7 @@ export async function getPortalTrackingSnapshot(email: string, orderId: string) 
     riderName: row.riderName,
     riderPhone: row.riderPhone,
     riderVehicleType: row.riderVehicleType,
-    latestPoint: row.latestTrackingPointId
+    latestPoint: deliveryDefaults.trackingEnabled && row.latestTrackingPointId
       ? {
           pointId: row.latestTrackingPointId,
           assignmentId: row.assignmentId ?? "",

@@ -28,6 +28,7 @@ export default async function OrderDetailPage({
       timeline={timeline}
       proofs={proofs}
       backHref="/account/orders"
+      trackingHref={`/account/tracking/${params.orderId}`}
     />
   );
 }

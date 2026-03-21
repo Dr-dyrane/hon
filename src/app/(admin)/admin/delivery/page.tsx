@@ -437,7 +437,7 @@ function RiderRoster({ riders }: { riders: AdminDeliveryRider[] }) {
 
 export default async function AdminDeliveryPage() {
   const session = await requireAdminSession("/admin/delivery");
-  const { orders, riders } = await getAdminDeliveryBoardSnapshot({
+  const { orders, riders, trackingEnabled } = await getAdminDeliveryBoardSnapshot({
     actorEmail: session.email,
   });
   const preparingOrders = orders.filter((order) => order.deliveryStage === "preparing");
@@ -447,7 +447,11 @@ export default async function AdminDeliveryPage() {
   const liveOrders = orders.filter(
     (order) => order.deliveryStage === "out_for_delivery"
   );
-  const liveSnapshot = buildAdminDeliveryLiveSnapshot({ orders, riders });
+  const liveSnapshot = buildAdminDeliveryLiveSnapshot({
+    orders,
+    riders,
+    trackingEnabled,
+  });
 
   return (
     <div className="space-y-8 pb-20 md:space-y-10">

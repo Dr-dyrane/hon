@@ -194,6 +194,7 @@ export function Product3DCarousel({
   const [shouldRender, setShouldRender] = useState(false);
   const [hasWebGLError, setHasWebGLError] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const stageYOffset = 0.14;
 
   // Delay rendering to prevent WebGL context conflicts
   useEffect(() => {
@@ -351,7 +352,7 @@ export function Product3DCarousel({
             <SceneEnvironment isDark={isDark} />
 
             {/* Only render active model and immediate neighbors to prevent WebGL context overload */}
-            <group position={[0, -0.02, 0]}>
+            <group position={[0, stageYOffset, 0]}>
               {productIds.map((key, index) => {
                 const relativeIndex = getRelativeIndex(index, activeIndex, productIds.length);
                 // Only render active model and immediate neighbors
@@ -371,7 +372,7 @@ export function Product3DCarousel({
             </group>
 
             <ContactShadows
-              position={[0, -0.95, 0]}
+              position={[0, -0.81, 0]}
               opacity={isDark ? 0.38 : 0.28}
               scale={5.5}
               blur={1.4}
@@ -379,7 +380,7 @@ export function Product3DCarousel({
               resolution={1024}
             />
             <ContactShadows
-              position={[0, -1.05, 0]}
+              position={[0, -0.91, 0]}
               opacity={isDark ? 0.18 : 0.12}
               scale={7.5}
               blur={2.4}

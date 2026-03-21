@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Upload failed.";
+  return error instanceof Error ? error.message : "Try again.";
 }
 
 export function PaymentProofUploadCard({
@@ -29,7 +29,7 @@ export function PaymentProofUploadCard({
     const file = inputRef.current?.files?.[0];
 
     if (!file) {
-      setMessage("Pick a file.");
+      setMessage("Choose a file.");
       return;
     }
 
@@ -64,7 +64,7 @@ export function PaymentProofUploadCard({
         };
 
         if (!presignResponse.ok || !presignPayload.ok || !presignPayload.data) {
-          throw new Error(presignPayload.error || "Upload failed.");
+          throw new Error(presignPayload.error || "Try again.");
         }
 
         const uploadResponse = await fetch(presignPayload.data.uploadUrl, {
@@ -76,7 +76,7 @@ export function PaymentProofUploadCard({
         });
 
         if (!uploadResponse.ok) {
-          throw new Error("Upload failed.");
+          throw new Error("Try again.");
         }
 
         const commitResponse = await fetch("/api/payment-proofs/commit", {
@@ -101,7 +101,7 @@ export function PaymentProofUploadCard({
         };
 
         if (!commitResponse.ok || !commitPayload.ok) {
-          throw new Error(commitPayload.error || "Upload failed.");
+          throw new Error(commitPayload.error || "Try again.");
         }
 
         if (inputRef.current) {
@@ -117,24 +117,31 @@ export function PaymentProofUploadCard({
   }
 
   return (
-    <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center">
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*,application/pdf"
-        className="min-w-0 flex-1 rounded-[24px] bg-system-fill/70 px-3 py-3 text-xs text-label file:mr-3 file:rounded-full file:bg-system-background file:px-3 file:py-2 file:text-[10px] file:font-semibold file:text-label"
-      />
-      <button
-        type="button"
-        onClick={() => void handleUpload()}
-        disabled={isPending}
-        className="button-primary min-h-[44px] shrink-0 text-xs font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:shadow-none md:px-5"
-      >
-        {isPending ? "Sending" : "Add proof"}
-      </button>
-      {message ? (
-        <p className="text-xs text-secondary-label md:min-w-[72px] md:text-right">{message}</p>
-      ) : null}
+    <div className="mt-4 space-y-3">
+      <div className="rounded-[22px] bg-system-fill/36 px-4 py-3 text-sm text-secondary-label">
+        Add transfer proof.
+      </div>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*,application/pdf"
+          className="min-w-0 flex-1 rounded-[24px] bg-system-fill/70 px-3 py-3 text-xs text-label file:mr-3 file:rounded-full file:bg-system-background file:px-3 file:py-2 file:text-[10px] file:font-semibold file:text-label"
+        />
+        <button
+          type="button"
+          onClick={() => void handleUpload()}
+          disabled={isPending}
+          className="button-primary min-h-[44px] shrink-0 text-xs font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:shadow-none md:px-5"
+        >
+          {isPending ? "Sending" : "Add proof"}
+        </button>
+        {message ? (
+          <p className="text-xs text-secondary-label md:min-w-[72px] md:text-right">
+            {message}
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }

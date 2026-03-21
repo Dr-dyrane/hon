@@ -58,7 +58,7 @@ export default async function AccountPage() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-3">
-        <PortalPanel title="Latest" badge={accountSummary.latestOrderNumber ? "Live" : "None"}>
+        <PortalPanel title="Order" badge={accountSummary.latestOrderNumber ? "Live" : "New"}>
           {accountSummary.latestOrderNumber ? (
             <Link
               href="/account/orders"
@@ -73,15 +73,15 @@ export default async function AccountPage() {
                 </div>
               </div>
               <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-                Open
+                View
               </span>
             </Link>
           ) : (
-            <EmptyRow label="No orders yet." />
+            <EmptyRow label="No order yet." />
           )}
         </PortalPanel>
 
-        <PortalPanel title="Account" badge={customerName.slice(0, 1).toUpperCase()}>
+        <PortalPanel title="You" badge={customerName.slice(0, 1).toUpperCase()}>
           <div className="rounded-[24px] bg-system-fill/42 px-4 py-4">
             <div className="text-sm font-semibold text-label">{customerName}</div>
             <div className="mt-1 truncate text-xs text-secondary-label">{session.email}</div>
@@ -90,14 +90,14 @@ export default async function AccountPage() {
             href="/account/profile"
             className="flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/42 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/58"
           >
-            <span className="text-sm font-semibold text-label">Open profile</span>
+            <span className="text-sm font-semibold text-label">Profile</span>
             <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
               Edit
             </span>
           </Link>
         </PortalPanel>
 
-        <PortalPanel title="Store" badge={`${availableProductCount}`}>
+        <PortalPanel title="Shop" badge={`${availableProductCount}`}>
           <div className="rounded-[24px] bg-system-fill/42 px-4 py-4">
             <div className="text-sm font-semibold text-label">
               {availableProductCount} available
@@ -111,10 +111,10 @@ export default async function AccountPage() {
             className="flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/42 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/58"
           >
             <span className="text-sm font-semibold text-label">
-              {accountSummary.totalOrders > 0 ? "Load again" : "Browse store"}
+              {accountSummary.totalOrders > 0 ? "Reorder" : "Store"}
             </span>
             <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-              Open
+              View
             </span>
           </Link>
         </PortalPanel>

@@ -51,7 +51,7 @@ export function CatalogProductBoard({
 
   if (products.length === 0) {
     return (
-      <section className="rounded-[28px] bg-system-background/86 p-6 text-sm text-secondary-label shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+      <section className="glass-morphism rounded-[28px] p-6 text-sm text-secondary-label shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
         No products yet.
       </section>
     );
@@ -71,7 +71,7 @@ export function CatalogProductBoard({
             return (
               <article
                 key={product.productId}
-                className="rounded-[28px] bg-system-background/86 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-5"
+                className="glass-morphism rounded-[28px] p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-5"
               >
                 <div className="flex flex-col gap-4 min-[1500px]:flex-row min-[1500px]:items-center">
                   <Link
@@ -175,7 +175,7 @@ export function CatalogProductBoard({
           <SupportCard
             label="Live"
             value={products.filter((product) => product.isAvailable).length.toString()}
-            detail="Available now"
+            detail="On"
           />
           <SupportCard
             label="Featured"
@@ -183,14 +183,14 @@ export function CatalogProductBoard({
               products.filter((product) => product.merchandisingState === "featured")
                 .length.toString()
             }
-            detail="Homepage ready"
+            detail="Home"
           />
           <SupportCard
             label="Hidden"
             value={
               products.filter((product) => !product.isAvailable).length.toString()
             }
-            detail="Off catalog"
+            detail="Off"
           />
         </aside>
       </div>
@@ -246,7 +246,7 @@ function SupportCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-[28px] bg-system-background/86 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+    <div className="glass-morphism rounded-[28px] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
       <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
         {label}
       </p>

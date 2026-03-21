@@ -10,8 +10,8 @@ export default async function ProfilePage() {
   return (
     <div className="space-y-8 pb-20 md:space-y-10">
       <WorkspaceContextPanel
-        title={profile.fullName || "Your profile"}
-        detail="Name, phone, preferences."
+        title={profile.fullName || "You"}
+        detail={profile.email}
         tags={[{ label: "Profile", tone: "muted" }]}
       />
 

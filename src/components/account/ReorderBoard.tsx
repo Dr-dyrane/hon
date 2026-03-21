@@ -113,7 +113,7 @@ export function ReorderBoard({ orders }: { orders: PortalOrderListRow[] }) {
                 href={`/account/orders/${order.orderId}`}
                 className="flex min-h-[40px] items-center rounded-[18px] bg-system-fill/42 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label"
               >
-                Open
+                View
               </Link>
               <button
                 type="button"
@@ -124,7 +124,7 @@ export function ReorderBoard({ orders }: { orders: PortalOrderListRow[] }) {
                   isPending && busyOrderId === order.orderId && "pointer-events-none opacity-50"
                 )}
               >
-                {isPending && busyOrderId === order.orderId ? "Loading" : "Load"}
+                {isPending && busyOrderId === order.orderId ? "Loading" : "Reorder"}
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
 import { listPaymentsForAdmin } from "@/lib/db/repositories/orders-repository";
+import { reviewPaymentQueueAction } from "./actions";
 
 function formatTimestamp(value?: string | null) {
   if (!value) {
@@ -20,6 +21,18 @@ function formatStatusLabel(value: string) {
   return value.replace(/_/g, " ");
 }
 
+function availablePaymentActions(status: string) {
+  if (status === "submitted") {
+    return ["under_review", "confirmed", "rejected"] as const;
+  }
+
+  if (status === "under_review") {
+    return ["confirmed", "rejected"] as const;
+  }
+
+  return [] as const;
+}
+
 export default async function AdminPaymentsPage() {
   const session = await requireAdminSession("/admin/payments");
   const payments = await listPaymentsForAdmin(50, session.email);
@@ -29,13 +42,11 @@ export default async function AdminPaymentsPage() {
   return (
     <div className="space-y-8 pb-20 md:space-y-10">
       <section className="space-y-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/admin/orders"
-            className="button-secondary min-h-[40px] px-4 text-[11px] font-semibold uppercase tracking-[0.16em]"
-          >
-            Orders
-          </Link>
+        <div className="rounded-[24px] bg-system-fill/42 p-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.04)] md:inline-flex">
+          <div className="grid grid-cols-2 gap-1.5">
+            <QuickLink href="/admin/orders" label="Orders" />
+            <QuickLink href="/admin/payments" label="Payments" />
+          </div>
         </div>
 
         <MetricRail
@@ -84,7 +95,10 @@ export default async function AdminPaymentsPage() {
                 <div className="mt-3 grid gap-3 text-sm text-secondary-label sm:grid-cols-2 xl:grid-cols-4">
                   <MetaItem
                     label="Account"
-                    value={[payment.bankName, payment.accountNumber].filter(Boolean).join(" · ") || "Pending"}
+                    value={
+                      [payment.bankName, payment.accountNumber].filter(Boolean).join(" / ") ||
+                      "Pending"
+                    }
                   />
                   <MetaItem label="Payer" value={payment.payerName ?? "Missing proof"} />
                   <MetaItem label="Submitted" value={formatTimestamp(payment.submittedAt)} />
@@ -92,7 +106,7 @@ export default async function AdminPaymentsPage() {
                 </div>
               </div>
 
-              <div className="min-w-[160px] shrink-0">
+              <div className="min-w-[220px] shrink-0">
                 <div className="text-right text-sm text-secondary-label">
                   <div className="text-lg font-semibold text-label">
                     {formatNgn(payment.expectedAmountNgn)}
@@ -104,6 +118,24 @@ export default async function AdminPaymentsPage() {
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  {availablePaymentActions(payment.status).map((action) => (
+                    <form key={action} action={reviewPaymentQueueAction} className="flex">
+                      <input type="hidden" name="orderId" value={payment.orderId} />
+                      <input type="hidden" name="paymentId" value={payment.paymentId} />
+                      <button
+                        type="submit"
+                        name="action"
+                        value={action}
+                        className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                      >
+                        {action === "under_review"
+                          ? "Review"
+                          : action === "confirmed"
+                            ? "Confirm"
+                            : "Reject"}
+                      </button>
+                    </form>
+                  ))}
                   <Link
                     href={`/admin/orders/${payment.orderId}`}
                     className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
@@ -128,5 +160,16 @@ function MetaItem({ label, value }: { label: string; value: string }) {
       </div>
       <div className="mt-1 truncate text-sm font-medium text-label">{value}</div>
     </div>
+  );
+}
+
+function QuickLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-[40px] items-center justify-center rounded-[18px] px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label transition-colors duration-200 hover:bg-system-background hover:shadow-soft"
+    >
+      {label}
+    </Link>
   );
 }

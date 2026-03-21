@@ -11,7 +11,7 @@ export default async function AddressesPage() {
     <div className="space-y-8 pb-20 md:space-y-10">
       <WorkspaceContextPanel
         title="Places"
-        detail="Save, edit, default."
+        detail={`${addresses.length} saved`}
         tags={[{ label: `${addresses.length}`, tone: "muted" }]}
       />
 

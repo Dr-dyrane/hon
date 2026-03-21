@@ -16,15 +16,14 @@ export default async function VerifyPage() {
   return (
     <AuthCard
       badge="Verification"
-      title="Confirm your sign-in code."
+      title="Enter the code."
       description={
         <>
-          Enter the current six-digit code sent to{" "}
+          Sent to{" "}
           <span className="font-semibold text-label">
             {maskEmailAddress(challenge.email)}
           </span>
-          . This is the same boundary the portal and admin shells will use once live
-          email delivery is attached.
+          .
         </>
       }
       footer={
@@ -32,7 +31,7 @@ export default async function VerifyPage() {
           href="/auth/sign-in"
           className="font-medium text-label underline-offset-4 hover:underline"
         >
-          Back to sign in
+          Another email
         </Link>
       }
     >

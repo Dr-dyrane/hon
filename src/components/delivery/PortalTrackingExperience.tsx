@@ -67,7 +67,9 @@ export function PortalTrackingExperience({
         lat: snapshot.latestPoint.latitude,
         lng: snapshot.latestPoint.longitude,
       }
-    : getTrackingCoords(snapshot.deliveryAddressSnapshot);
+    : snapshot.trackingEnabled
+      ? getTrackingCoords(snapshot.deliveryAddressSnapshot)
+      : null;
   const mapSrc = mapCoords
     ? buildTrackingMapUrl({
         latitude: mapCoords.lat,
@@ -89,16 +91,19 @@ export function PortalTrackingExperience({
         tags={[
           buildStatusTag(snapshot.fulfillmentStatus),
           ...(snapshot.assignmentStatus ? [buildStatusTag(snapshot.assignmentStatus)] : []),
-          { label: freshness.label, tone: freshnessTone },
+          {
+            label: snapshot.trackingEnabled ? freshness.label : "tracking off",
+            tone: snapshot.trackingEnabled ? freshnessTone : "muted",
+          },
         ]}
         meta={[
           {
-            label: "Last update",
+            label: "Update",
             value: formatTimestamp(snapshot.latestPoint?.recordedAt ?? null),
           },
           {
-            label: "Drop",
-            value: snapshot.customerName,
+            label: "Contact",
+            value: snapshot.customerPhone,
           },
         ]}
         actions={
@@ -106,7 +111,7 @@ export function PortalTrackingExperience({
             href={`/account/orders/${snapshot.orderId}`}
             className="flex min-h-[40px] items-center rounded-[18px] bg-system-fill/42 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label"
           >
-            Order
+            View order
           </Link>
         }
       />
@@ -115,9 +120,12 @@ export function PortalTrackingExperience({
         items={[
           {
             label: "Signal",
-            value: freshness.label,
-            detail:
-              freshness.ageMinutes == null ? "Waiting" : `${freshness.ageMinutes} min ago`,
+            value: snapshot.trackingEnabled ? freshness.label : "Off",
+            detail: snapshot.trackingEnabled
+              ? freshness.ageMinutes == null
+                ? "Waiting"
+                : `${freshness.ageMinutes} min ago`
+              : "Paused",
           },
           {
             label: "Rider",
@@ -148,7 +156,7 @@ export function PortalTrackingExperience({
             </div>
           ) : (
             <div className="flex min-h-[280px] items-center justify-center rounded-[26px] bg-system-fill/42 text-sm text-secondary-label">
-              Waiting.
+              {snapshot.trackingEnabled ? "Waiting." : "Tracking is off."}
             </div>
           )}
         </TrackingSurface>

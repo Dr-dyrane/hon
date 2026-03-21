@@ -297,7 +297,7 @@ export async function getAdminSettingsSnapshot() {
         where key = any($1::text[])
         order by key asc
       `,
-      [["bank_transfer_details", "delivery_defaults", "layout_preview"]]
+      [["delivery_defaults", "layout_preview"]]
     ),
   ]);
 

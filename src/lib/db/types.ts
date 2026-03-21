@@ -63,6 +63,7 @@ export type AdminCatalogProductDetail = {
   shortDescription: string;
   longDescription: string | null;
   categoryId: string | null;
+  categoryName: string | null;
   status: "draft" | "active" | "archived";
   merchandisingState: "featured" | "standard" | "hidden";
   isAvailable: boolean;
@@ -81,6 +82,20 @@ export type AdminCatalogProductDetail = {
   inventoryOnHand: number | null;
   inventoryReserved: number | null;
   reorderThreshold: number | null;
+};
+
+export type AdminCatalogProductMedia = {
+  mediaId: string;
+  productId: string | null;
+  variantId: string | null;
+  mediaType: "image" | "model_3d" | "video";
+  storageKey: string;
+  publicUrl: string;
+  altText: string | null;
+  sortOrder: number;
+  isPrimary: boolean;
+  metadata: Record<string, unknown>;
+  createdAt: string;
 };
 
 export type AdminLayoutSummary = {
@@ -210,6 +225,7 @@ export type PortalTrackingSnapshot = {
   orderNumber: string;
   status: string;
   fulfillmentStatus: string;
+  trackingEnabled: boolean;
   customerName: string;
   customerPhone: string;
   deliveryAddressSnapshot: Record<string, unknown>;
@@ -225,6 +241,22 @@ export type PortalTrackingSnapshot = {
 export type SiteSettingRow = {
   key: string;
   value: unknown;
+};
+
+export type AdminDeliveryDefaults = {
+  trackingEnabled: boolean;
+  staleTransferWindowMinutes: number;
+};
+
+export type AdminLayoutPreviewSetting = {
+  mode: string;
+};
+
+export type AdminSettingsSnapshot = {
+  bankAccount: BankAccountRow | null;
+  deliveryDefaults: AdminDeliveryDefaults;
+  layoutPreview: AdminLayoutPreviewSetting;
+  siteSettings: SiteSettingRow[];
 };
 
 export type PublishedPageSection = {

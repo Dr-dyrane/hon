@@ -92,6 +92,13 @@ export function Navbar() {
               <ThemeToggle />
             </motion.div>
 
+            <Link
+              href="/auth/sign-in?returnTo=/account"
+              className="hidden md:inline-flex items-center text-[11px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
+            >
+              Account
+            </Link>
+
             <button
               type="button"
               onClick={handleOpenCart}
@@ -247,6 +254,14 @@ export function Navbar() {
                     className="button-primary w-full justify-center min-h-[56px] text-xs font-semibold uppercase tracking-headline"
                   >
                     Shop Products
+                  </Link>
+
+                  <Link
+                    href="/auth/sign-in?returnTo=/account"
+                    onClick={closeMobileMenu}
+                    className="button-secondary w-full justify-center min-h-[56px] text-xs font-semibold uppercase tracking-headline"
+                  >
+                    Account
                   </Link>
 
                   <button

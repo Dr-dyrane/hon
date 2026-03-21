@@ -23,9 +23,6 @@ export default async function AdminProductsPage() {
             <h1 className="mt-2 text-4xl font-bold tracking-display text-label md:text-5xl">
               Products
             </h1>
-            <p className="mt-3 text-sm text-secondary-label md:text-base">
-              Create, stock, feature.
-            </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -52,26 +49,26 @@ export default async function AdminProductsPage() {
           {
             label: "Products",
             value: products.length.toString(),
-            detail: `${liveProducts.length} live`,
+            detail: `${liveProducts.length} on`,
             icon: Package2,
           },
           {
             label: "Live",
             value: liveProducts.length.toString(),
-            detail: "Available now",
+            detail: "On",
             icon: Store,
             tone: "success",
           },
           {
             label: "Featured",
             value: featuredProducts.length.toString(),
-            detail: "Homepage ready",
+            detail: "Home",
             icon: Sparkles,
           },
           {
             label: "Drafts",
             value: draftProducts.length.toString(),
-            detail: "Need review",
+            detail: "Open",
             icon: FileStack,
           },
         ]}

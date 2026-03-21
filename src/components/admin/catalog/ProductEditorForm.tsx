@@ -3,19 +3,23 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
+import { ProductMediaManager } from "@/components/admin/catalog/ProductMediaManager";
 import { cn } from "@/lib/utils";
 import type {
   AdminCatalogCategory,
   AdminCatalogProductDetail,
+  AdminCatalogProductMedia,
 } from "@/lib/db/types";
 import { updateProductAction } from "@/app/(admin)/admin/catalog/products/[productId]/actions";
 
 export function ProductEditorForm({
   product,
   categories,
+  media,
 }: {
   product: AdminCatalogProductDetail;
   categories: AdminCatalogCategory[];
+  media: AdminCatalogProductMedia[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -140,6 +144,8 @@ export function ProductEditorForm({
               />
             </div>
           </EditorSection>
+
+          <ProductMediaManager productId={product.productId} media={media} />
 
           <EditorSection title="State">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -268,7 +274,7 @@ function EditorSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[28px] bg-system-background/86 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
+    <section className="glass-morphism rounded-[28px] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
       <h2 className="text-lg font-semibold tracking-tight text-label">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
@@ -283,7 +289,7 @@ function SignalCard({
   items: { label: string; value: string }[];
 }) {
   return (
-    <section className="rounded-[28px] bg-system-background/86 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+    <section className="glass-morphism rounded-[28px] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
       <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-secondary-label">
         {title}
       </h2>

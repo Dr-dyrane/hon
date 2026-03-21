@@ -5,11 +5,15 @@ import { requireAdminSession } from "@/lib/auth/guards";
 import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
 import { 
   createAdminCatalogProduct,
+  deleteAdminCatalogProductMedia,
+  setAdminCatalogProductMediaPrimary,
   updateAdminCatalogProduct, 
+  updateAdminCatalogProductMedia,
   updateAdminCatalogInventory,
   setAdminCatalogProductAvailability,
   setAdminCatalogProductMerchandising
 } from "@/lib/db/repositories/catalog-admin-repository";
+import { deleteFromS3 } from "@/lib/storage/s3";
 
 function revalidateCatalogPaths(productId?: string) {
   revalidatePath("/");
@@ -152,6 +156,86 @@ export async function updateInventoryAction(variantId: string, onHand: number, r
     });
     revalidateCatalogPaths();
     // Note: revalidating by productId would be better if we had it here, but revalidatePath works on the route
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+function isManagedBucketKey(storageKey: string) {
+  return !/^https?:\/\//i.test(storageKey) && !storageKey.startsWith("/");
+}
+
+export async function updateProductMediaAction(formData: FormData) {
+  const productId = formData.get("productId")?.toString();
+  const mediaId = formData.get("mediaId")?.toString();
+
+  if (!productId || !mediaId) {
+    return { success: false, error: "Media reference is incomplete." };
+  }
+
+  try {
+    const actor = await getAdminActor(`/admin/catalog/products/${productId}`);
+    await updateAdminCatalogProductMedia({
+      productId,
+      mediaId,
+      altText: formData.get("altText")?.toString() ?? null,
+      sortOrder: formData.get("sortOrder")?.toString() ?? null,
+      actorUserId: actor.userId,
+      actorEmail: actor.email,
+    });
+    revalidateCatalogPaths(productId);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function setProductMediaPrimaryAction(formData: FormData) {
+  const productId = formData.get("productId")?.toString();
+  const mediaId = formData.get("mediaId")?.toString();
+
+  if (!productId || !mediaId) {
+    return { success: false, error: "Media reference is incomplete." };
+  }
+
+  try {
+    const actor = await getAdminActor(`/admin/catalog/products/${productId}`);
+    await setAdminCatalogProductMediaPrimary({
+      productId,
+      mediaId,
+      actorUserId: actor.userId,
+      actorEmail: actor.email,
+    });
+    revalidateCatalogPaths(productId);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function deleteProductMediaAction(formData: FormData) {
+  const productId = formData.get("productId")?.toString();
+  const mediaId = formData.get("mediaId")?.toString();
+
+  if (!productId || !mediaId) {
+    return { success: false, error: "Media reference is incomplete." };
+  }
+
+  try {
+    const actor = await getAdminActor(`/admin/catalog/products/${productId}`);
+    const storageKey = await deleteAdminCatalogProductMedia({
+      productId,
+      mediaId,
+      actorUserId: actor.userId,
+      actorEmail: actor.email,
+    });
+
+    if (storageKey && isManagedBucketKey(storageKey)) {
+      await deleteFromS3(storageKey);
+    }
+
+    revalidateCatalogPaths(productId);
     return { success: true };
   } catch (error) {
     return { success: false, error: (error as Error).message };

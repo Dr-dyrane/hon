@@ -97,7 +97,7 @@ export function LayoutDashboard({
                 className={cn(
                   "flex min-h-[42px] items-center justify-center gap-2 rounded-[18px] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] transition-all",
                   view === "published"
-                    ? "bg-system-background text-label shadow-soft"
+                    ? "bg-system-fill/82 text-label shadow-soft"
                     : "text-secondary-label hover:text-label"
                 )}
               >
@@ -110,7 +110,7 @@ export function LayoutDashboard({
                 className={cn(
                   "flex min-h-[42px] items-center justify-center gap-2 rounded-[18px] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] transition-all",
                   view === "draft"
-                    ? "bg-system-background text-label shadow-soft"
+                    ? "bg-system-fill/82 text-label shadow-soft"
                     : "text-secondary-label hover:text-label",
                   !hasDraft && "cursor-not-allowed opacity-30"
                 )}
@@ -129,7 +129,7 @@ export function LayoutDashboard({
                     href="/?preview=true"
                     target="_blank"
                     aria-label="Preview"
-                    className="flex min-h-[42px] min-w-[42px] items-center justify-center rounded-[18px] text-secondary-label transition-all hover:bg-system-background hover:text-label"
+                    className="flex min-h-[42px] min-w-[42px] items-center justify-center rounded-[18px] text-secondary-label transition-all hover:bg-system-fill/82 hover:text-label"
                   >
                     <Eye size={16} />
                   </a>
@@ -156,7 +156,7 @@ export function LayoutDashboard({
           </div>
         </div>
 
-        <div className="rounded-[24px] bg-system-fill/36 px-4 py-4 shadow-[0_12px_24px_rgba(15,23,42,0.04)]">
+        <div className="glass-morphism rounded-[24px] px-4 py-4 shadow-[0_12px_24px_rgba(15,23,42,0.04)]">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-accent/10 text-accent">
               {view === "published" ? <CheckCircle2 size={18} /> : <Layers size={18} />}

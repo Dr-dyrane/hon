@@ -82,12 +82,14 @@ export function OrderDetailView({
   proofs,
   backHref,
   accessToken,
+  trackingHref,
 }: {
   order: PortalOrderDetail | null;
   timeline: OrderStatusEventRow[];
   proofs: PaymentProofRow[];
   backHref: string;
   accessToken?: string;
+  trackingHref?: string | null;
 }) {
   if (!order) {
     return (
@@ -224,11 +226,12 @@ export function OrderDetailView({
           <OrderSurface
             title="Delivery"
             action={
+              trackingHref &&
               ["ready_for_dispatch", "out_for_delivery", "delivered"].includes(
                 order.fulfillmentStatus
               ) ? (
                 <Link
-                  href={`/account/tracking/${order.orderId}`}
+                  href={trackingHref}
                   className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
                 >
                   Track

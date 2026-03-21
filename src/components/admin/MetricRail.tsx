@@ -15,28 +15,16 @@ const toneClasses: Record<NonNullable<MetricRailItem["tone"]>, string> = {
   success: "text-emerald-600 bg-emerald-500/10",
 };
 
-function getCompactGridClass(columns: 2 | 3 | 4) {
+function getDesktopGridClass(columns: 2 | 3 | 4) {
   if (columns === 2) {
     return "md:grid-cols-2";
   }
 
   if (columns === 3) {
-    return "md:grid-cols-2 lg:grid-cols-3";
+    return "md:grid-cols-2 xl:grid-cols-3";
   }
 
-  return "md:grid-cols-2 lg:grid-cols-4";
-}
-
-function getWideGridClass(columns: 2 | 3 | 4) {
-  if (columns === 2) {
-    return "min-[1500px]:grid-cols-2";
-  }
-
-  if (columns === 3) {
-    return "min-[1500px]:grid-cols-3";
-  }
-
-  return "min-[1500px]:grid-cols-4";
+  return "md:grid-cols-2 xl:grid-cols-4";
 }
 
 export function MetricRail({
@@ -66,8 +54,8 @@ export function MetricRail({
 
       <div
         className={cn(
-          "hidden gap-4 md:grid min-[1500px]:hidden",
-          getCompactGridClass(columns)
+          "hidden gap-4 md:grid",
+          getDesktopGridClass(columns)
         )}
       >
         {items.map((item) => {
@@ -75,24 +63,7 @@ export function MetricRail({
             <MetricCard
               key={item.label}
               item={item}
-              size="compact"
-            />
-          );
-        })}
-      </div>
-
-      <div
-        className={cn(
-          "hidden gap-4 min-[1500px]:grid",
-          getWideGridClass(columns)
-        )}
-      >
-        {items.map((item) => {
-          return (
-            <MetricCard
-              key={item.label}
-              item={item}
-              size="full"
+              size="desktop"
             />
           );
         })}
@@ -107,7 +78,7 @@ function MetricCard({
   style,
 }: {
   item: MetricRailItem;
-  size: "mobile" | "compact" | "full";
+  size: "mobile" | "desktop";
   style?: CSSProperties;
 }) {
   const Icon = item.icon;
@@ -117,7 +88,7 @@ function MetricCard({
     return (
       <article
         style={style}
-        className="overflow-hidden rounded-[20px] bg-system-fill/45 px-3 py-3 shadow-[0_12px_24px_rgba(15,23,42,0.05)]"
+        className="glass-morphism overflow-hidden rounded-[20px] px-3 py-3 shadow-[0_12px_24px_rgba(15,23,42,0.05)]"
       >
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -141,55 +112,29 @@ function MetricCard({
     );
   }
 
-  if (size === "compact") {
-    return (
-      <article className="overflow-hidden rounded-[24px] bg-system-background/84 px-4 py-4 shadow-[0_14px_28px_rgba(15,23,42,0.05)]">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
-              {item.label}
-            </p>
-            <p className="mt-2 truncate text-[28px] font-semibold tracking-tight text-label">
-              {item.value}
-            </p>
-            {item.detail ? (
-              <p className="mt-2 truncate text-[11px] text-secondary-label">{item.detail}</p>
-            ) : null}
-          </div>
-          <div
-            className={cn(
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-[16px]",
-              tone
-            )}
-          >
-            <Icon size={16} />
-          </div>
-        </div>
-      </article>
-    );
-  }
-
   return (
-    <article className="overflow-hidden rounded-[28px] bg-system-background/86 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+    <article className="glass-morphism overflow-hidden rounded-[24px] p-4 shadow-[0_14px_28px_rgba(15,23,42,0.05)] xl:rounded-[28px] xl:p-5 xl:shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
             {item.label}
           </p>
-          <p className="mt-3 truncate text-4xl font-semibold tracking-tight text-label">
+          <p className="mt-2 truncate text-[28px] font-semibold tracking-tight text-label xl:mt-3 xl:text-4xl">
             {item.value}
           </p>
           {item.detail ? (
-            <p className="mt-3 text-xs text-secondary-label">{item.detail}</p>
+            <p className="mt-2 truncate text-[11px] text-secondary-label xl:mt-3 xl:text-xs">
+              {item.detail}
+            </p>
           ) : null}
         </div>
         <div
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-2xl",
+            "flex h-9 w-9 items-center justify-center rounded-[16px] xl:h-10 xl:w-10 xl:rounded-2xl",
             tone
           )}
         >
-          <Icon size={18} />
+          <Icon size={17} />
         </div>
       </div>
     </article>

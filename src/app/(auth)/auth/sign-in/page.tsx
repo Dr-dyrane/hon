@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { EmailOtpRequestForm } from "@/components/auth/EmailOtpRequestForm";
-import { serverEnv } from "@/lib/config/server";
 
 export default async function SignInPage({
   searchParams,
@@ -16,23 +15,16 @@ export default async function SignInPage({
   return (
     <AuthCard
       badge="Account Access"
-      title="Sign in with email OTP."
-      description={
-        <>
-          Launch auth mode is locked to{" "}
-          <span className="font-semibold text-label">{serverEnv.auth.mode}</span>. Passwords
-          stay out of the first release so guest claiming, checkout continuity, and
-          admin onboarding remain simple.
-        </>
-      }
+      title="Use your email."
+      description="We'll send a six-digit code."
       footer={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <span>Guest checkout remains available throughout the storefront flow.</span>
+          <span>Guest checkout stays open.</span>
           <Link
             href="/auth/verify"
             className="font-medium text-label underline-offset-4 hover:underline"
           >
-            View verification screen
+            Have a code?
           </Link>
         </div>
       }

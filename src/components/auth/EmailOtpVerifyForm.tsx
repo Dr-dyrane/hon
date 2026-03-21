@@ -35,7 +35,7 @@ export function EmailOtpVerifyForm({
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength={6}
-          placeholder="111111"
+          placeholder="000000"
           className="rounded-[24px] bg-system-background px-4 py-4 text-center text-2xl font-semibold tracking-[0.55em] text-label placeholder:tracking-[0.18em] placeholder:text-secondary-label"
         />
       </label>
@@ -58,7 +58,7 @@ export function EmailOtpVerifyForm({
           disabled={pending}
           className="button-primary min-h-[52px] flex-1 justify-center text-[11px] font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:opacity-70 disabled:shadow-none"
         >
-          {pending ? "Verifying" : "Verify Code"}
+          {pending ? "Checking" : "Continue"}
         </button>
       </div>
     </form>

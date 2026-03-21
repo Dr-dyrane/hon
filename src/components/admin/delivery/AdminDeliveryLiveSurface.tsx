@@ -1,8 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { Bike, Clock3, Truck } from "lucide-react";
-import { MetricRail } from "@/components/admin/MetricRail";
 import { useSseResource } from "@/hooks/useSseResource";
 import type { AdminDeliveryLiveSnapshot } from "@/lib/delivery/snapshot";
 
@@ -35,31 +33,6 @@ export function AdminDeliveryLiveSurface({
 
   return (
     <div className="space-y-4">
-      <MetricRail
-        items={[
-          {
-            label: "Preparing",
-            value: `${data.preparingCount}`,
-            detail: "Kitchen",
-            icon: Clock3,
-          },
-          {
-            label: "Ready",
-            value: `${data.readyCount}`,
-            detail: "Rider",
-            icon: Bike,
-          },
-          {
-            label: "Live",
-            value: `${data.liveCount}`,
-            detail: "Road",
-            icon: Truck,
-            tone: "success",
-          },
-        ]}
-        columns={3}
-      />
-
       <section className="glass-morphism rounded-[32px] bg-system-background/78 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
         <div className="flex items-center justify-between gap-4">
           <h3 className="text-lg font-semibold tracking-tight text-label">Map</h3>
@@ -68,7 +41,7 @@ export function AdminDeliveryLiveSurface({
           </span>
         </div>
 
-        {data.mapOrder?.mapUrl ? (
+        {data.trackingEnabled && data.mapOrder?.mapUrl ? (
           <div className="mt-4 overflow-hidden rounded-[28px]">
             <Image
               src={data.mapOrder.mapUrl}
@@ -86,7 +59,7 @@ export function AdminDeliveryLiveSurface({
           </div>
         ) : (
           <div className="mt-4 rounded-[28px] bg-system-fill/60 px-4 py-12 text-sm text-secondary-label">
-            No live location.
+            {data.trackingEnabled ? "No live location." : "Tracking is off."}
           </div>
         )}
 

@@ -294,6 +294,22 @@ export function CartDrawer() {
                     </div>
                   </div>
 
+                  <div className="mt-4 flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/42 px-4 py-3">
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                        Account
+                      </div>
+                      <div className="mt-1 text-sm text-label">Save this order</div>
+                    </div>
+                    <Link
+                      href="/auth/sign-in?returnTo=/account"
+                      onClick={closeCart}
+                      className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
+                    >
+                      Sign in
+                    </Link>
+                  </div>
+
                   <div className="mt-5 grid gap-3">
                     <label className="grid gap-2">
                       <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
@@ -327,7 +343,7 @@ export function CartDrawer() {
 
                     <label className="grid gap-2">
                       <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                        Phone Number
+                        Phone
                       </span>
                       <input
                         type="tel"
@@ -336,13 +352,13 @@ export function CartDrawer() {
                           updateCheckoutField("phoneNumber", event.target.value)
                         }
                         className={fieldClassName}
-                        placeholder="Phone number"
+                        placeholder="Phone"
                       />
                     </label>
 
                     <label className="grid gap-2">
                       <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                        Delivery Area
+                        Area
                       </span>
                       <input
                         type="text"
@@ -354,7 +370,7 @@ export function CartDrawer() {
                           )
                         }
                         className={fieldClassName}
-                        placeholder="Delivery area"
+                        placeholder="Area"
                       />
                     </label>
 
@@ -369,7 +385,7 @@ export function CartDrawer() {
                           updateCheckoutField("notes", event.target.value)
                         }
                         className={fieldClassName}
-                        placeholder="Notes"
+                        placeholder="Gate, floor, landmark"
                       />
                     </label>
                   </div>

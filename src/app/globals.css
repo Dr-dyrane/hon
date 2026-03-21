@@ -21,6 +21,7 @@
 
   --color-accent: var(--accent);
   --color-accent-label: var(--accent-label);
+  --color-accent-ink: var(--accent-ink);
   --color-selection: var(--selection);
   --color-ring: var(--ring);
   --color-separator: var(--separator);
@@ -87,6 +88,7 @@
 
   --accent: #0f3d2e;
   --accent-label: #ffffff;
+  --accent-ink: #0f1110;
   --selection: rgba(15, 61, 46, 0.12);
   --ring: rgba(15, 61, 46, 0.22);
   --surface: rgba(255, 255, 255, 0.82);
@@ -115,6 +117,7 @@
 
   --accent: #d7c5a3;
   --accent-label: #0f1110;
+  --accent-ink: #0f1110;
   --selection: rgba(215, 197, 163, 0.16);
   --ring: rgba(215, 197, 163, 0.28);
   --surface: rgba(20, 23, 20, 0.72);
@@ -141,6 +144,7 @@
 
     --accent: #d7c5a3;
     --accent-label: #0f1110;
+    --accent-ink: #0f1110;
     --selection: rgba(215, 197, 163, 0.16);
     --ring: rgba(215, 197, 163, 0.28);
 

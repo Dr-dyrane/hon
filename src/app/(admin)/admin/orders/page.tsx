@@ -49,13 +49,11 @@ export default async function AdminOrdersPage() {
   return (
     <div className="space-y-8 pb-20 md:space-y-10">
       <section className="space-y-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/admin/payments"
-            className="button-secondary min-h-[40px] px-4 text-[11px] font-semibold uppercase tracking-[0.16em]"
-          >
-            Payments
-          </Link>
+        <div className="rounded-[24px] bg-system-fill/42 p-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.04)] md:inline-flex">
+          <div className="grid grid-cols-2 gap-1.5">
+            <QuickLink href="/admin/orders" label="Orders" />
+            <QuickLink href="/admin/payments" label="Payments" />
+          </div>
         </div>
 
         <MetricRail
@@ -126,12 +124,6 @@ export default async function AdminOrdersPage() {
                   >
                     Open
                   </Link>
-                  <Link
-                    href="/admin/payments"
-                    className="rounded-full bg-system-fill/56 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label transition-colors duration-200 hover:text-label"
-                  >
-                    Payments
-                  </Link>
                 </div>
               </div>
             </div>
@@ -150,5 +142,16 @@ function MetaItem({ label, value }: { label: string; value: string }) {
       </div>
       <div className="mt-1 truncate text-sm font-medium text-label">{value}</div>
     </div>
+  );
+}
+
+function QuickLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-[40px] items-center justify-center rounded-[18px] px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label transition-colors duration-200 hover:bg-system-background hover:shadow-soft"
+    >
+      {label}
+    </Link>
   );
 }

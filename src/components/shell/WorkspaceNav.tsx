@@ -13,12 +13,19 @@ export function WorkspaceNav({
   mode?: "sidebar" | "mobile";
 }) {
   const pathname = usePathname();
+  const mobileFrameClass =
+    process.env.NODE_ENV === "development"
+      ? "left-[4.5rem] right-4"
+      : "inset-x-4";
 
   if (mode === "mobile") {
     return (
       <nav
         aria-label="Section navigation"
-        className="glass-morphism fixed inset-x-4 bottom-4 z-40 rounded-[28px] bg-system-background/84 p-2 shadow-[0_20px_60px_rgba(15,23,42,0.12)] md:hidden"
+        className={cn(
+          "glass-morphism fixed bottom-4 z-40 rounded-[28px] bg-system-background/84 p-2 shadow-[0_20px_60px_rgba(15,23,42,0.12)] md:hidden",
+          mobileFrameClass
+        )}
       >
         <ul className="scrollbar-hide flex gap-1 overflow-x-auto">
           {items.map((item) => {
@@ -55,17 +62,32 @@ export function WorkspaceNav({
             key={item.href}
             href={item.href}
             className={cn(
-              "glass-morphism block rounded-[28px] px-4 py-4 transition-all duration-200",
+              "block rounded-[28px] px-4 py-4 transition-all duration-200",
               active
-                ? "bg-system-background text-label shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
-                : "bg-system-fill/56 text-label hover:bg-system-fill/76"
+                ? "bg-[var(--accent)] text-[var(--accent-label)] shadow-button"
+                : "glass-morphism bg-system-fill/56 text-label hover:bg-system-fill/76"
             )}
           >
-            <div className="text-sm font-semibold tracking-tight">{item.label}</div>
+            <div
+              className={cn(
+                "text-sm font-semibold tracking-tight",
+                active ? "text-[var(--accent-label)]" : "text-label"
+              )}
+            >
+              {item.label}
+            </div>
             <p
+              style={
+                active
+                  ? {
+                      color: "var(--accent-label)",
+                      opacity: 0.82,
+                    }
+                  : undefined
+              }
               className={cn(
                 "mt-1 text-xs leading-relaxed",
-                "text-secondary-label"
+                active ? "" : "text-secondary-label"
               )}
             >
               {item.description}

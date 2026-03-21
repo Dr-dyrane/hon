@@ -2,9 +2,11 @@ import "server-only";
 
 import { isDatabaseConfigured, query, withTransaction } from "@/lib/db/client";
 import { slugifyProduct } from "@/lib/catalog/slug";
+import { getStoragePublicUrl } from "@/lib/storage/s3";
 import type {
   AdminCatalogCategory,
   AdminCatalogProduct,
+  AdminCatalogProductMedia,
   AdminCatalogProductDetail,
 } from "@/lib/db/types";
 
@@ -112,6 +114,18 @@ function normalizeProductStatus(value: string) {
   }
 
   return value as "draft" | "active" | "archived";
+}
+
+function resolveCatalogMediaUrl(storageKey: string) {
+  if (/^https?:\/\//i.test(storageKey) || storageKey.startsWith("/")) {
+    return storageKey;
+  }
+
+  try {
+    return getStoragePublicUrl(storageKey);
+  } catch {
+    return storageKey;
+  }
 }
 
 export async function listAdminCatalogCategories() {
@@ -222,6 +236,7 @@ export async function getAdminCatalogProductDetail(productId: string) {
         p.short_description as "shortDescription",
         p.long_description as "longDescription",
         p.category_id as "categoryId",
+        pc.name as "categoryName",
         p.status,
         p.merchandising_state as "merchandisingState",
         p.is_available as "isAvailable",
@@ -241,6 +256,8 @@ export async function getAdminCatalogProductDetail(productId: string) {
         ii.reserved as "inventoryReserved",
         ii.reorder_threshold as "reorderThreshold"
       from app.products p
+      left join app.product_categories pc
+        on pc.id = p.category_id
       inner join app.product_variants v
         on v.product_id = p.id
        and v.is_default = true
@@ -260,6 +277,7 @@ export async function getAdminCatalogProductDetail(productId: string) {
         p.short_description,
         p.long_description,
         p.category_id,
+        pc.name,
         p.status,
         p.merchandising_state,
         p.is_available,
@@ -282,6 +300,39 @@ export async function getAdminCatalogProductDetail(productId: string) {
   );
 
   return result.rows[0] ?? null;
+}
+
+export async function listAdminCatalogProductMedia(productId: string) {
+  if (!productId || !isDatabaseConfigured()) {
+    return [] satisfies AdminCatalogProductMedia[];
+  }
+
+  const result = await query<
+    Omit<AdminCatalogProductMedia, "publicUrl"> & { createdAt: string }
+  >(
+    `
+      select
+        id as "mediaId",
+        product_id as "productId",
+        variant_id as "variantId",
+        media_type as "mediaType",
+        storage_key as "storageKey",
+        alt_text as "altText",
+        sort_order as "sortOrder",
+        is_primary as "isPrimary",
+        metadata,
+        created_at as "createdAt"
+      from app.product_media
+      where product_id = $1
+      order by media_type asc, is_primary desc, sort_order asc, created_at asc
+    `,
+    [productId]
+  );
+
+  return result.rows.map((row) => ({
+    ...row,
+    publicUrl: resolveCatalogMediaUrl(row.storageKey),
+  }));
 }
 
 export async function createAdminCatalogProduct(input: {
@@ -669,4 +720,286 @@ export async function setAdminCatalogProductMerchandising(
       },
     }
   );
+}
+
+export async function createAdminCatalogProductMedia(input: {
+  productId: string;
+  mediaType: "image" | "model_3d" | "video";
+  storageKey: string;
+  altText?: string | null;
+  metadata?: Record<string, unknown>;
+  actorUserId?: string | null;
+  actorEmail?: string | null;
+}) {
+  requireDatabase();
+
+  const productId = input.productId;
+  const mediaType = input.mediaType;
+  const storageKey = input.storageKey.trim();
+  const altText = normalizeOptionalText(input.altText ?? null);
+  const metadata = input.metadata ?? {};
+
+  if (!productId || !storageKey) {
+    throw new Error("Product media is incomplete.");
+  }
+
+  return withTransaction(async (queryFn) => {
+    const productResult = await queryFn<{ productId: string }>(
+      `
+        select id as "productId"
+        from app.products
+        where id = $1
+        limit 1
+      `,
+      [productId]
+    );
+
+    if (!productResult.rows[0]) {
+      throw new Error("Product not found.");
+    }
+
+    const primaryResult = await queryFn<{ mediaId: string }>(
+      `
+        select id as "mediaId"
+        from app.product_media
+        where product_id = $1
+          and media_type = $2
+          and is_primary = true
+        limit 1
+      `,
+      [productId, mediaType]
+    );
+
+    const sortOrderResult = await queryFn<{ nextSortOrder: number }>(
+      `
+        select coalesce(max(sort_order), -1) + 1 as "nextSortOrder"
+        from app.product_media
+        where product_id = $1
+          and media_type = $2
+      `,
+      [productId, mediaType]
+    );
+
+    const shouldBePrimary = !primaryResult.rows[0];
+    const nextSortOrder = sortOrderResult.rows[0]?.nextSortOrder ?? 0;
+
+    const insertResult = await queryFn<{ mediaId: string }>(
+      `
+        insert into app.product_media (
+          product_id,
+          media_type,
+          storage_key,
+          alt_text,
+          sort_order,
+          is_primary,
+          metadata
+        )
+        values ($1, $2, $3, $4, $5, $6, $7::jsonb)
+        returning id as "mediaId"
+      `,
+      [
+        productId,
+        mediaType,
+        storageKey,
+        altText,
+        nextSortOrder,
+        shouldBePrimary,
+        JSON.stringify(metadata),
+      ]
+    );
+
+    return insertResult.rows[0]?.mediaId ?? null;
+  }, {
+    actor: {
+      userId: input.actorUserId ?? null,
+      email: input.actorEmail ?? null,
+      role: "admin",
+    },
+  });
+}
+
+export async function updateAdminCatalogProductMedia(input: {
+  mediaId: string;
+  productId: string;
+  altText?: string | null;
+  sortOrder?: string | number | null;
+  actorUserId?: string | null;
+  actorEmail?: string | null;
+}) {
+  requireDatabase();
+
+  const mediaId = input.mediaId;
+  const productId = input.productId;
+  const altText = normalizeOptionalText(input.altText ?? null);
+  const sortOrder =
+    input.sortOrder == null || input.sortOrder === ""
+      ? null
+      : normalizeSortOrder(input.sortOrder);
+
+  if (!mediaId || !productId) {
+    throw new Error("Media reference is incomplete.");
+  }
+
+  await query(
+    `
+      update app.product_media
+      set
+        alt_text = $1,
+        sort_order = coalesce($2, sort_order)
+      where id = $3
+        and product_id = $4
+    `,
+    [altText, sortOrder, mediaId, productId],
+    {
+      actor: {
+        userId: input.actorUserId ?? null,
+        email: input.actorEmail ?? null,
+        role: "admin",
+      },
+    }
+  );
+}
+
+export async function setAdminCatalogProductMediaPrimary(input: {
+  mediaId: string;
+  productId: string;
+  actorUserId?: string | null;
+  actorEmail?: string | null;
+}) {
+  requireDatabase();
+
+  const mediaId = input.mediaId;
+  const productId = input.productId;
+
+  if (!mediaId || !productId) {
+    throw new Error("Media reference is incomplete.");
+  }
+
+  await withTransaction(async (queryFn) => {
+    const mediaResult = await queryFn<{
+      mediaId: string;
+      mediaType: "image" | "model_3d" | "video";
+    }>(
+      `
+        select
+          id as "mediaId",
+          media_type as "mediaType"
+        from app.product_media
+        where id = $1
+          and product_id = $2
+        limit 1
+      `,
+      [mediaId, productId]
+    );
+
+    const media = mediaResult.rows[0];
+
+    if (!media) {
+      throw new Error("Media not found.");
+    }
+
+    await queryFn(
+      `
+        update app.product_media
+        set is_primary = false
+        where product_id = $1
+          and media_type = $2
+      `,
+      [productId, media.mediaType]
+    );
+
+    await queryFn(
+      `
+        update app.product_media
+        set is_primary = true
+        where id = $1
+      `,
+      [mediaId]
+    );
+  }, {
+    actor: {
+      userId: input.actorUserId ?? null,
+      email: input.actorEmail ?? null,
+      role: "admin",
+    },
+  });
+}
+
+export async function deleteAdminCatalogProductMedia(input: {
+  mediaId: string;
+  productId: string;
+  actorUserId?: string | null;
+  actorEmail?: string | null;
+}) {
+  requireDatabase();
+
+  const mediaId = input.mediaId;
+  const productId = input.productId;
+
+  if (!mediaId || !productId) {
+    throw new Error("Media reference is incomplete.");
+  }
+
+  return withTransaction(async (queryFn) => {
+    const mediaResult = await queryFn<{
+      mediaId: string;
+      mediaType: "image" | "model_3d" | "video";
+      storageKey: string;
+      isPrimary: boolean;
+    }>(
+      `
+        select
+          id as "mediaId",
+          media_type as "mediaType",
+          storage_key as "storageKey",
+          is_primary as "isPrimary"
+        from app.product_media
+        where id = $1
+          and product_id = $2
+        limit 1
+      `,
+      [mediaId, productId]
+    );
+
+    const media = mediaResult.rows[0];
+
+    if (!media) {
+      throw new Error("Media not found.");
+    }
+
+    await queryFn(
+      `
+        delete from app.product_media
+        where id = $1
+      `,
+      [mediaId]
+    );
+
+    if (media.isPrimary) {
+      await queryFn(
+        `
+          with next_media as (
+            select id
+            from app.product_media
+            where product_id = $1
+              and media_type = $2
+            order by sort_order asc, created_at asc
+            limit 1
+          )
+          update app.product_media
+          set is_primary = true
+          where id = (select id from next_media)
+        `,
+        [productId, media.mediaType]
+      );
+    }
+
+    return media.storageKey;
+  }, {
+    actor: {
+      userId: input.actorUserId ?? null,
+      email: input.actorEmail ?? null,
+      role: "admin",
+    },
+  });
 }

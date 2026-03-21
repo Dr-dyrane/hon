@@ -70,6 +70,22 @@ Current state:
 - portal order detail, proof upload, and live tracking now use quieter value strips and tighter section shells instead of generic stacked cards
 - shell sidebars now avoid redundant descriptive copy and root metric language is shorter across the main admin and portal entry screens
 - repo-wide lint now passes after clearing the older 3D and marketing lint debt
+- catalog list, create, and edit routes now share the calmer KPI rail and context rhythm instead of mixing old editor chrome with newer admin surfaces
+- admin settings now use typed edit flows for bank details, delivery defaults, and preview mode instead of a raw registry dump
+- marketing now exposes a customer account entry path and the auth screens use quieter, non-technical copy
+- delivery defaults now affect real runtime behavior: transfer deadlines use the configured stale window, and tracking can be turned off across customer and admin delivery surfaces
+- shared KPI rails and the layout/catalog workspaces now use the warmer glass surface language again instead of opaque dark blocks in dark mode
+- selected shell navigation states now use accent surfaces with legible contrast in both light and dark mode
+- auth, cart handoff, and guest confirmation wording is quieter and less technical on the live user path
+- mobile shell navigation now clears the development badge in local testing so the first rail item stays readable
+- portal order list now relies more on shell hierarchy instead of repeating route-level headings
+- admin orders and payments now use the same quiet root switcher pattern instead of lone cross-links
+- portal account home labels are shorter and less instructional on the main signed-in path
+- admin order detail now uses the same context-strip, value-strip, and compact surface rhythm as the stronger portal screens
+- profile, addresses, reorder, and tracking now use shorter customer-facing labels on the main portal flow
+- admin payments now supports direct review, confirm, and reject actions from the queue itself
+- proof-upload language is shorter on the customer order flow
+- admin catalog now supports product media CRUD for image, 3D, and video assets through direct S3 upload and audited media mutations
 
 This means the system has crossed into operational platform work.
 
@@ -228,6 +244,7 @@ Completed:
 - [x] checkout order creation from the live cart
 - [x] guest-safe checkout order access token path
 - [x] browser-direct signed upload flow for payment proofs
+- [x] browser-direct signed upload flow for admin catalog media
 - [x] converted-cart checkout recovery path
 - [x] checkout cart refresh path for expired or replaced carts
 - [x] delivery assignment schema and repository path
@@ -239,9 +256,11 @@ Completed:
 - [x] audit trigger foundation for critical mutable tables
 - [x] owner/admin RLS policy rollout on order-, profile-, and review-scoped tables
 - [x] low-churn secondary audit coverage for layout presentations, layout bindings, and review requests
+- [x] runtime usage of delivery defaults for checkout deadlines and tracking on/off
 
 Open:
 
+- [ ] connect inventory reservation and stock release/decrement to the real order lifecycle
 - [ ] review whether any future low-churn mutable tables should join the audit ledger as new admin surfaces are introduced
 
 ---
@@ -267,16 +286,20 @@ Open:
 
 - [x] customer directory
 - [x] settings surface
+- [x] settings editing flow
 - [x] delivery board
 - [x] assignment-aware delivery operations
 - [x] review moderation
 - [x] catalog creation and editing flows
+- [x] product media CRUD for image, 3D, and video assets
 - [x] availability and featured management actions
 - [x] layout authoring flow
 - [x] layout publishing flow
 - [ ] tighter Apple-style visual and copy pass across all admin pages
+- [ ] product archive/delete safety flow
+- [ ] variant-level media management
 
----
+--- 
 
 ## 6. User Portal Tracker
 
@@ -304,8 +327,9 @@ Completed:
 Open:
 
 - [ ] quieter Apple-style copy pass across portal screens
+- [ ] run one deployed end-to-end business-flow smoke test from sign-in through payment review
 
----
+--- 
 
 ## 7. Quality And Design Tracker
 
@@ -323,9 +347,10 @@ Completed:
 Open:
 
 - [ ] reduce explanatory copy in admin and portal UI
+- [ ] finish the same quiet-copy pass on auth and checkout edge screens
 - [ ] align page chrome more closely with the marketing visual language
 - [ ] enforce viewport-native mobile, tablet, and desktop compositions across admin and portal
-- [ ] ensure selected navigation states remain legible in every shell
+- [x] ensure selected navigation states remain legible in every shell
 - [ ] finish no-border, Apple-HIG-consistent surface treatment review
 - [ ] tighten the checkout drawer and confirmation route further toward the marketing-page visual bar
 
@@ -360,6 +385,35 @@ Missing:
 
 - richer route/ETA logic
 - guest tracking on the same live model
+
+### Catalog media is product-level first
+
+Current catalog media behavior:
+
+- admin can upload image, 3D, and video assets directly to S3
+- admin can set primary media, update alt text and sort order, and delete assets
+- media audit coverage is now active
+
+Missing:
+
+- variant-specific media management in the admin UI
+- richer gallery ordering controls beyond numeric sort order
+- explicit archive/delete safeguards for product families
+- image transforms or validation beyond upload-time file typing
+
+### Inventory is not yet order-coupled
+
+Current inventory behavior:
+
+- admin can set on-hand and reorder thresholds
+- catalog pages surface stock state
+
+Missing:
+
+- reserve stock when a real order is created or confirmed
+- release reserved stock when orders expire or are cancelled
+- decrement fulfilled stock as orders move through dispatch and delivery
+- operator-visible low-stock behavior tied to real commerce activity
 
 ### RLS is active on the first protected slice
 Current protection model:
@@ -440,9 +494,10 @@ The active build block is Pass 5: admin console expansion.
 
 Implement in this order:
 
-1. Keep tightening the Apple-HIG execution across admin and portal root/detail screens.
-2. Reassess audit coverage only when new low-churn admin mutation surfaces appear.
-3. Keep delivery quality moving toward richer ETA/live behavior once the shell polish is stable.
+1. Run one deployed business-flow smoke test from sign-in through payment review and delivery-state progression.
+2. Connect inventory to the order lifecycle so stock becomes operationally truthful.
+3. Keep tightening the Apple-HIG execution across admin and portal root/detail screens.
+4. Close the remaining catalog operator gaps: product archive/delete safety and variant-level media handling.
 
 After that:
 

@@ -38,7 +38,7 @@ export function EmailOtpRequestForm({
           name="email"
           autoComplete="email"
           defaultValue={defaultEmail}
-          placeholder="halodyrane@gmail.com"
+          placeholder="you@example.com"
           className="w-full rounded-[24px] bg-system-background px-4 py-3 text-sm text-label placeholder:text-secondary-label"
         />
       </label>
@@ -60,7 +60,7 @@ export function EmailOtpRequestForm({
         disabled={pending}
         className="button-primary min-h-[52px] justify-center text-[11px] font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:opacity-70 disabled:shadow-none"
       >
-        {pending ? "Preparing Code" : "Request Sign-In Code"}
+        {pending ? "Sending" : "Send Code"}
       </button>
     </form>
   );
