@@ -13,6 +13,10 @@ export type PublishedCatalogProduct = {
   sku: string;
   priceNgn: number;
   compareAtPriceNgn: number | null;
+  imageStorageKey: string | null;
+  imageUrl: string | null;
+  modelStorageKey: string | null;
+  modelUrl: string | null;
   mediaStorageKey: string | null;
   mediaType: string | null;
 };
@@ -31,6 +35,8 @@ export type AdminCatalogProduct = {
   productSlug: string;
   productName: string;
   productMarketingName: string | null;
+  productTagline: string | null;
+  shortDescription: string;
   categoryId: string | null;
   categoryName: string | null;
   status: "draft" | "active" | "archived";
@@ -44,8 +50,15 @@ export type AdminCatalogProduct = {
   priceNgn: number;
   compareAtPriceNgn: number | null;
   ingredientCount: number;
+  mediaCount: number;
   inventoryOnHand: number | null;
+  inventoryReserved: number | null;
+  reorderThreshold: number | null;
   sortOrder: number;
+  imageStorageKey: string | null;
+  imageUrl: string | null;
+  modelStorageKey: string | null;
+  modelUrl: string | null;
 };
 
 export type AdminCatalogCategory = {
@@ -538,6 +551,16 @@ export type PortalReviewRow = {
   isFeatured: boolean;
   createdAt: string;
   moderatedAt: string | null;
+};
+
+export type WorkspaceNotification = {
+  notificationId: string;
+  title: string;
+  detail: string;
+  href: string;
+  createdAt: string;
+  tone: "default" | "success" | "warning";
+  icon: "order" | "payment" | "delivery" | "return" | "alert";
 };
 
 export type AdminReviewRow = {

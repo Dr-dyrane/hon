@@ -3,9 +3,33 @@ import { requireAdminSession } from "@/lib/auth/guards";
 import { advanceOrderReturnCase } from "@/lib/db/repositories/order-returns-repository";
 import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
 import {
+  acceptOrderRequestByAdmin,
   cancelOrderByAdmin,
   reviewPayment,
 } from "@/lib/db/repositories/orders-repository";
+
+export async function acceptOrderRequestAction(formData: FormData) {
+  const orderId = formData.get("orderId")?.toString();
+  const note = formData.get("note")?.toString().trim() || null;
+
+  if (!orderId) {
+    throw new Error("Missing order.");
+  }
+
+  const session = await requireAdminSession(`/admin/orders/${orderId}`);
+  const actor = await ensureUserByEmail(session.email);
+
+  await acceptOrderRequestByAdmin(
+    orderId,
+    session.email,
+    actor?.userId ?? null,
+    note
+  );
+
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin/payments");
+}
 
 export async function reviewPaymentAction(formData: FormData) {
   const orderId = formData.get("orderId")?.toString();

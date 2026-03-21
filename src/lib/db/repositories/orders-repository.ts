@@ -9,8 +9,11 @@ import {
 import { releaseInventoryReservationForOrder } from "@/lib/db/repositories/order-inventory";
 import {
   sendOrderCancelledNotification,
+  sendOrderPlacedNotifications,
   sendPaymentDecisionNotification,
 } from "@/lib/email/orders";
+import { reserveInventoryForOrder } from "@/lib/db/repositories/order-inventory";
+import { getDeliveryDefaultsSetting } from "@/lib/db/repositories/settings-repository";
 import type {
   AdminPaymentQueueRow,
   BankAccountRow,
@@ -51,6 +54,12 @@ function buildCustomerActor(input: {
     role: "customer",
     guestOrderId: input.guestOrderId ?? null,
   };
+}
+
+function buildTransferDeadlineAt(staleTransferWindowMinutes: number) {
+  return new Date(
+    Date.now() + staleTransferWindowMinutes * 60 * 1000
+  ).toISOString();
 }
 
 export async function expireStaleAwaitingTransferOrders() {
@@ -258,6 +267,140 @@ export async function getDefaultBankAccount() {
   return result.rows[0] ?? null;
 }
 
+export async function acceptOrderRequestByAdmin(
+  orderId: string,
+  actorEmail: string | null,
+  actorUserId: string | null,
+  note: string | null
+) {
+  if (!isDatabaseConfigured()) {
+    return;
+  }
+
+  const deliveryDefaults = await getDeliveryDefaultsSetting();
+  const transferDeadlineAt = buildTransferDeadlineAt(
+    deliveryDefaults.staleTransferWindowMinutes
+  );
+  let acceptedOrderId: string | null = null;
+
+  await withTransaction(async (queryFn) => {
+    const orderResult = await queryFn<{
+      orderId: string;
+      status: string;
+      paymentId: string | null;
+      totalNgn: number;
+    }>(
+      `
+        select
+          o.id as "orderId",
+          o.status,
+          p.id as "paymentId",
+          o.total_ngn as "totalNgn"
+        from app.orders o
+        left join app.payments p
+          on p.order_id = o.id
+        where o.id = $1
+        limit 1
+        for update of o
+      `,
+      [orderId]
+    );
+
+    const order = orderResult.rows[0];
+
+    if (!order) {
+      throw new Error("Order not found.");
+    }
+
+    if (order.status !== "checkout_draft") {
+      throw new Error("Request is not waiting for acceptance.");
+    }
+
+    if (order.paymentId) {
+      throw new Error("Payment already exists for this order.");
+    }
+
+    const bankAccountResult = await queryFn<{ bankAccountId: string }>(
+      `
+        select id as "bankAccountId"
+        from app.bank_accounts
+        where is_active = true
+        order by is_default desc, created_at desc
+        limit 1
+      `
+    );
+    const bankAccountId = bankAccountResult.rows[0]?.bankAccountId ?? null;
+
+    await reserveInventoryForOrder(queryFn, order.orderId);
+
+    await queryFn(
+      `
+        insert into app.payments (
+          order_id,
+          bank_account_id,
+          payment_method,
+          status,
+          expected_amount_ngn,
+          expires_at
+        )
+        values ($1, $2, 'bank_transfer', 'awaiting_transfer', $3, $4)
+      `,
+      [order.orderId, bankAccountId, order.totalNgn, transferDeadlineAt]
+    );
+
+    await queryFn(
+      `
+        update app.orders
+        set
+          status = 'awaiting_transfer',
+          payment_status = 'awaiting_transfer',
+          fulfillment_status = 'pending',
+          transfer_deadline_at = $2
+        where id = $1
+      `,
+      [order.orderId, transferDeadlineAt]
+    );
+
+    await queryFn(
+      `
+        insert into app.order_status_events (
+          order_id,
+          from_status,
+          to_status,
+          actor_type,
+          actor_user_id,
+          actor_email,
+          note,
+          metadata
+        )
+        values ($1, 'checkout_draft', 'awaiting_transfer', 'admin', $2, $3, $4, $5::jsonb)
+      `,
+      [
+        order.orderId,
+        actorUserId,
+        actorEmail,
+        note,
+        JSON.stringify({ source: "request_accept" }),
+      ]
+    );
+
+    acceptedOrderId = order.orderId;
+  }, {
+    actor: {
+      userId: actorUserId,
+      email: actorEmail,
+      role: "admin",
+    },
+  });
+
+  if (acceptedOrderId) {
+    await sendOrderPlacedNotifications({
+      orderId: acceptedOrderId,
+      notifyAdmin: false,
+    });
+  }
+}
+
 export async function listOrdersForPortal(email: string) {
   const normalizedEmail = email.trim().toLowerCase();
 
@@ -293,7 +436,6 @@ export async function listOrdersForPortal(email: string) {
       left join app.order_items oi on oi.order_id = o.id
       left join matched_user mu on mu.id = o.user_id
       where (mu.id is not null or lower(o.customer_email) = $1)
-        and o.status <> 'checkout_draft'
       group by
         o.id,
         o.public_order_number,
@@ -517,6 +659,7 @@ export async function preparePortalReorder(email: string, orderId: string) {
         where cp.slug = coalesce(oi.snapshot ->> 'productId', p.slug)
           and cp.status = 'active'
           and cp.is_available = true
+          and cp.merchandising_state <> 'hidden'
         limit 1
       ) cv on true
       left join matched_user mu
@@ -856,6 +999,7 @@ export async function createPaymentProof(
 }
 
 const CANCELLABLE_ORDER_STATUSES = [
+  "checkout_draft",
   "awaiting_transfer",
   "payment_submitted",
   "payment_under_review",

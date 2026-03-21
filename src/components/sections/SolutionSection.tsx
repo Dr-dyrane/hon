@@ -30,12 +30,19 @@ export function SolutionSection({
 }: {
   isScrollingIntoSection: (sectionId: string) => boolean;
 }) {
-  const { brand, homeSectionsByKey, productsById } = useMarketingContent();
+  const { brand, homeSectionsByKey, productIds, productsById } = useMarketingContent();
   const solutionSettings = homeSectionsByKey.solution?.settings as
     | { featuredProductId?: ProductId }
     | undefined;
-  const currentProduct = solutionSettings?.featuredProductId ?? "protein_chocolate";
+  const currentProduct =
+    solutionSettings?.featuredProductId && productsById[solutionSettings.featuredProductId]
+      ? solutionSettings.featuredProductId
+      : productIds[0] ?? null;
   const scrollActive = isScrollingIntoSection("solution");
+
+  if (!currentProduct || !productsById[currentProduct]) {
+    return null;
+  }
 
   return (
     <SectionContainer variant="white" id="solution">

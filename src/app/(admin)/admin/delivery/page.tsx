@@ -26,8 +26,20 @@ function formatTimestamp(value?: string | null) {
   }).format(new Date(value));
 }
 
+const deliveryLabelMap: Record<string, string> = {
+  preparing: "Preparing order",
+  ready_for_dispatch: "Ready to send",
+  out_for_delivery: "Out for delivery",
+  assigned: "Rider assigned",
+  unassigned: "Awaiting rider",
+  picked_up: "Picked up",
+  failed: "Delivery failed",
+  returned: "Returned",
+  delivered: "Delivered",
+};
+
 function formatStatusLabel(value: string) {
-  return value.replace(/_/g, " ");
+  return deliveryLabelMap[value] ?? value.replace(/_/g, " ");
 }
 
 function StageChip({ value }: { value: string }) {
@@ -53,7 +65,7 @@ function DeliveryControls({
           type="submit"
           className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-headline"
         >
-          Ready
+          Ready to send
         </button>
       </form>
     );
@@ -86,7 +98,7 @@ function DeliveryControls({
               type="submit"
               className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-headline"
             >
-              Assign
+              Assign rider
             </button>
           </form>
         ) : null}
@@ -150,7 +162,7 @@ function DeliveryControls({
             type="submit"
             className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-headline"
           >
-            On road
+            Out for delivery
           </button>
         </form>
         <form action={updateAssignmentStatusAction}>
@@ -217,7 +229,7 @@ function DeliveryControls({
             type="submit"
             className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-headline"
           >
-            Reassign
+            Reassign rider
           </button>
         </form>
         <form action={updateAssignmentStatusAction}>
@@ -279,7 +291,7 @@ function OrderCard({
         {order.riderName ? (
           <div className="text-label">
             {order.riderName}
-            {order.riderPhone ? ` · ${order.riderPhone}` : ""}
+            {order.riderPhone ? ` / ${order.riderPhone}` : ""}
           </div>
         ) : null}
       </div>
@@ -316,7 +328,7 @@ function OrderCard({
 
       {order.latestDeliveryEventType ? (
         <div className="mt-4 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-          {formatStatusLabel(order.latestDeliveryEventType)} ·{" "}
+          {formatStatusLabel(order.latestDeliveryEventType)} /{" "}
           {formatTimestamp(order.latestDeliveryEventAt)}
         </div>
       ) : null}
@@ -464,13 +476,13 @@ export default async function AdminDeliveryPage() {
             riders={riders}
           />
           <StageCard
-            title="Ready"
+            title="Ready to Send"
             count={readyOrders.length}
             orders={readyOrders}
             riders={riders}
           />
           <StageCard
-            title="Live"
+            title="Out for Delivery"
             count={liveOrders.length}
             orders={liveOrders}
             riders={riders}

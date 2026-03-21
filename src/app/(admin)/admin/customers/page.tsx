@@ -2,6 +2,7 @@ import { CircleUserRound, MapPinHouse, UserRoundCheck } from "lucide-react";
 import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { listAdminCustomerSummaries } from "@/lib/db/repositories/admin-repository";
+import { formatFlowStatusLabel } from "@/lib/orders/presentation";
 
 function formatTimestamp(value?: string | null) {
   if (!value) {
@@ -19,7 +20,7 @@ function formatStatusLabel(value?: string | null) {
     return null;
   }
 
-  return value.replace(/_/g, " ");
+  return formatFlowStatusLabel(value);
 }
 
 export default async function AdminCustomersPage() {

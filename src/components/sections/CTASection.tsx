@@ -17,12 +17,20 @@ import {
 import type { ProductId } from "@/lib/marketing/types";
 
 export function CTASection() {
-  const { homeSectionsByKey, productsById } = useMarketingContent();
+  const { homeSectionsByKey, productIds, productsById } = useMarketingContent();
   const { addItem, itemCount, openCart } = useCommerce();
   const ctaSettings = homeSectionsByKey.cta?.settings as
     | { defaultProductId?: ProductId }
     | undefined;
-  const defaultProductId = ctaSettings?.defaultProductId ?? "protein_chocolate";
+  const defaultProductId =
+    ctaSettings?.defaultProductId && productsById[ctaSettings.defaultProductId]
+      ? ctaSettings.defaultProductId
+      : productIds[0] ?? null;
+
+  if (!defaultProductId || !productsById[defaultProductId]) {
+    return null;
+  }
+
   const flagshipProduct = productsById[defaultProductId];
   const flagshipPricing = getProductPriceSnapshot(productsById, defaultProductId);
   const ctaBadges = ["Subsidized", SHOT_BUNDLE.shortLabel, "WhatsApp Checkout"];

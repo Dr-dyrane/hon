@@ -95,7 +95,7 @@ export function ProductEditorForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 pb-24">
+    <form id="admin-product-edit-form" onSubmit={handleSubmit} className="space-y-6 pb-24">
       <input type="hidden" name="productId" value={product.productId} />
 
       <div className="grid gap-6 min-[1500px]:grid-cols-[minmax(0,1fr)_300px]">

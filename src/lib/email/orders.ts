@@ -87,6 +87,7 @@ async function loadOrder(orderId: string) {
 export async function sendOrderPlacedNotifications(input: {
   orderId: string;
   customerLink?: string | null;
+  notifyAdmin?: boolean;
 }) {
   const order = await loadOrder(input.orderId);
 
@@ -94,6 +95,7 @@ export async function sendOrderPlacedNotifications(input: {
     return;
   }
 
+  const isRequest = order.status === "checkout_draft";
   const deadlineText = order.transferDeadlineAt
     ? new Intl.DateTimeFormat("en-US", {
         dateStyle: "medium",
@@ -120,28 +122,42 @@ export async function sendOrderPlacedNotifications(input: {
   if (order.customerEmail) {
     await sendSafe({
       to: order.customerEmail,
-      subject: `House of Prax order ${order.orderNumber}`,
-      text: `Your House of Prax order ${order.orderNumber} is waiting for transfer. Use reference ${order.transferReference}. Total: ${formatNgn(order.totalNgn)}.`,
+      subject: isRequest
+        ? `House of Prax request ${order.orderNumber}`
+        : `House of Prax order ${order.orderNumber}`,
+      text: isRequest
+        ? `Your House of Prax request ${order.orderNumber} has been received. Transfer details will appear after approval.`
+        : `Your House of Prax order ${order.orderNumber} is waiting for transfer. Use reference ${order.transferReference}. Total: ${formatNgn(order.totalNgn)}.`,
       html: buildShell({
         eyebrow: "House of Prax",
-        title: "Order received",
-        intro: `Your order is ready for transfer. Use the reference ${order.transferReference} and complete payment before ${deadlineText}.`,
-        bodyHtml: `${buildOrderFacts(order)}${bankBlock}${input.customerLink ? buildActionLink("Open order", input.customerLink) : ""}`,
-        footer: "Once payment proof is added, Praxy will review it from the console.",
+        title: isRequest ? "Request received" : "Order received",
+        intro: isRequest
+          ? "Praxy received your request. Transfer details will appear once it is accepted."
+          : `Your order is ready for transfer. Use the reference ${order.transferReference} and complete payment before ${deadlineText}.`,
+        bodyHtml: `${buildOrderFacts(order)}${isRequest ? "" : bankBlock}${input.customerLink ? buildActionLink("Open order", input.customerLink) : ""}`,
+        footer: isRequest
+          ? "You can follow the request from your order page."
+          : "Once payment proof is added, Praxy will review it from the console.",
       }),
     });
   }
 
-  if (serverEnv.auth.adminEmails.length > 0) {
+  if ((input.notifyAdmin ?? true) && serverEnv.auth.adminEmails.length > 0) {
     const adminHref = `${serverEnv.public.appUrl}/admin/orders/${order.orderId}`;
     await sendSafe({
       to: serverEnv.auth.adminEmails,
-      subject: `New order ${order.orderNumber}`,
-      text: `New order ${order.orderNumber} from ${order.customerName}. Total: ${formatNgn(order.totalNgn)}.`,
+      subject: isRequest
+        ? `New request ${order.orderNumber}`
+        : `New order ${order.orderNumber}`,
+      text: isRequest
+        ? `New request ${order.orderNumber} from ${order.customerName}.`
+        : `New order ${order.orderNumber} from ${order.customerName}. Total: ${formatNgn(order.totalNgn)}.`,
       html: buildShell({
         eyebrow: "Operations console",
-        title: "New order",
-        intro: `${order.customerName} just placed an order and is waiting for transfer instructions.`,
+        title: isRequest ? "New request" : "New order",
+        intro: isRequest
+          ? `${order.customerName} submitted a new order request.`
+          : `${order.customerName} just placed an order and is waiting for transfer instructions.`,
         bodyHtml: `${buildOrderFacts(order)}
           <div style="margin-top:18px;border-radius:24px;background:#f4f2ea;padding:18px;">
             <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:600;">Customer</div>

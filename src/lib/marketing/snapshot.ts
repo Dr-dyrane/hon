@@ -11,6 +11,7 @@ import type {
   MarketingSocialProof,
   ProductId,
 } from "@/lib/marketing/types";
+import { isStorefrontVisibleProduct } from "@/lib/catalog/storefront";
 
 export type MarketingSnapshot = {
   source: "bootstrap" | "database";
@@ -36,13 +37,15 @@ export function createMarketingSnapshot(
   const categories = [...bootstrap.categories].sort(
     (left, right) => left.sortOrder - right.sortOrder
   );
-  const products = [...bootstrap.products].sort((left, right) => {
-    if (left.categoryId !== right.categoryId) {
-      return left.categoryId.localeCompare(right.categoryId);
-    }
+  const products = [...bootstrap.products]
+    .filter((product) => isStorefrontVisibleProduct(product))
+    .sort((left, right) => {
+      if (left.categoryId !== right.categoryId) {
+        return left.categoryId.localeCompare(right.categoryId);
+      }
 
-    return left.sortOrder - right.sortOrder;
-  });
+      return left.sortOrder - right.sortOrder;
+    });
   const ingredients = [...bootstrap.ingredients].sort(
     (left, right) => left.sortOrder - right.sortOrder
   );

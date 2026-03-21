@@ -5,7 +5,9 @@ import { Logo } from "@/components/ui/Logo";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { WorkspaceHeaderTitle } from "@/components/shell/WorkspaceHeaderTitle";
 import { WorkspaceNav } from "@/components/shell/WorkspaceNav";
+import { WorkspaceNotificationSheet } from "@/components/shell/WorkspaceNotificationSheet";
 import type { ShellHeaderRoute, ShellNavItem } from "@/lib/app-shell";
+import type { WorkspaceNotification } from "@/lib/db/types";
 
 export function WorkspaceShell({
   eyebrow,
@@ -17,6 +19,7 @@ export function WorkspaceShell({
   mobileNav = false,
   sessionEmail,
   sessionRoleLabel,
+  notifications = [],
 }: {
   eyebrow: string;
   title: string;
@@ -27,6 +30,7 @@ export function WorkspaceShell({
   mobileNav?: boolean;
   sessionEmail?: string;
   sessionRoleLabel?: string;
+  notifications?: WorkspaceNotification[];
 }) {
   return (
     <div className="min-h-svh bg-[radial-gradient(circle_at_top,rgba(15,61,46,0.08),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,242,234,0.9)_100%)] dark:bg-[radial-gradient(circle_at_top,rgba(215,197,163,0.09),transparent_38%),linear-gradient(180deg,rgba(18,22,18,0.98)_0%,rgba(10,12,10,1)_100%)]">
@@ -92,6 +96,7 @@ export function WorkspaceShell({
                       <SignOutButton />
                     </div>
                   ) : null}
+                  <WorkspaceNotificationSheet notifications={notifications} />
                   <ThemeToggle />
                 </div>
               </div>
@@ -104,7 +109,7 @@ export function WorkspaceShell({
         </div>
       </div>
 
-      {mobileNav ? <WorkspaceNav items={navItems} mode="mobile" /> : null}
+      {mobileNav ? <WorkspaceNav items={navItems} headerRoutes={headerRoutes} mode="mobile" /> : null}
     </div>
   );
 }

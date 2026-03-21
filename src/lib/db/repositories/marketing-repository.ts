@@ -100,6 +100,8 @@ export async function listMarketingProducts() {
         limit 1
       ) model_media on true
       where p.status = 'active'
+        and p.is_available = true
+        and p.merchandising_state <> 'hidden'
       group by
         p.slug,
         pc.slug,

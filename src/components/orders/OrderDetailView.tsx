@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { CheckCircle2, Clock3, CreditCard, Truck } from "lucide-react";
 import { PaymentProofUploadCard } from "@/components/orders/PaymentProofUploadCard";
 import { OrderReturnRequestCard } from "@/components/orders/OrderReturnRequestCard";
 import { WorkspaceContextPanel } from "@/components/shell/WorkspaceContextPanel";
@@ -13,6 +14,11 @@ import type {
   PaymentProofRow,
   PortalOrderDetail,
 } from "@/lib/db/types";
+import {
+  formatFlowStatusLabel,
+  getOrderStagePresentation,
+  getPaymentStatusPresentation,
+} from "@/lib/orders/presentation";
 
 const mapToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
@@ -75,9 +81,16 @@ function getDeliveryLine(snapshot: Record<string, unknown>) {
   return "Pending";
 }
 
-function buildStatusTag(value: string) {
-  return { label: formatStatusLabel(value) };
-}
+const STAGE_ICONS = {
+  requested: Clock3,
+  awaiting_transfer: CreditCard,
+  money_sent: CreditCard,
+  preparing: CheckCircle2,
+  out_for_delivery: Truck,
+  delivered: CheckCircle2,
+  cancelled: Clock3,
+  expired: Clock3,
+} as const;
 
 export function OrderDetailView({
   order,
@@ -116,17 +129,17 @@ export function OrderDetailView({
 
   const coords = getTrackingCoords(order.deliveryAddressSnapshot);
   const mapSrc = coords ? buildMapUrl(coords.lat, coords.lng) : null;
+  const stage = getOrderStagePresentation(order);
+  const paymentState = getPaymentStatusPresentation(order.payment?.status ?? order.paymentStatus);
+  const StageIcon = STAGE_ICONS[stage.key];
+  const isRequestPending = order.status === "checkout_draft";
 
   return (
     <div className="space-y-6">
       <WorkspaceContextPanel
         title={`#${order.orderNumber}`}
         detail={formatNgn(order.totalNgn)}
-        tags={[
-          buildStatusTag(order.status),
-          buildStatusTag(order.paymentStatus),
-          buildStatusTag(order.fulfillmentStatus),
-        ]}
+        tags={[{ label: stage.label, tone: stage.tone }]}
         meta={[
           {
             label: "Placed",
@@ -134,10 +147,10 @@ export function OrderDetailView({
           },
           {
             label: "Ref",
-            value: order.transferReference,
+            value: isRequestPending ? "Pending" : order.transferReference,
           },
           {
-            label: "Drop",
+            label: "Address",
             value: getDeliveryLine(order.deliveryAddressSnapshot),
           },
         ]}
@@ -146,15 +159,24 @@ export function OrderDetailView({
       <QuietValueStrip
         items={[
           {
+            label: "Stage",
+            value: stage.label,
+            detail: stage.detail,
+          },
+          {
             label: "Due",
             value: formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn),
-            detail: order.payment?.status
-              ? formatStatusLabel(order.payment.status)
-              : "Pending",
+            detail: isRequestPending
+              ? "Request pending"
+              : order.payment?.status
+                ? paymentState.label
+                : "Pending",
           },
           {
             label: "Deadline",
-            value: order.transferDeadlineAt
+            value: isRequestPending
+              ? "Pending"
+              : order.transferDeadlineAt
               ? formatTimestamp(order.transferDeadlineAt)
               : "Open",
           },
@@ -166,12 +188,7 @@ export function OrderDetailView({
           {
             label: "Proofs",
             value: `${proofs.length}`,
-            detail: proofs.length > 0 ? "Received" : "Waiting",
-          },
-          {
-            label: "Return",
-            value: returnCase ? formatStatusLabel(returnCase.status) : "Quiet",
-            detail: returnCase ? "Case" : "None",
+            detail: isRequestPending ? "Locked" : proofs.length > 0 ? "Received" : "Waiting",
           },
         ]}
         columns={4}
@@ -179,35 +196,54 @@ export function OrderDetailView({
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
         <div className="space-y-4">
-          <OrderSurface title="Pay">
-            <div className="space-y-3">
-              <div className="text-[28px] font-semibold tracking-tight text-label">
-                {formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn)}
+          <OrderSurface
+            title="Transfer"
+            action={
+              <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                <StageIcon className="h-4 w-4" strokeWidth={1.8} />
+                <span>{stage.label}</span>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <SurfaceMeta
-                  label="Bank"
-                  value={order.payment?.bankName ?? "Pending"}
-                />
-                <SurfaceMeta
-                  label="Name"
-                  value={order.payment?.accountName ?? "Pending"}
-                />
+            }
+          >
+            {isRequestPending ? (
+              <div className="space-y-3">
+                <div className="text-[28px] font-semibold tracking-tight text-label">
+                  {formatNgn(order.totalNgn)}
+                </div>
+                <div className="rounded-[24px] bg-system-fill/42 px-4 py-4 text-sm text-secondary-label">
+                  Transfer details will appear here after approval.
+                </div>
               </div>
-              <div className="rounded-[24px] bg-system-fill/42 px-4 py-4">
-                <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                  Number
+            ) : (
+              <div className="space-y-3">
+                <div className="text-[28px] font-semibold tracking-tight text-label">
+                  {formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn)}
                 </div>
-                <div className="mt-2 text-[26px] font-semibold tracking-tight text-label">
-                  {order.payment?.accountNumber ?? "Pending"}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <SurfaceMeta
+                    label="Bank"
+                    value={order.payment?.bankName ?? "Pending"}
+                  />
+                  <SurfaceMeta
+                    label="Name"
+                    value={order.payment?.accountName ?? "Pending"}
+                  />
                 </div>
-                {order.payment?.instructions ? (
-                  <div className="mt-2 text-sm text-secondary-label">
-                    {order.payment.instructions}
+                <div className="rounded-[24px] bg-system-fill/42 px-4 py-4">
+                  <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                    Number
                   </div>
-                ) : null}
+                  <div className="mt-2 text-[26px] font-semibold tracking-tight text-label">
+                    {order.payment?.accountNumber ?? "Pending"}
+                  </div>
+                  {order.payment?.instructions ? (
+                    <div className="mt-2 text-sm text-secondary-label">
+                      {order.payment.instructions}
+                    </div>
+                  ) : null}
+                </div>
               </div>
-            </div>
+            )}
           </OrderSurface>
 
           <OrderSurface title="Items">
@@ -236,7 +272,7 @@ export function OrderDetailView({
 
         <div className="space-y-4">
           <OrderSurface
-            title="Delivery"
+            title="Delivery Address"
             action={
               trackingHref &&
               ["ready_for_dispatch", "out_for_delivery", "delivered"].includes(
@@ -259,19 +295,25 @@ export function OrderDetailView({
           </OrderSurface>
 
           <OrderSurface
-            title="Proof"
+            title={order.paymentId ? "Money Sent" : "Payment"}
             action={
               <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                {order.payment?.status ? formatStatusLabel(order.payment.status) : "Pending"}
+                {stage.detail}
               </span>
             }
           >
-            <PaymentProofUploadCard
-              orderId={order.orderId}
-              paymentId={order.paymentId}
-              accessToken={accessToken}
-              paymentStatus={order.payment?.status ?? order.paymentStatus}
-            />
+            {order.paymentId ? (
+              <PaymentProofUploadCard
+                orderId={order.orderId}
+                paymentId={order.paymentId}
+                accessToken={accessToken}
+                paymentStatus={order.payment?.status ?? order.paymentStatus}
+              />
+            ) : (
+              <div className="rounded-[22px] bg-system-fill/36 px-4 py-3 text-sm text-secondary-label">
+                Available after approval.
+              </div>
+            )}
 
             {proofs.length > 0 ? (
               <div className="mt-4 grid gap-2 text-xs text-secondary-label">
@@ -321,7 +363,7 @@ export function OrderDetailView({
                     key={event.eventId}
                     className="flex items-center justify-between gap-4 rounded-[22px] bg-system-fill/36 px-4 py-3"
                   >
-                    <span className="text-label">{formatStatusLabel(event.toStatus)}</span>
+                    <span className="text-label">{formatFlowStatusLabel(event.toStatus)}</span>
                     <span>{formatTimestamp(event.createdAt)}</span>
                   </div>
                 ))

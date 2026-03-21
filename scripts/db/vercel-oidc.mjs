@@ -79,7 +79,7 @@ function isTokenFresh(token, bufferMs = OIDC_REFRESH_BUFFER_MS) {
   return payload.exp * 1000 > Date.now() + bufferMs;
 }
 
-function readPulledOidcToken(rootDir = process.cwd()) {
+function readPulledOidcToken(rootDir = process.cwd(), bufferMs = OIDC_REFRESH_BUFFER_MS) {
   const candidatePaths = [
     path.join(rootDir, ".vercel", ".env.development.local"),
     path.join(rootDir, ".vercel", ".env.preview.local"),
@@ -89,7 +89,7 @@ function readPulledOidcToken(rootDir = process.cwd()) {
   for (const filePath of candidatePaths) {
     const token = readEnvFileValue(filePath, "VERCEL_OIDC_TOKEN");
 
-    if (isTokenFresh(token)) {
+    if (isTokenFresh(token, bufferMs)) {
       return token;
     }
   }
@@ -185,11 +185,22 @@ export async function getRuntimeVercelOidcToken() {
     return process.env.VERCEL_OIDC_TOKEN;
   }
 
+  if (isTokenFresh(process.env.VERCEL_OIDC_TOKEN, 0)) {
+    return process.env.VERCEL_OIDC_TOKEN;
+  }
+
   const pulledToken = readPulledOidcToken();
 
   if (pulledToken) {
     process.env.VERCEL_OIDC_TOKEN = pulledToken;
     return pulledToken;
+  }
+
+  const stillValidPulledToken = readPulledOidcToken(process.cwd(), 0);
+
+  if (stillValidPulledToken) {
+    process.env.VERCEL_OIDC_TOKEN = stillValidPulledToken;
+    return stillValidPulledToken;
   }
 
   const cliRefreshedToken = refreshPulledOidcTokenViaCli();

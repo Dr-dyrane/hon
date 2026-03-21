@@ -27,8 +27,11 @@ export function HeroSection() {
   const heroSettings = homeSectionsByKey.hero?.settings as
     | { badgeItems?: string[]; featuredProductId?: ProductId }
     | undefined;
-  const defaultProductId = heroSettings?.featuredProductId ?? productIds[0];
-  const [currentProduct, setCurrentProduct] = useState<ProductId>(defaultProductId);
+  const defaultProductId =
+    heroSettings?.featuredProductId && productsById[heroSettings.featuredProductId]
+      ? heroSettings.featuredProductId
+      : productIds[0] ?? null;
+  const [currentProduct, setCurrentProduct] = useState<ProductId | null>(defaultProductId);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -53,6 +56,10 @@ export function HeroSection() {
   }, [hydrated]);
 
   const isDark = hydrated && resolvedTheme === "dark";
+
+  if (!currentProduct || !productsById[currentProduct]) {
+    return null;
+  }
 
   const revealVariants: Variants = {
     hidden: { opacity: 0, y: 30 },

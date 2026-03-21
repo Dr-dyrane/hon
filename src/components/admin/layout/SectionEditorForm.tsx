@@ -42,7 +42,7 @@ export function SectionEditorForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 pb-24">
+    <form id="admin-layout-section-form" onSubmit={handleSubmit} className="space-y-6 pb-24">
       <input type="hidden" name="sectionId" value={section.sectionId} />
 
       <div className="grid gap-6 min-[1500px]:grid-cols-[minmax(0,1fr)_300px]">

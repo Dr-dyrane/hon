@@ -1,23 +1,11 @@
 import Link from "next/link";
-import { Clock3, Landmark, PackageCheck, RotateCcw } from "lucide-react";
+import { CircleEllipsis, Clock3, Landmark, PackageCheck, RotateCcw } from "lucide-react";
 import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
 import { listOpenOrderReturnCasesForAdmin } from "@/lib/db/repositories/order-returns-repository";
 import { listOrdersForAdmin } from "@/lib/db/repositories/orders-repository";
-
-const friendlyStatusLabel: Record<string, string> = {
-  awaiting_transfer: "Awaiting transfer",
-  payment_submitted: "Payment submitted",
-  payment_under_review: "Under review",
-  payment_confirmed: "Payment confirmed",
-  preparing: "Preparing",
-  ready_for_dispatch: "Ready for dispatch",
-  out_for_delivery: "Out for delivery",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
-  expired: "Expired",
-};
+import { getOrderStagePresentation } from "@/lib/orders/presentation";
 
 function formatTimestamp(value?: string | null) {
   if (!value) {
@@ -31,7 +19,7 @@ function formatTimestamp(value?: string | null) {
 }
 
 function formatStatusLabel(value: string) {
-  return friendlyStatusLabel[value] ?? value.replace(/_/g, " ");
+  return value.replace(/_/g, " ");
 }
 
 export default async function AdminOrdersPage() {
@@ -40,14 +28,17 @@ export default async function AdminOrdersPage() {
     listOrdersForAdmin(40, session.email),
     listOpenOrderReturnCasesForAdmin(12, session.email),
   ]);
+  const requests = orders.filter((order) => order.status === "checkout_draft").length;
   const awaitingTransfer = orders.filter(
-    (order) => order.paymentStatus === "awaiting_transfer"
+    (order) =>
+      order.status !== "checkout_draft" &&
+      order.paymentStatus === "awaiting_transfer"
   ).length;
   const activeOrders = orders.filter(
     (order) => !["delivered", "cancelled", "expired"].includes(order.status)
   ).length;
-  const dispatchReady = orders.filter(
-    (order) => ["payment_confirmed", "ready_for_dispatch"].includes(order.status)
+  const preparingOrders = orders.filter(
+    (order) => getOrderStagePresentation(order).key === "preparing"
   ).length;
 
   return (
@@ -69,15 +60,21 @@ export default async function AdminOrdersPage() {
               icon: Clock3,
             },
             {
+              label: "Requests",
+              value: `${requests}`,
+              detail: "Pending",
+              icon: CircleEllipsis,
+            },
+            {
               label: "Awaiting",
               value: `${awaitingTransfer}`,
               detail: "Transfer",
               icon: Landmark,
             },
             {
-              label: "Ready",
-              value: `${dispatchReady}`,
-              detail: "Dispatch",
+              label: "Preparing",
+              value: `${preparingOrders}`,
+              detail: "Orders",
               icon: PackageCheck,
               tone: "success",
             },
@@ -159,52 +156,54 @@ export default async function AdminOrdersPage() {
       ) : null}
 
       <section className="grid gap-4">
-        {orders.map((order) => (
-          <article
-            key={order.orderId}
-            className="glass-morphism rounded-[32px] bg-system-background/72 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
-          >
-            <div className="flex flex-col gap-4 min-[980px]:flex-row min-[980px]:items-start min-[980px]:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="text-lg font-semibold tracking-tight text-label">
-                    #{order.orderNumber}
+        {orders.map((order) => {
+          const stage = getOrderStagePresentation(order);
+
+          return (
+            <article
+              key={order.orderId}
+              className="glass-morphism rounded-[32px] bg-system-background/72 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
+            >
+              <div className="flex flex-col gap-4 min-[980px]:flex-row min-[980px]:items-start min-[980px]:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="text-lg font-semibold tracking-tight text-label">
+                      #{order.orderNumber}
+                    </div>
+                    <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                      {stage.label}
+                    </span>
                   </div>
-                  <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-                    {formatStatusLabel(order.status)}
-                  </span>
-                  <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-                    {formatStatusLabel(order.paymentStatus)}
-                  </span>
-                </div>
+                  <div className="mt-2 text-sm text-secondary-label">{stage.detail}</div>
 
-                <div className="mt-3 grid gap-3 text-sm text-secondary-label sm:grid-cols-2 xl:grid-cols-4">
-                  <MetaItem label="Customer" value={order.customerName} />
-                  <MetaItem label="Phone" value={order.customerPhone} />
-                  <MetaItem label="Placed" value={formatTimestamp(order.placedAt)} />
-                  <MetaItem label="Deadline" value={formatTimestamp(order.transferDeadlineAt)} />
-                </div>
-              </div>
-
-              <div className="min-w-[150px] shrink-0">
-                <div className="text-right text-sm text-secondary-label">
-                  <div className="text-lg font-semibold text-label">{formatNgn(order.totalNgn)}</div>
-                  <div className="mt-1">
-                    {order.itemCount} item{order.itemCount === 1 ? "" : "s"}
+                  <div className="mt-3 grid gap-3 text-sm text-secondary-label sm:grid-cols-2 xl:grid-cols-4">
+                    <MetaItem label="Customer" value={order.customerName} />
+                    <MetaItem label="Phone" value={order.customerPhone} />
+                    <MetaItem label="Placed" value={formatTimestamp(order.placedAt)} />
+                    <MetaItem label="Next" value={stage.detail} />
                   </div>
                 </div>
-                <div className="mt-4 flex flex-wrap justify-end gap-2">
-                  <Link
-                    href={`/admin/orders/${order.orderId}`}
-                    className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
-                  >
-                    Open
-                  </Link>
+
+                <div className="min-w-[150px] shrink-0">
+                  <div className="text-right text-sm text-secondary-label">
+                    <div className="text-lg font-semibold text-label">{formatNgn(order.totalNgn)}</div>
+                    <div className="mt-1">
+                      {order.itemCount} item{order.itemCount === 1 ? "" : "s"}
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap justify-end gap-2">
+                    <Link
+                      href={`/admin/orders/${order.orderId}`}
+                      className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                    >
+                      Open
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </section>
     </div>
   );

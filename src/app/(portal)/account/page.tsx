@@ -6,6 +6,7 @@ import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAuthenticatedSession } from "@/lib/auth/guards";
 import { listPublishedCatalogProducts } from "@/lib/db/repositories/catalog-repository";
 import { getPortalAccountSummary } from "@/lib/db/repositories/account-repository";
+import { formatFlowStatusLabel } from "@/lib/orders/presentation";
 
 export default async function AccountPage() {
   const session = await requireAuthenticatedSession("/account");
@@ -24,7 +25,7 @@ export default async function AccountPage() {
     <div className="space-y-8 pb-20 md:space-y-10">
       <section className="space-y-5">
         <div className="rounded-[24px] bg-system-fill/42 p-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.04)] md:inline-flex">
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-2 gap-1.5 md:grid-cols-3 xl:grid-cols-4">
             <QuickLink href="/account#store" label="Store" />
             <QuickLink href="/account/orders" label="Orders" />
             <QuickLink href="/account/addresses" label="Places" />
@@ -70,7 +71,7 @@ export default async function AccountPage() {
                   #{accountSummary.latestOrderNumber}
                 </div>
                 <div className="mt-1 truncate text-xs text-secondary-label">
-                  {(accountSummary.latestOrderStatus ?? "pending").replace(/_/g, " ")}
+                  {formatFlowStatusLabel(accountSummary.latestOrderStatus ?? "pending")}
                 </div>
               </div>
               <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
@@ -121,19 +122,7 @@ export default async function AccountPage() {
         </PortalPanel>
       </section>
 
-      <section id="store" className="space-y-5 scroll-mt-28">
-        <div className="space-y-2">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-            Store
-          </div>
-          <h1 className="text-4xl font-semibold tracking-tight text-label md:text-5xl">
-            Start a fresh order.
-          </h1>
-          <p className="text-sm text-secondary-label">
-            Add products here. The same cart and checkout flow stays available inside your portal.
-          </p>
-        </div>
-
+      <section id="store" className="scroll-mt-28">
         <PortalStoreShelf products={products} />
       </section>
     </div>

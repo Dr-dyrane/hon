@@ -1,8 +1,35 @@
+export type ShellNavIcon =
+  | "store"
+  | "cart"
+  | "orders"
+  | "addresses"
+  | "reviews"
+  | "profile"
+  | "overview"
+  | "payments"
+  | "delivery"
+  | "catalog"
+  | "layout"
+  | "customers"
+  | "settings";
+
+export type ShellFabIcon = ShellNavIcon | "add" | "save";
+
+export type ShellFabAction = {
+  label: string;
+  icon: ShellFabIcon;
+  kind: "cart" | "link" | "submit" | "event";
+  href?: string;
+  formId?: string;
+  eventName?: string;
+};
+
 export type ShellNavItem = {
   href: string;
   label: string;
   shortLabel: string;
   description: string;
+  icon: ShellNavIcon;
   match?: "exact" | "prefix";
 };
 
@@ -15,6 +42,7 @@ export type ShellHeaderRoute = {
   pattern: string;
   title: string;
   breadcrumbs?: ShellBreadcrumb[];
+  mobileFab?: ShellFabAction;
 };
 
 export type ShellHeaderContext = {
@@ -81,6 +109,14 @@ function matchShellRoutePattern(pathname: string, pattern: string) {
   });
 }
 
+export function getShellMatchedRoute(pathname: string, routes: ShellHeaderRoute[]) {
+  const normalizedPathname = normalizePathname(pathname);
+
+  return (
+    routes.find((route) => matchShellRoutePattern(normalizedPathname, route.pattern)) ?? null
+  );
+}
+
 export function getActiveShellNavItem(pathname: string, items: ShellNavItem[]) {
   const matches = items.filter((item) => isActiveShellPath(pathname, item));
 
@@ -105,7 +141,7 @@ export function getShellHeaderContext({
   const normalizedPathname = normalizePathname(pathname);
   const activeItem = getActiveShellNavItem(normalizedPathname, navItems);
   const matchedRoute =
-    routes.find((route) => matchShellRoutePattern(normalizedPathname, route.pattern)) ?? null;
+    getShellMatchedRoute(normalizedPathname, routes);
   const lastSegment = splitPathname(normalizedPathname).at(-1) ?? null;
   const breadcrumbs =
     matchedRoute?.breadcrumbs ??
@@ -130,6 +166,7 @@ export const PORTAL_NAV_ITEMS: ShellNavItem[] = [
     label: "Store",
     shortLabel: "Store",
     description: "In-portal shopping and order overview.",
+    icon: "store",
     match: "exact",
   },
   {
@@ -137,24 +174,28 @@ export const PORTAL_NAV_ITEMS: ShellNavItem[] = [
     label: "Orders",
     shortLabel: "Orders",
     description: "Order history, payment status, and tracking.",
+    icon: "orders",
   },
   {
     href: "/account/addresses",
     label: "Addresses",
     shortLabel: "Places",
     description: "Saved delivery addresses and preferences.",
+    icon: "addresses",
   },
   {
     href: "/account/reviews",
     label: "Reviews",
     shortLabel: "Reviews",
     description: "Pending ratings and submitted feedback.",
+    icon: "reviews",
   },
   {
     href: "/account/profile",
     label: "Profile",
     shortLabel: "Account",
     description: "Identity, phone number, and preferences.",
+    icon: "profile",
   },
 ];
 
@@ -162,10 +203,20 @@ export const PORTAL_HEADER_ROUTES: ShellHeaderRoute[] = [
   {
     pattern: "/account",
     title: "Store",
+    mobileFab: {
+      label: "Open cart",
+      icon: "cart",
+      kind: "cart",
+    },
   },
   {
     pattern: "/account/orders",
     title: "Orders",
+    mobileFab: {
+      label: "Open cart",
+      icon: "cart",
+      kind: "cart",
+    },
   },
   {
     pattern: "/account/orders/[orderId]",
@@ -180,6 +231,12 @@ export const PORTAL_HEADER_ROUTES: ShellHeaderRoute[] = [
   {
     pattern: "/account/addresses",
     title: "Addresses",
+    mobileFab: {
+      label: "Save address",
+      icon: "add",
+      kind: "submit",
+      formId: "account-address-form",
+    },
   },
   {
     pattern: "/account/reviews",
@@ -188,6 +245,12 @@ export const PORTAL_HEADER_ROUTES: ShellHeaderRoute[] = [
   {
     pattern: "/account/profile",
     title: "Profile",
+    mobileFab: {
+      label: "Save profile",
+      icon: "save",
+      kind: "submit",
+      formId: "account-profile-form",
+    },
   },
   {
     pattern: "/account/reorder",
@@ -201,6 +264,7 @@ export const ADMIN_NAV_ITEMS: ShellNavItem[] = [
     label: "Overview",
     shortLabel: "Home",
     description: "Queues, delivery pressure, and low-stock signals.",
+    icon: "overview",
     match: "exact",
   },
   {
@@ -208,48 +272,56 @@ export const ADMIN_NAV_ITEMS: ShellNavItem[] = [
     label: "Orders",
     shortLabel: "Orders",
     description: "Operational order board and detailed workflow control.",
+    icon: "orders",
   },
   {
     href: "/admin/payments",
     label: "Payments",
     shortLabel: "Payments",
     description: "Manual transfer review and proof verification.",
+    icon: "payments",
   },
   {
     href: "/admin/delivery",
     label: "Delivery",
     shortLabel: "Delivery",
     description: "Dispatch, assignment, and live tracking supervision.",
+    icon: "delivery",
   },
   {
     href: "/admin/catalog/products",
     label: "Catalog",
     shortLabel: "Catalog",
     description: "Products, variants, merchandising, and stock controls.",
+    icon: "catalog",
   },
   {
     href: "/admin/layout",
     label: "Layout",
     shortLabel: "Layout",
     description: "Published sections, drafts, and breakpoint previews.",
+    icon: "layout",
   },
   {
     href: "/admin/customers",
     label: "Customers",
     shortLabel: "People",
     description: "Customer lookup, history, and support context.",
+    icon: "customers",
   },
   {
     href: "/admin/reviews",
     label: "Reviews",
     shortLabel: "Reviews",
     description: "Moderation and featured trust signals.",
+    icon: "reviews",
   },
   {
     href: "/admin/settings",
     label: "Settings",
     shortLabel: "Settings",
     description: "Bank accounts, notifications, delivery, and admin controls.",
+    icon: "settings",
   },
 ];
 
@@ -278,16 +350,34 @@ export const ADMIN_HEADER_ROUTES: ShellHeaderRoute[] = [
   {
     pattern: "/admin/catalog/products",
     title: "Catalog",
+    mobileFab: {
+      label: "New product",
+      icon: "add",
+      kind: "link",
+      href: "/admin/catalog/products/new",
+    },
   },
   {
     pattern: "/admin/catalog/products/new",
     title: "New Product",
     breadcrumbs: [{ href: "/admin/catalog/products", label: "Products" }],
+    mobileFab: {
+      label: "Create product",
+      icon: "add",
+      kind: "submit",
+      formId: "admin-product-create-form",
+    },
   },
   {
     pattern: "/admin/catalog/products/[productId]",
     title: "Edit Product",
     breadcrumbs: [{ href: "/admin/catalog/products", label: "Products" }],
+    mobileFab: {
+      label: "Save product",
+      icon: "save",
+      kind: "submit",
+      formId: "admin-product-edit-form",
+    },
   },
   {
     pattern: "/admin/layout",
@@ -297,6 +387,12 @@ export const ADMIN_HEADER_ROUTES: ShellHeaderRoute[] = [
     pattern: "/admin/layout/sections/[sectionId]",
     title: "Edit Section",
     breadcrumbs: [{ href: "/admin/layout", label: "Layout" }],
+    mobileFab: {
+      label: "Save section",
+      icon: "save",
+      kind: "submit",
+      formId: "admin-layout-section-form",
+    },
   },
   {
     pattern: "/admin/customers",

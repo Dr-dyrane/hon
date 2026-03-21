@@ -63,7 +63,6 @@ export const getMarketingSnapshot = cache(async (mode: "published" | "draft" = "
 
     if (
       categories.length === 0 ||
-      products.length === 0 ||
       ingredients.length === 0 ||
       sectionRows.length === 0
     ) {

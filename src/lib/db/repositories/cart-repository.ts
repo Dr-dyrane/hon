@@ -3,8 +3,6 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { getShotBundlePricing } from "@/lib/commerce";
 import { isDatabaseConfigured, query, withTransaction } from "@/lib/db/client";
-import { getDeliveryDefaultsSetting } from "@/lib/db/repositories/settings-repository";
-import { reserveInventoryForOrder } from "@/lib/db/repositories/order-inventory";
 import type { CartSnapshot } from "@/lib/db/types";
 
 type CartContext = {
@@ -126,6 +124,7 @@ async function resolveProductVariant(productId: string) {
       where p.slug = $1
         and p.status = 'active'
         and p.is_available = true
+        and p.merchandising_state <> 'hidden'
       limit 1
     `,
     [productId]
@@ -577,10 +576,6 @@ export async function createOrderFromCart(input: CheckoutInput) {
   if (!isDatabaseConfigured()) {
     throw new Error("Database is not configured.");
   }
-  const deliveryDefaults = await getDeliveryDefaultsSetting();
-  const transferDeadlineAt = new Date(
-    Date.now() + deliveryDefaults.staleTransferWindowMinutes * 60 * 1000
-  ).toISOString();
   const normalizedNotes = normalizeOptionalText(input.notes);
   const normalizedEmail = normalizeOptionalText(input.customerEmail)?.toLowerCase() ?? null;
 
@@ -664,16 +659,6 @@ export async function createOrderFromCart(input: CheckoutInput) {
     }
 
     const totals = calculateCartTotals(lines);
-    const defaultBankAccount = await queryFn<{ bankAccountId: string }>(
-      `
-        select id as "bankAccountId"
-        from app.bank_accounts
-        where is_active = true
-        order by is_default desc, created_at desc
-        limit 1
-      `
-    );
-    const bankAccountId = defaultBankAccount.rows[0]?.bankAccountId ?? null;
     let createdOrder: CreatedOrder | null = null;
 
     while (!createdOrder) {
@@ -705,7 +690,7 @@ export async function createOrderFromCart(input: CheckoutInput) {
               $1,
               $2,
               'web',
-              'awaiting_transfer',
+              'checkout_draft',
               'awaiting_transfer',
               'pending',
               $3,
@@ -718,7 +703,7 @@ export async function createOrderFromCart(input: CheckoutInput) {
               $10,
               $11,
               $12,
-              $13
+              null
             )
             returning id as "orderId", public_order_number as "orderNumber"
           `,
@@ -735,7 +720,6 @@ export async function createOrderFromCart(input: CheckoutInput) {
             totals.deliveryFeeNgn,
             totals.totalNgn,
             transferReference,
-            transferDeadlineAt,
           ]
         );
 
@@ -795,23 +779,6 @@ export async function createOrderFromCart(input: CheckoutInput) {
 
     await queryFn(
       `
-        insert into app.payments (
-          order_id,
-          bank_account_id,
-          payment_method,
-          status,
-          expected_amount_ngn,
-          expires_at
-        )
-        values ($1, $2, 'bank_transfer', 'awaiting_transfer', $3, $4)
-      `,
-      [createdOrder.orderId, bankAccountId, totals.totalNgn, transferDeadlineAt]
-    );
-
-    await reserveInventoryForOrder(queryFn, createdOrder.orderId);
-
-    await queryFn(
-      `
         insert into app.order_status_events (
           order_id,
           from_status,
@@ -820,7 +787,7 @@ export async function createOrderFromCart(input: CheckoutInput) {
           actor_email,
           note
         )
-        values ($1, null, 'awaiting_transfer', 'customer', $2, null)
+        values ($1, null, 'checkout_draft', 'customer', $2, null)
       `,
       [createdOrder.orderId, normalizedEmail]
     );

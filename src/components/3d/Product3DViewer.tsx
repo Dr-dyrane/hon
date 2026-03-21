@@ -18,6 +18,7 @@ interface Product3DViewerProps {
   className?: string;
   sectionId?: string;
   scrollActive?: boolean;
+  fallbackImagePath?: string;
 }
 
 function Model({ url, isReady, scrollActive }: { url: string; isReady: boolean; scrollActive?: boolean }) {
@@ -74,6 +75,7 @@ export function Product3DViewer({
   className,
   sectionId,
   scrollActive,
+  fallbackImagePath,
 }: Product3DViewerProps) {
   const [isWebGLSupported] = useState(() => {
     if (typeof document === "undefined") {
@@ -141,13 +143,15 @@ export function Product3DViewer({
         };
 
   if (!isWebGLSupported || hasError) {
-    const fallbackImagePath = modelPath
-      .replace("/models/products/", "/images/products/")
-      .replace(".glb", ".png");
+    const resolvedFallbackImagePath =
+      fallbackImagePath ??
+      modelPath
+        .replace("/models/products/", "/images/products/")
+        .replace(".glb", ".png");
 
     return (
       <ProductFallback
-        imagePath={fallbackImagePath}
+        imagePath={resolvedFallbackImagePath}
         className={className}
       />
     );
@@ -161,7 +165,10 @@ export function Product3DViewer({
         isReady ? "opacity-0 scale-95" : "opacity-100 scale-100"
       )}>
         <ProductFallback
-          imagePath={modelPath.replace("/models/products/", "/images/products/").replace(".glb", ".png")}
+          imagePath={
+            fallbackImagePath ??
+            modelPath.replace("/models/products/", "/images/products/").replace(".glb", ".png")
+          }
           className="w-full h-full"
         />
       </div>

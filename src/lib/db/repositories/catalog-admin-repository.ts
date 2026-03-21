@@ -152,13 +152,17 @@ export async function listAllAdminCatalogProducts() {
     return [] satisfies AdminCatalogProduct[];
   }
 
-  const result = await query<AdminCatalogProduct>(
+  const result = await query<
+    Omit<AdminCatalogProduct, "imageUrl" | "modelUrl">
+  >(
     `
       select
         p.id as "productId",
         p.slug as "productSlug",
         p.name as "productName",
         p.marketing_name as "productMarketingName",
+        p.tagline as "productTagline",
+        p.short_description as "shortDescription",
         pc.id as "categoryId",
         pc.name as "categoryName",
         p.status,
@@ -171,40 +175,71 @@ export async function listAllAdminCatalogProducts() {
         v.status as "variantStatus",
         v.price_ngn as "priceNgn",
         v.compare_at_price_ngn as "compareAtPriceNgn",
+        coalesce(ingredient_stats."ingredientCount", 0) as "ingredientCount",
+        coalesce(media_stats."mediaCount", 0) as "mediaCount",
         ii.on_hand as "inventoryOnHand",
+        ii.reserved as "inventoryReserved",
+        ii.reorder_threshold as "reorderThreshold",
         p.sort_order as "sortOrder",
-        count(vi.ingredient_id)::int as "ingredientCount"
+        image_media."imageStorageKey",
+        model_media."modelStorageKey"
       from app.products p
       left join app.product_categories pc
         on pc.id = p.category_id
       inner join app.product_variants v
         on v.product_id = p.id
        and v.is_default = true
-      left join app.variant_ingredients vi
-        on vi.variant_id = v.id
+      left join lateral (
+        select count(*)::int as "ingredientCount"
+        from app.variant_ingredients vi
+        where vi.variant_id = v.id
+      ) ingredient_stats
+        on true
+      left join lateral (
+        select count(*)::int as "mediaCount"
+        from app.product_media pm
+        where pm.product_id = p.id
+           or pm.variant_id in (
+             select pv.id
+             from app.product_variants pv
+             where pv.product_id = p.id
+           )
+      ) media_stats
+        on true
+      left join lateral (
+        select pm.storage_key as "imageStorageKey"
+        from app.product_media pm
+        where pm.media_type = 'image'
+          and (
+            pm.product_id = p.id
+            or pm.variant_id = v.id
+          )
+        order by
+          case when pm.variant_id = v.id then 0 else 1 end asc,
+          pm.is_primary desc,
+          pm.sort_order asc,
+          pm.created_at asc
+        limit 1
+      ) image_media
+        on true
+      left join lateral (
+        select pm.storage_key as "modelStorageKey"
+        from app.product_media pm
+        where pm.media_type = 'model_3d'
+          and (
+            pm.product_id = p.id
+            or pm.variant_id = v.id
+          )
+        order by
+          case when pm.variant_id = v.id then 0 else 1 end asc,
+          pm.is_primary desc,
+          pm.sort_order asc,
+          pm.created_at asc
+        limit 1
+      ) model_media
+        on true
       left join app.inventory_items ii
         on ii.variant_id = v.id
-      group by
-        p.id,
-        p.slug,
-        p.name,
-        p.marketing_name,
-        pc.id,
-        pc.name,
-        p.status,
-        p.merchandising_state,
-        p.is_available,
-        v.id,
-        v.slug,
-        v.name,
-        v.sku,
-        v.status,
-        v.price_ngn,
-        v.compare_at_price_ngn,
-        ii.on_hand,
-        p.sort_order,
-        p.created_at,
-        pc.sort_order
       order by
         case p.status
           when 'active' then 0
@@ -217,7 +252,11 @@ export async function listAllAdminCatalogProducts() {
     `
   );
 
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    imageUrl: row.imageStorageKey ? resolveCatalogMediaUrl(row.imageStorageKey) : null,
+    modelUrl: row.modelStorageKey ? resolveCatalogMediaUrl(row.modelStorageKey) : null,
+  }));
 }
 
 export async function getAdminCatalogProductDetail(productId: string) {
@@ -312,36 +351,41 @@ export async function listAdminCatalogProductMedia(productId: string) {
   >(
     `
       select
-        id as "mediaId",
-        product_id as "productId",
-        variant_id as "variantId",
+        pm.id as "mediaId",
+        pm.product_id as "productId",
+        pm.variant_id as "variantId",
         case
-          when variant_id is not null then 'variant'
+          when pm.variant_id is not null then 'variant'
           else 'product'
         end as "targetType",
         case
-          when variant_id is not null then coalesce(v.name, 'Variant')
+          when pm.variant_id is not null then coalesce(v.name, 'Variant')
           else coalesce(p.marketing_name, p.name, 'Product')
         end as "targetLabel",
-        media_type as "mediaType",
-        storage_key as "storageKey",
-        alt_text as "altText",
-        sort_order as "sortOrder",
-        is_primary as "isPrimary",
-        metadata,
-        created_at as "createdAt"
-      from app.product_media
+        pm.media_type as "mediaType",
+        pm.storage_key as "storageKey",
+        pm.alt_text as "altText",
+        pm.sort_order as "sortOrder",
+        pm.is_primary as "isPrimary",
+        pm.metadata,
+        pm.created_at as "createdAt"
+      from app.product_media pm
       left join app.products p
-        on p.id = app.product_media.product_id
+        on p.id = pm.product_id
       left join app.product_variants v
-        on v.id = app.product_media.variant_id
-      where product_id = $1
-         or variant_id in (
-           select id
-           from app.product_variants
-           where product_id = $1
+        on v.id = pm.variant_id
+      where pm.product_id = $1
+         or pm.variant_id in (
+           select pv.id
+           from app.product_variants pv
+           where pv.product_id = $1
          )
-      order by "targetType" asc, media_type asc, is_primary desc, sort_order asc, created_at asc
+      order by
+        "targetType" asc,
+        pm.media_type asc,
+        pm.is_primary desc,
+        pm.sort_order asc,
+        pm.created_at asc
     `,
     [productId]
   );

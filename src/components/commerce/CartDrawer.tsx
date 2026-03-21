@@ -73,7 +73,7 @@ export function CartDrawer() {
     <>
       <div
         className={cn(
-          "fixed inset-0 z-[70] transition-opacity duration-300",
+          "fixed inset-0 z-[2147483630] transition-opacity duration-300",
           isCartOpen
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
@@ -93,11 +93,11 @@ export function CartDrawer() {
         aria-label="Shopping cart"
         aria-hidden={!isCartOpen}
         className={cn(
-          "fixed right-0 top-0 z-[80] h-[100svh] w-full max-w-[480px] transition-transform duration-500 ease-[var(--ease-premium)]",
+          "fixed right-0 top-0 z-[2147483640] h-[100svh] w-full max-w-[480px] transition-transform duration-500 ease-[var(--ease-premium)]",
           isCartOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
-        <div className="glass-morphism flex h-full flex-col bg-system-background/96 p-4 shadow-[0_32px_120px_rgba(0,0,0,0.22)] sm:p-5">
+        <div className="glass-morphism flex h-full flex-col overflow-hidden rounded-l-[36px] bg-system-background/96 p-4 shadow-[0_32px_120px_rgba(0,0,0,0.22)] sm:p-5">
           <div className="flex items-start justify-between gap-4 px-1 pb-5 pt-2">
             <div>
               <span className="inline-flex items-center rounded-full bg-accent/10 px-3 py-2 text-[10px] font-semibold uppercase tracking-headline text-accent dark:bg-accent/15">
@@ -290,7 +290,7 @@ export function CartDrawer() {
                       Checkout
                     </h3>
                     <div className="rounded-full bg-system-fill px-3 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                      Transfer
+                      Request
                     </div>
                   </div>
 
@@ -420,7 +420,7 @@ export function CartDrawer() {
                   disabled={!canCheckout || !isCartReady}
                   className="button-primary min-h-[60px] w-full justify-center text-xs font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:shadow-none"
                 >
-                  {isSubmittingCheckout ? "Placing order" : "Place order"}
+                  {isSubmittingCheckout ? "Sending request" : "Send request"}
                 </button>
               </div>
             </>

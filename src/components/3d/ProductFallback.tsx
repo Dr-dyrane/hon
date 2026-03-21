@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import React from "react";
 import Image from "next/image";
@@ -15,20 +16,30 @@ export function ProductFallback({
   className,
   priority = false,
 }: ProductFallbackProps) {
+  const isRemoteImage = /^https?:\/\//.test(imagePath);
+
   return (
     <motion.div
       animate={{ y: [0, -8, 0] }}
       transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
       className={`relative ${className}`}
     >
-      <Image
-        src={imagePath}
-        alt="Product"
-        width={800}
-        height={1000}
-        priority={priority}
-        className="w-full h-auto drop-shadow-2xl mask-radial"
-      />
+      {isRemoteImage ? (
+        <img
+          src={imagePath}
+          alt="Product"
+          className="h-auto w-full drop-shadow-2xl mask-radial"
+        />
+      ) : (
+        <Image
+          src={imagePath}
+          alt="Product"
+          width={800}
+          height={1000}
+          priority={priority}
+          className="w-full h-auto drop-shadow-2xl mask-radial"
+        />
+      )}
     </motion.div>
   );
 }

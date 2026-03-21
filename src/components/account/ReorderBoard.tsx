@@ -7,6 +7,7 @@ import type { PortalOrderListRow } from "@/lib/db/types";
 import { prepareReorderAction } from "@/app/(portal)/account/reorder/actions";
 import { replaceRemoteCartItems } from "@/lib/cart/api-client";
 import { formatNgn } from "@/lib/commerce";
+import { formatFlowStatusLabel } from "@/lib/orders/presentation";
 import { cn } from "@/lib/utils";
 
 function formatTimestamp(value: string) {
@@ -16,7 +17,7 @@ function formatTimestamp(value: string) {
 }
 
 function formatStatusLabel(value: string) {
-  return value.replace(/_/g, " ");
+  return formatFlowStatusLabel(value);
 }
 
 export function ReorderBoard({ orders }: { orders: PortalOrderListRow[] }) {

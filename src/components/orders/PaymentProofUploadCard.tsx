@@ -2,9 +2,25 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle2, Landmark, Upload } from "lucide-react";
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Try again.";
+}
+
+function getPaymentStateMessage(paymentStatus: string) {
+  switch (paymentStatus) {
+    case "submitted":
+      return "Money sent. Waiting for confirmation.";
+    case "under_review":
+      return "Payment is being checked.";
+    case "confirmed":
+      return "Payment confirmed.";
+    case "expired":
+      return "Transfer window closed.";
+    default:
+      return "Handled.";
+  }
 }
 
 export function PaymentProofUploadCard({
@@ -28,20 +44,10 @@ export function PaymentProofUploadCard({
   }
 
   if (paymentStatus && !["awaiting_transfer", "rejected"].includes(paymentStatus)) {
-    const message =
-      paymentStatus === "submitted"
-        ? "Proof added."
-        : paymentStatus === "under_review"
-          ? "Under review."
-          : paymentStatus === "confirmed"
-            ? "Confirmed."
-            : paymentStatus === "expired"
-              ? "Window closed."
-              : "Handled.";
-
     return (
-      <div className="mt-4 rounded-[22px] bg-system-fill/36 px-4 py-3 text-sm text-secondary-label">
-        {message}
+      <div className="mt-4 flex items-center gap-3 rounded-[22px] bg-system-fill/36 px-4 py-3 text-sm text-secondary-label">
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-label" strokeWidth={1.8} />
+        <span>{getPaymentStateMessage(paymentStatus)}</span>
       </div>
     );
   }
@@ -129,7 +135,7 @@ export function PaymentProofUploadCard({
           inputRef.current.value = "";
         }
 
-        setMessage("Added.");
+        setMessage("Money sent.");
         router.refresh();
       } catch (error) {
         setMessage(getErrorMessage(error));
@@ -140,7 +146,13 @@ export function PaymentProofUploadCard({
   return (
     <div className="mt-4 space-y-3">
       <div className="rounded-[22px] bg-system-fill/36 px-4 py-3 text-sm text-secondary-label">
-        Add transfer proof.
+        <div className="flex items-start gap-3">
+          <Landmark className="mt-0.5 h-4 w-4 shrink-0 text-label" strokeWidth={1.8} />
+          <div className="space-y-1">
+            <div className="text-label">Send the transfer, then add your receipt or screenshot.</div>
+            <div>Tap once after payment so Praxy can confirm it.</div>
+          </div>
+        </div>
       </div>
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <input
@@ -155,7 +167,8 @@ export function PaymentProofUploadCard({
           disabled={isPending}
           className="button-primary min-h-[44px] shrink-0 text-xs font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:shadow-none md:px-5"
         >
-          {isPending ? "Sending" : "Add proof"}
+          <Upload className="h-4 w-4" strokeWidth={1.8} />
+          {isPending ? "Sending" : "I sent the money"}
         </button>
         {message ? (
           <p className="text-xs text-secondary-label md:min-w-[72px] md:text-right">

@@ -212,6 +212,18 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
   const [checkoutForm, setCheckoutForm] = useState(emptyCheckoutForm);
 
   useEffect(() => {
+    const handleOpenCart = () => {
+      setIsCartOpen(true);
+    };
+
+    window.addEventListener("commerce:open-cart", handleOpenCart);
+
+    return () => {
+      window.removeEventListener("commerce:open-cart", handleOpenCart);
+    };
+  }, []);
+
+  useEffect(() => {
     let active = true;
 
     async function hydrateCart() {

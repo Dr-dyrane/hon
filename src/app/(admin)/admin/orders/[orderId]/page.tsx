@@ -15,23 +15,18 @@ import {
   listOrderReturnEvents,
 } from "@/lib/db/repositories/order-returns-repository";
 import {
+  formatFlowStatusLabel,
+  formatPaymentReviewActionLabel,
+  getOrderStagePresentation,
+  getPaymentReviewActionLabel,
+  getPaymentStatusPresentation,
+} from "@/lib/orders/presentation";
+import {
+  acceptOrderRequestAction,
   advanceReturnCaseAction,
   cancelOrderAction,
   reviewPaymentAction,
 } from "./actions";
-
-const statusLabelMap: Record<string, string> = {
-  awaiting_transfer: "Awaiting transfer",
-  payment_submitted: "Payment submitted",
-  payment_under_review: "Under review",
-  payment_confirmed: "Confirmed",
-  preparing: "Preparing",
-  ready_for_dispatch: "Ready for dispatch",
-  out_for_delivery: "Out for delivery",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
-  expired: "Expired",
-};
 
 const returnStatusLabelMap: Record<string, string> = {
   requested: "Requested",
@@ -80,6 +75,18 @@ function canCancelOrder(input: {
   ].includes(input.status) && input.fulfillmentStatus !== "out_for_delivery";
 }
 
+function availablePaymentActions(status: string | null | undefined) {
+  if (status === "submitted") {
+    return ["under_review", "confirmed", "rejected"] as const;
+  }
+
+  if (status === "under_review") {
+    return ["confirmed", "rejected"] as const;
+  }
+
+  return [] as const;
+}
+
 export default async function AdminOrderDetailPage({
   params,
 }: {
@@ -115,16 +122,17 @@ export default async function AdminOrderDetailPage({
     getLatestOrderReturnCase(params.orderId, adminActor),
     listOrderReturnEvents(params.orderId, adminActor),
   ]);
+  const stage = getOrderStagePresentation(order);
+  const paymentState = getPaymentStatusPresentation(order.payment?.status ?? order.paymentStatus);
+  const paymentActions = availablePaymentActions(order.payment?.status ?? order.paymentStatus);
+  const isRequestPending = order.status === "checkout_draft";
 
   return (
     <div className="space-y-6">
       <WorkspaceContextPanel
         title={`#${order.orderNumber}`}
         detail={order.customerName}
-        tags={[
-          { label: statusLabelMap[order.paymentStatus] ?? order.paymentStatus },
-          { label: statusLabelMap[order.status] ?? order.status },
-        ]}
+        tags={[{ label: stage.label, tone: stage.tone }]}
         meta={[
           {
             label: "Customer",
@@ -141,15 +149,17 @@ export default async function AdminOrderDetailPage({
             value: `${formatNgn(order.totalNgn)} / ${formatTimestamp(order.placedAt)}`,
           },
           {
-            label: "Transfer",
-            value: order.transferReference,
+            label: "Transfer Ref",
+            value: isRequestPending ? "Pending" : order.transferReference,
           },
           {
             label: "Deadline",
-            value: formatTimestamp(order.transferDeadlineAt),
+            value: isRequestPending
+              ? "Pending"
+              : formatTimestamp(order.transferDeadlineAt),
           },
           {
-            label: "Drop",
+            label: "Address",
             value: getDeliveryLine(order.deliveryAddressSnapshot),
           },
         ]}
@@ -158,16 +168,27 @@ export default async function AdminOrderDetailPage({
       <QuietValueStrip
         items={[
           {
+            label: "Stage",
+            value: stage.label,
+            detail: stage.detail,
+          },
+          {
             label: "Due",
             value: formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn),
-            detail: order.payment
-              ? statusLabelMap[order.payment.status] ?? order.payment.status
-              : "Pending",
+            detail: isRequestPending
+              ? "Request pending"
+              : order.payment
+                ? paymentState.label
+                : "Pending",
           },
           {
             label: "Proofs",
             value: `${paymentProofs.length}`,
-            detail: paymentProofs.length > 0 ? "Received" : "Waiting",
+            detail: isRequestPending
+              ? "Locked"
+              : paymentProofs.length > 0
+                ? "Received"
+                : "Waiting",
           },
           {
             label: "Reviews",
@@ -191,36 +212,70 @@ export default async function AdminOrderDetailPage({
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(300px,0.95fr)]">
         <div className="space-y-4">
           <DetailSurface
-            title="Payment"
+            title="Transfer"
             action={
               <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
                 #{order.paymentId ?? "pending"}
               </span>
             }
           >
-            <div className="space-y-3">
-              <div className="text-[28px] font-semibold tracking-tight text-label">
-                {formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn)}
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <SurfaceMeta label="Bank" value={order.payment?.bankName ?? "Pending"} />
-                <SurfaceMeta label="Name" value={order.payment?.accountName ?? "Pending"} />
-              </div>
-              <div className="rounded-[24px] bg-system-fill/42 px-4 py-4">
-                <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                  Number
+            {isRequestPending ? (
+              <div className="space-y-3">
+                <div className="text-[28px] font-semibold tracking-tight text-label">
+                  {formatNgn(order.totalNgn)}
                 </div>
-                <div className="mt-1 text-lg font-semibold tracking-tight text-label">
-                  {order.payment?.accountNumber ?? "Pending"}
+                <div className="rounded-[24px] bg-system-fill/42 px-4 py-4 text-sm text-secondary-label">
+                  Accept the request to generate transfer details.
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="text-[28px] font-semibold tracking-tight text-label">
+                  {formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn)}
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <SurfaceMeta label="Bank" value={order.payment?.bankName ?? "Pending"} />
+                  <SurfaceMeta label="Name" value={order.payment?.accountName ?? "Pending"} />
+                </div>
+                <div className="rounded-[24px] bg-system-fill/42 px-4 py-4">
+                  <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                    Number
+                  </div>
+                  <div className="mt-1 text-lg font-semibold tracking-tight text-label">
+                    {order.payment?.accountNumber ?? "Pending"}
+                  </div>
+                </div>
+              </div>
+            )}
           </DetailSurface>
 
           <DetailSurface title="Actions">
             <div className="grid gap-3 sm:grid-cols-4">
-              {order.paymentId ? (
-                ["confirmed", "under_review", "rejected"].map((action) => (
+              {isRequestPending ? (
+                <>
+                  <form action={acceptOrderRequestAction} className="flex">
+                    <input type="hidden" name="orderId" value={order.orderId} />
+                    <input type="hidden" name="note" value="Request accepted from order detail." />
+                    <button
+                      type="submit"
+                      className="button-secondary min-h-[44px] w-full text-xs font-semibold uppercase tracking-headline"
+                    >
+                      Accept
+                    </button>
+                  </form>
+                  <form action={cancelOrderAction} className="flex">
+                    <input type="hidden" name="orderId" value={order.orderId} />
+                    <input type="hidden" name="note" value="Request declined from order detail." />
+                    <button
+                      type="submit"
+                      className="min-h-[44px] w-full rounded-full bg-system-fill/56 px-4 text-xs font-semibold uppercase tracking-headline text-red-500 transition-colors duration-200 hover:bg-system-fill/76"
+                    >
+                      Decline
+                    </button>
+                  </form>
+                </>
+              ) : order.paymentId && paymentActions.length > 0 ? (
+                paymentActions.map((action) => (
                   <form key={action} action={reviewPaymentAction} className="flex">
                     <input type="hidden" name="orderId" value={order.orderId} />
                     <input type="hidden" name="paymentId" value={order.paymentId ?? ""} />
@@ -230,21 +285,17 @@ export default async function AdminOrderDetailPage({
                       value={action}
                       className="button-secondary min-h-[44px] w-full text-xs font-semibold uppercase tracking-headline"
                     >
-                      {action === "confirmed"
-                        ? "Confirm"
-                        : action === "under_review"
-                          ? "Review"
-                          : "Reject"}
+                      {getPaymentReviewActionLabel(action)}
                     </button>
                   </form>
                 ))
               ) : (
                 <div className="rounded-[24px] bg-system-fill/42 px-4 py-4 text-sm text-secondary-label sm:col-span-3">
-                  Waiting for payment.
+                  {order.paymentId ? "No payment action needed." : "Waiting for payment."}
                 </div>
               )}
 
-              {canCancelOrder(order) ? (
+              {!isRequestPending && canCancelOrder(order) ? (
                 <form action={cancelOrderAction} className="flex">
                   <input type="hidden" name="orderId" value={order.orderId} />
                   <input type="hidden" name="note" value="Cancelled from order detail." />
@@ -269,9 +320,7 @@ export default async function AdminOrderDetailPage({
                     key={event.eventId}
                     className="flex items-center justify-between gap-4 rounded-[22px] bg-system-fill/36 px-4 py-3"
                   >
-                    <span className="text-label">
-                      {statusLabelMap[event.toStatus] ?? event.toStatus}
-                    </span>
+                    <span className="text-label">{formatFlowStatusLabel(event.toStatus)}</span>
                     <span>{formatTimestamp(event.createdAt)}</span>
                   </div>
                 ))
@@ -292,9 +341,7 @@ export default async function AdminOrderDetailPage({
                     className="rounded-[22px] bg-system-fill/36 px-4 py-3"
                   >
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-label">
-                        {review.action.replace(/_/g, " ")}
-                      </span>
+                      <span className="text-label">{formatPaymentReviewActionLabel(review.action)}</span>
                       <span>{formatTimestamp(review.createdAt)}</span>
                     </div>
                     {review.note ? (
@@ -309,7 +356,9 @@ export default async function AdminOrderDetailPage({
           <DetailSurface title="Proofs">
             <div className="grid gap-2 text-sm text-secondary-label">
               {paymentProofs.length === 0 ? (
-                <div className="rounded-[22px] bg-system-fill/36 px-4 py-3">No proof.</div>
+                <div className="rounded-[22px] bg-system-fill/36 px-4 py-3">
+                  Waiting for receipt.
+                </div>
               ) : (
                 paymentProofs.map((proof) => (
                   <Link

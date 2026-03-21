@@ -43,14 +43,22 @@ export function ProductSelector({
     useMarketingContent();
   const { resolvedTheme } = useTheme();
   const { addItem } = useCommerce();
+  const visibleCategories = categories.filter((category) =>
+    productIds.some((key) => productsById[key].categoryId === category.id)
+  );
   const selectorSettings = homeSectionsByKey.products?.settings as
     | { defaultCategoryId?: string; defaultProductId?: ProductId }
     | undefined;
   const [activeCategory, setActiveCategory] = useState(
-    selectorSettings?.defaultCategoryId ?? categories[0].id
+    selectorSettings?.defaultCategoryId &&
+      visibleCategories.some((category) => category.id === selectorSettings.defaultCategoryId)
+      ? selectorSettings.defaultCategoryId
+      : visibleCategories[0]?.id ?? categories[0]?.id ?? ""
   );
   const [selectedProduct, setSelectedProduct] = useState<ProductId>(
-    selectorSettings?.defaultProductId ?? productIds[0]
+    selectorSettings?.defaultProductId && productsById[selectorSettings.defaultProductId]
+      ? selectorSettings.defaultProductId
+      : productIds[0]
   );
   const deferredProduct = useDeferredValue(selectedProduct);
 
@@ -60,11 +68,20 @@ export function ProductSelector({
   const filteredProducts = productIds.filter(
     (key) => productsById[key].categoryId === activeCategory
   );
-  const activeProduct = productsById[selectedProduct];
-  const activeIsShot = isShotProduct(productsById, selectedProduct);
+  const safeSelectedProduct =
+    filteredProducts.find((key) => key === selectedProduct) ??
+    filteredProducts[0] ??
+    productIds[0];
+  const activeProduct = productsById[safeSelectedProduct];
+  const activeIsShot = isShotProduct(productsById, safeSelectedProduct);
   const statEntries = getProductStats(activeProduct);
-  const pricing = getProductPriceSnapshot(productsById, selectedProduct);
-  const stageProduct = productsById[deferredProduct];
+  const pricing = getProductPriceSnapshot(productsById, safeSelectedProduct);
+  const stageProduct =
+    productsById[productIds.includes(deferredProduct) ? deferredProduct : safeSelectedProduct];
+
+  if (!activeProduct || !stageProduct || visibleCategories.length === 0) {
+    return null;
+  }
 
   return (
     <SectionContainer variant="white" id="shop">
@@ -85,7 +102,7 @@ export function ProductSelector({
             </motion.h2>
 
             <div className="mt-8 inline-flex flex-wrap items-center justify-center gap-2 rounded-full bg-system-background/75 p-2 shadow-[0_20px_60px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-2xl dark:bg-[rgba(18,20,18,0.78)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)]">
-              {categories.map((category) => (
+              {visibleCategories.map((category) => (
                 <button
                   key={category.id}
                   type="button"
@@ -129,7 +146,7 @@ export function ProductSelector({
                   {filteredProducts.map((key) => {
                     const product = productsById[key];
                     const productFlavor = getProductFlavor(product);
-                    const isSelected = selectedProduct === key;
+                    const isSelected = safeSelectedProduct === key;
                     const cardPricing = getProductPriceSnapshot(productsById, key);
 
                     return (
@@ -238,7 +255,7 @@ export function ProductSelector({
 
                   <AnimatePresence mode="wait">
                     <motion.div
-                      key={deferredProduct}
+                      key={safeSelectedProduct}
                       initial={{ opacity: 0, scale: 0.92, y: 16, rotateY: -10 }}
                       animate={{ opacity: 1, scale: 1, y: 0, rotateY: 0 }}
                       exit={{ opacity: 0, scale: 1.04, y: -8, rotateY: 10 }}
@@ -250,7 +267,7 @@ export function ProductSelector({
                           modelPath={stageProduct.model}
                           theme={isDark ? "dark" : "light"}
                           className="h-full w-full max-w-[360px]"
-                          sectionId={`shop-${deferredProduct}`}
+                          sectionId={`shop-${safeSelectedProduct}`}
                           scrollActive={scrollActive}
                         />
                       ) : (
@@ -279,7 +296,7 @@ export function ProductSelector({
                         <Button
                           size="md"
                           className="!h-[44px] px-5 text-[10px] font-semibold uppercase tracking-headline"
-                          onClick={() => addItem(selectedProduct)}
+                          onClick={() => addItem(safeSelectedProduct)}
                         >
                           Add to Cart
                         </Button>
@@ -292,7 +309,7 @@ export function ProductSelector({
               <div className="order-3">
                 <AnimatePresence mode="wait">
                   <motion.div
-                    key={selectedProduct}
+                    key={safeSelectedProduct}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}

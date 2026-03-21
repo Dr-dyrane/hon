@@ -12,10 +12,7 @@ import {
   listOrdersForAdmin,
   listPaymentsForAdmin,
 } from "@/lib/db/repositories/orders-repository";
-
-function formatStatusLabel(value: string) {
-  return value.replace(/_/g, " ");
-}
+import { getOrderStagePresentation } from "@/lib/orders/presentation";
 
 export default async function AdminPage() {
   const session = await requireAdminSession("/admin");
@@ -37,7 +34,12 @@ export default async function AdminPage() {
     (product) => product.merchandisingState === "featured"
   );
   const urgentOrders = orders.filter((order) =>
-    ["awaiting_transfer", "payment_under_review", "ready_for_dispatch"].includes(order.status)
+    [
+      "checkout_draft",
+      "awaiting_transfer",
+      "payment_under_review",
+      "ready_for_dispatch",
+    ].includes(order.status)
   );
 
   return (
@@ -89,23 +91,27 @@ export default async function AdminPage() {
           emptyLabel="Clear"
         >
           {urgentOrders.length > 0 ? (
-            urgentOrders.slice(0, 5).map((order) => (
-              <Link
-                key={order.orderId}
-                href={`/admin/orders/${order.orderId}`}
-                className="flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/42 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/58"
-              >
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-label">#{order.orderNumber}</div>
-                  <div className="mt-1 truncate text-xs text-secondary-label">
-                    {order.customerName}
+            urgentOrders.slice(0, 5).map((order) => {
+              const stage = getOrderStagePresentation(order);
+
+              return (
+                <Link
+                  key={order.orderId}
+                  href={`/admin/orders/${order.orderId}`}
+                  className="flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/42 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/58"
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-label">#{order.orderNumber}</div>
+                    <div className="mt-1 truncate text-xs text-secondary-label">
+                      {order.customerName}
+                    </div>
                   </div>
-                </div>
-                <span className="shrink-0 rounded-full bg-system-background px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-                  {formatStatusLabel(order.status)}
-                </span>
-              </Link>
-            ))
+                  <span className="shrink-0 rounded-full bg-system-background px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                    {stage.label}
+                  </span>
+                </Link>
+              );
+            })
           ) : null}
         </OverviewPanel>
 
@@ -197,7 +203,7 @@ function OverviewPanel({
         </span>
       </div>
 
-          <div className="mt-4 grid gap-3">
+      <div className="mt-4 grid gap-3">
         {hasChildren ? children : (
           <div className="rounded-[24px] bg-system-fill/42 px-4 py-4 text-sm text-secondary-label">
             {emptyLabel}

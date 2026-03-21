@@ -4,6 +4,10 @@ import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
 import { listPaymentsForAdmin } from "@/lib/db/repositories/orders-repository";
+import {
+  getPaymentReviewActionLabel,
+  getPaymentStatusPresentation,
+} from "@/lib/orders/presentation";
 import { reviewPaymentQueueAction } from "./actions";
 
 function formatTimestamp(value?: string | null) {
@@ -15,10 +19,6 @@ function formatTimestamp(value?: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
-}
-
-function formatStatusLabel(value: string) {
-  return value.replace(/_/g, " ");
 }
 
 function availablePaymentActions(status: string) {
@@ -52,15 +52,15 @@ export default async function AdminPaymentsPage() {
         <MetricRail
           items={[
             {
-              label: "Review",
+              label: "Checking",
               value: `${underReview}`,
               detail: "Queue",
               icon: AlertCircle,
             },
             {
-              label: "Submitted",
+              label: "Money Sent",
               value: `${submitted}`,
-              detail: "Proofs",
+              detail: "Waiting",
               icon: CircleEllipsis,
             },
             {
@@ -76,77 +76,78 @@ export default async function AdminPaymentsPage() {
       </section>
 
       <section className="grid gap-4">
-        {payments.map((payment) => (
-          <article
-            key={payment.paymentId}
-            className="glass-morphism rounded-[32px] bg-system-background/72 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
-          >
-            <div className="flex flex-col gap-4 min-[980px]:flex-row min-[980px]:items-start min-[980px]:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="text-lg font-semibold tracking-tight text-label">
-                    #{payment.orderNumber}
+        {payments.map((payment) => {
+          const paymentState = getPaymentStatusPresentation(payment.status);
+
+          return (
+            <article
+              key={payment.paymentId}
+              className="glass-morphism rounded-[32px] bg-system-background/72 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
+            >
+              <div className="flex flex-col gap-4 min-[980px]:flex-row min-[980px]:items-start min-[980px]:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="text-lg font-semibold tracking-tight text-label">
+                      #{payment.orderNumber}
+                    </div>
+                    <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                      {paymentState.label}
+                    </span>
                   </div>
-                  <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-                    {formatStatusLabel(payment.status)}
-                  </span>
+                  <div className="mt-2 text-sm text-secondary-label">{paymentState.detail}</div>
+
+                  <div className="mt-3 grid gap-3 text-sm text-secondary-label sm:grid-cols-2 xl:grid-cols-4">
+                    <MetaItem
+                      label="Account"
+                      value={
+                        [payment.bankName, payment.accountNumber].filter(Boolean).join(" / ") ||
+                        "Pending"
+                      }
+                    />
+                    <MetaItem label="Payer" value={payment.payerName ?? "Waiting for receipt"} />
+                    <MetaItem label="Sent" value={formatTimestamp(payment.submittedAt)} />
+                    <MetaItem label="Deadline" value={formatTimestamp(payment.expiresAt)} />
+                  </div>
                 </div>
 
-                <div className="mt-3 grid gap-3 text-sm text-secondary-label sm:grid-cols-2 xl:grid-cols-4">
-                  <MetaItem
-                    label="Account"
-                    value={
-                      [payment.bankName, payment.accountNumber].filter(Boolean).join(" / ") ||
-                      "Pending"
-                    }
-                  />
-                  <MetaItem label="Payer" value={payment.payerName ?? "Missing proof"} />
-                  <MetaItem label="Submitted" value={formatTimestamp(payment.submittedAt)} />
-                  <MetaItem label="Expires" value={formatTimestamp(payment.expiresAt)} />
+                <div className="min-w-[220px] shrink-0">
+                  <div className="text-right text-sm text-secondary-label">
+                    <div className="text-lg font-semibold text-label">
+                      {formatNgn(payment.expectedAmountNgn)}
+                    </div>
+                    <div className="mt-1">
+                      {payment.submittedAmountNgn !== null
+                        ? formatNgn(payment.submittedAmountNgn)
+                        : "Waiting for receipt"}
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap justify-end gap-2">
+                    {availablePaymentActions(payment.status).map((action) => (
+                      <form key={action} action={reviewPaymentQueueAction} className="flex">
+                        <input type="hidden" name="orderId" value={payment.orderId} />
+                        <input type="hidden" name="paymentId" value={payment.paymentId} />
+                        <button
+                          type="submit"
+                          name="action"
+                          value={action}
+                          className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                        >
+                          {getPaymentReviewActionLabel(action)}
+                        </button>
+                      </form>
+                    ))}
+                    <Link
+                      href={`/admin/orders/${payment.orderId}`}
+                      className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                    >
+                      Open
+                    </Link>
+                  </div>
                 </div>
               </div>
-
-              <div className="min-w-[220px] shrink-0">
-                <div className="text-right text-sm text-secondary-label">
-                  <div className="text-lg font-semibold text-label">
-                    {formatNgn(payment.expectedAmountNgn)}
-                  </div>
-                  <div className="mt-1">
-                    {payment.submittedAmountNgn !== null
-                      ? formatNgn(payment.submittedAmountNgn)
-                      : "Awaiting proof"}
-                  </div>
-                </div>
-                <div className="mt-4 flex flex-wrap justify-end gap-2">
-                  {availablePaymentActions(payment.status).map((action) => (
-                    <form key={action} action={reviewPaymentQueueAction} className="flex">
-                      <input type="hidden" name="orderId" value={payment.orderId} />
-                      <input type="hidden" name="paymentId" value={payment.paymentId} />
-                      <button
-                        type="submit"
-                        name="action"
-                        value={action}
-                        className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
-                      >
-                        {action === "under_review"
-                          ? "Review"
-                          : action === "confirmed"
-                            ? "Confirm"
-                            : "Reject"}
-                      </button>
-                    </form>
-                  ))}
-                  <Link
-                    href={`/admin/orders/${payment.orderId}`}
-                    className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
-                  >
-                    Open
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </section>
     </div>
   );
