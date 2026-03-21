@@ -10,7 +10,7 @@ export function Footer() {
   const links = [
     ...navigation.map((item) => ({ name: item.label, href: item.href })),
     { name: "Reviews", href: "#social" },
-    { name: "Account", href: "/auth/sign-in?returnTo=/account" },
+    { name: "Account", href: "/account" },
   ];
 
   return (

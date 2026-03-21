@@ -6,7 +6,8 @@ import {
   type DatabaseActorContext,
   withTransaction,
 } from "@/lib/db/client";
-import { normalizePhoneToE164 } from "@/lib/phone";
+import { expireStaleAwaitingTransferOrders } from "@/lib/db/repositories/orders-repository";
+import { getPhoneValidationMessage, normalizePhoneToE164 } from "@/lib/phone";
 import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
 import type {
   PortalAccountSummary,
@@ -74,6 +75,8 @@ export async function getPortalAccountSummary(email: string) {
       latestOrderStatus: null,
     } satisfies PortalAccountSummary;
   }
+
+  await expireStaleAwaitingTransferOrders();
 
   const result = await query<PortalAccountSummary>(
     `
@@ -206,7 +209,7 @@ export async function updatePortalProfile(email: string, input: {
   }
 
   if (!preferredPhoneE164) {
-    throw new Error("Enter a valid phone.");
+    throw new Error(getPhoneValidationMessage());
   }
 
   const user = await ensureUserByEmail(normalizedEmail);
@@ -347,7 +350,7 @@ export async function savePortalAddress(email: string, input: {
   }
 
   if (!phoneE164) {
-    throw new Error("Enter a valid phone.");
+    throw new Error(getPhoneValidationMessage());
   }
 
   if (latitude != null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) {

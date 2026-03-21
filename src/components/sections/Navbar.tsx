@@ -93,7 +93,7 @@ export function Navbar() {
             </motion.div>
 
             <Link
-              href="/auth/sign-in?returnTo=/account"
+              href="/account"
               className="hidden md:inline-flex items-center text-[11px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
             >
               Account
@@ -257,7 +257,7 @@ export function Navbar() {
                   </Link>
 
                   <Link
-                    href="/auth/sign-in?returnTo=/account"
+                    href="/account"
                     onClick={closeMobileMenu}
                     className="button-secondary w-full justify-center min-h-[56px] text-xs font-semibold uppercase tracking-headline"
                   >

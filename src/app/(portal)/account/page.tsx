@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Bookmark, Receipt, Sparkles } from "lucide-react";
+import { PortalStoreShelf } from "@/components/account/PortalStoreShelf";
 import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAuthenticatedSession } from "@/lib/auth/guards";
 import { listPublishedCatalogProducts } from "@/lib/db/repositories/catalog-repository";
@@ -24,10 +25,10 @@ export default async function AccountPage() {
       <section className="space-y-5">
         <div className="rounded-[24px] bg-system-fill/42 p-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.04)] md:inline-flex">
           <div className="grid grid-cols-4 gap-1.5">
+            <QuickLink href="/account#store" label="Store" />
             <QuickLink href="/account/orders" label="Orders" />
             <QuickLink href="/account/addresses" label="Places" />
             <QuickLink href="/account/profile" label="Profile" />
-            <QuickLink href="/" label="Store" />
           </div>
         </div>
 
@@ -107,17 +108,33 @@ export default async function AccountPage() {
             </div>
           </div>
           <Link
-            href={accountSummary.totalOrders > 0 ? "/account/reorder" : "/"}
+            href={accountSummary.totalOrders > 0 ? "/account/reorder" : "/account#store"}
             className="flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/42 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/58"
           >
             <span className="text-sm font-semibold text-label">
-              {accountSummary.totalOrders > 0 ? "Reorder" : "Store"}
+              {accountSummary.totalOrders > 0 ? "Reorder" : "Browse"}
             </span>
             <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
               View
             </span>
           </Link>
         </PortalPanel>
+      </section>
+
+      <section id="store" className="space-y-5 scroll-mt-28">
+        <div className="space-y-2">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+            Store
+          </div>
+          <h1 className="text-4xl font-semibold tracking-tight text-label md:text-5xl">
+            Start a fresh order.
+          </h1>
+          <p className="text-sm text-secondary-label">
+            Add products here. The same cart and checkout flow stays available inside your portal.
+          </p>
+        </div>
+
+        <PortalStoreShelf products={products} />
       </section>
     </div>
   );

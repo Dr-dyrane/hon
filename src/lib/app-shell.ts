@@ -127,9 +127,9 @@ export function getShellHeaderContext({
 export const PORTAL_NAV_ITEMS: ShellNavItem[] = [
   {
     href: "/account",
-    label: "Home",
-    shortLabel: "Home",
-    description: "Order overview and account summary.",
+    label: "Store",
+    shortLabel: "Store",
+    description: "In-portal shopping and order overview.",
     match: "exact",
   },
   {
@@ -161,7 +161,7 @@ export const PORTAL_NAV_ITEMS: ShellNavItem[] = [
 export const PORTAL_HEADER_ROUTES: ShellHeaderRoute[] = [
   {
     pattern: "/account",
-    title: "Home",
+    title: "Store",
   },
   {
     pattern: "/account/orders",

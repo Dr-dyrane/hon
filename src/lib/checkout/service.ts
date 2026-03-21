@@ -1,8 +1,10 @@
 import "server-only";
 
 import { createOrderFromCart } from "@/lib/db/repositories/cart-repository";
+import { serverEnv } from "@/lib/config/server";
+import { sendOrderPlacedNotifications } from "@/lib/email/orders";
 import { createGuestOrderAccessToken } from "@/lib/orders/access";
-import { normalizePhoneToE164 } from "@/lib/phone";
+import { getPhoneValidationMessage, normalizePhoneToE164 } from "@/lib/phone";
 
 export type CheckoutPayload = {
   cartId: string;
@@ -28,11 +30,11 @@ export function validateCheckoutPayload(payload: Omit<CheckoutPayload, "customer
   }
 
   if (!customerPhoneE164) {
-    throw new Error("Enter a valid phone number.");
+    throw new Error(getPhoneValidationMessage());
   }
 
   if (deliveryLocation.length < 3) {
-    throw new Error("Enter a delivery location.");
+    throw new Error("Enter a delivery address.");
   }
 
   return {
@@ -52,6 +54,14 @@ export async function createCheckoutOrder(payload: CheckoutPayload) {
   const guestAccessToken = validated.userId
     ? null
     : createGuestOrderAccessToken(createdOrder.orderId);
+  const customerLink = guestAccessToken
+    ? `${serverEnv.public.appUrl}/checkout/orders/${createdOrder.orderId}?access=${encodeURIComponent(guestAccessToken)}`
+    : `${serverEnv.public.appUrl}/account/orders/${createdOrder.orderId}`;
+
+  await sendOrderPlacedNotifications({
+    orderId: createdOrder.orderId,
+    customerLink: validated.customerEmail ? customerLink : null,
+  });
 
   return {
     ...createdOrder,

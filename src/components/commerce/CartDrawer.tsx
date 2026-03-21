@@ -302,11 +302,11 @@ export function CartDrawer() {
                       <div className="mt-1 text-sm text-label">Save this order</div>
                     </div>
                     <Link
-                      href="/auth/sign-in?returnTo=/account"
+                      href="/account"
                       onClick={closeCart}
                       className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
                     >
-                      Sign in
+                      Account
                     </Link>
                   </div>
 
@@ -343,7 +343,7 @@ export function CartDrawer() {
 
                     <label className="grid gap-2">
                       <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                        Phone
+                        Phone Number
                       </span>
                       <input
                         type="tel"
@@ -352,13 +352,16 @@ export function CartDrawer() {
                           updateCheckoutField("phoneNumber", event.target.value)
                         }
                         className={fieldClassName}
-                        placeholder="Phone"
+                        placeholder="080..."
                       />
+                      <span className="px-1 text-[10px] text-secondary-label">
+                        Use 080..., 234..., or +234....
+                      </span>
                     </label>
 
                     <label className="grid gap-2">
                       <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                        Area
+                        Delivery Address
                       </span>
                       <input
                         type="text"
@@ -370,7 +373,7 @@ export function CartDrawer() {
                           )
                         }
                         className={fieldClassName}
-                        placeholder="Area"
+                        placeholder="House, street, area, landmark"
                       />
                     </label>
 

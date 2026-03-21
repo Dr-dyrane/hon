@@ -1,3 +1,9 @@
+export const PHONE_FORMAT_HINT = "Use 080..., 234..., or +234....";
+
+export function getPhoneValidationMessage(label = "phone number") {
+  return `Enter a valid ${label}. ${PHONE_FORMAT_HINT}`;
+}
+
 export function normalizePhoneToE164(rawValue: string) {
   const trimmed = rawValue.trim();
   const digits = trimmed.replace(/\D/g, "");
@@ -7,11 +13,11 @@ export function normalizePhoneToE164(rawValue: string) {
   }
 
   if (trimmed.startsWith("+")) {
-    return `+${digits}`;
+    return digits.length >= 8 && digits.length <= 15 ? `+${digits}` : null;
   }
 
   if (digits.startsWith("234")) {
-    return `+${digits}`;
+    return digits.length >= 10 && digits.length <= 15 ? `+${digits}` : null;
   }
 
   if (digits.startsWith("0") && digits.length === 11) {
@@ -20,6 +26,10 @@ export function normalizePhoneToE164(rawValue: string) {
 
   if (digits.length === 10) {
     return `+234${digits}`;
+  }
+
+  if (digits.length >= 8 && digits.length <= 15) {
+    return `+${digits}`;
   }
 
   return null;
