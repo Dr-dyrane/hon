@@ -8,6 +8,7 @@ import {
   updateAdminDeliveryDefaults,
   updateAdminLayoutPreview,
 } from "@/lib/db/repositories/settings-repository";
+import { saveWorkspaceNotificationPreference } from "@/lib/db/repositories/notification-preferences-repository";
 
 async function getAdminActor() {
   const session = await requireAdminSession("/admin/settings");
@@ -93,6 +94,36 @@ export async function updateLayoutPreviewAction(formData: FormData) {
         error instanceof Error
           ? error.message
           : "Unable to save preview mode.",
+    };
+  }
+}
+
+export async function updateNotificationPreferenceAction(formData: FormData) {
+  try {
+    const actor = await getAdminActor();
+
+    await saveWorkspaceNotificationPreference(
+      actor.email,
+      {
+        workspaceEmailEnabled:
+          formData.get("workspaceEmailEnabled")?.toString() === "true",
+        workspaceInAppEnabled:
+          formData.get("workspaceInAppEnabled")?.toString() === "true",
+        workspacePushEnabled:
+          formData.get("workspacePushEnabled")?.toString() === "true",
+      },
+      "admin"
+    );
+
+    revalidateSettingsPaths();
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unable to save notification preferences.",
     };
   }
 }

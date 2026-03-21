@@ -3,10 +3,14 @@ import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { AdminSettingsEditor } from "@/components/admin/settings/AdminSettingsEditor";
 import { getAdminSettingsSnapshot } from "@/lib/db/repositories/settings-repository";
+import { getWorkspaceNotificationPreference } from "@/lib/db/repositories/notification-preferences-repository";
 
 export default async function AdminSettingsPage() {
-  await requireAdminSession("/admin/settings");
-  const snapshot = await getAdminSettingsSnapshot();
+  const session = await requireAdminSession("/admin/settings");
+  const [snapshot, notificationPreference] = await Promise.all([
+    getAdminSettingsSnapshot(),
+    getWorkspaceNotificationPreference(session.email),
+  ]);
 
   return (
     <div className="space-y-8 pb-20 md:space-y-10">
@@ -39,6 +43,7 @@ export default async function AdminSettingsPage() {
         bankAccount={snapshot.bankAccount}
         deliveryDefaults={snapshot.deliveryDefaults}
         layoutPreview={snapshot.layoutPreview}
+        notificationPreference={notificationPreference}
       />
     </div>
   );

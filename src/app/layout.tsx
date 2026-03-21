@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import "aos/dist/aos.css";
+import { DeploymentRefreshGuard } from "@/components/system/DeploymentRefreshGuard";
+import { getRuntimeVersion } from "@/lib/runtime/version";
 
 const sfPro = localFont({
   src: [
@@ -88,6 +90,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const runtimeVersion = getRuntimeVersion();
+
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className={`${sfPro.variable} font-sans antialiased`}>
@@ -97,7 +101,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <UIProvider>{children}</UIProvider>
+          <UIProvider>
+            <DeploymentRefreshGuard currentVersion={runtimeVersion} />
+            {children}
+          </UIProvider>
         </ThemeProvider>
         {process.env.NODE_ENV === "production" ? <Analytics /> : null}
       </body>

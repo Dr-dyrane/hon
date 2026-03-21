@@ -17,27 +17,6 @@ function formatTimestamp(value?: string | null) {
   }).format(new Date(value));
 }
 
-function OrderStatusBadge({
-  label,
-  tone,
-}: {
-  label: string;
-  tone: "default" | "success" | "muted";
-}) {
-  const toneClass =
-    tone === "success"
-      ? "bg-accent/15 text-accent"
-      : tone === "muted"
-        ? "bg-system-fill/56 text-tertiary-label"
-        : "bg-system-fill/70 text-secondary-label";
-
-  return (
-    <span className={`rounded-full px-3 py-1 text-[11px] font-semibold tracking-tight ${toneClass}`}>
-      {label}
-    </span>
-  );
-}
-
 export default async function OrdersPage() {
   const session = await requireAuthenticatedSession("/account/orders");
   const orders = await listOrdersForPortal(session.email);
@@ -74,7 +53,7 @@ export default async function OrdersPage() {
             No orders yet.
           </div>
         ) : (
-          <div className="grid gap-4 min-[1460px]:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
             {orders.map((order) => {
               const stage = getOrderStagePresentation(order);
 
@@ -83,38 +62,56 @@ export default async function OrdersPage() {
                   key={order.orderId}
                   className="glass-morphism rounded-[32px] bg-system-background/78 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
                 >
-                  <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-headline text-secondary-label">
-                        Order #{order.orderNumber}
-                      </p>
-                      <p className="text-2xl font-semibold text-label">
-                        {formatNgn(order.totalNgn)}
-                      </p>
-                      <p className="mt-2 text-sm text-secondary-label">{stage.detail}</p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-semibold uppercase tracking-headline text-secondary-label">
+                          Order #{order.orderNumber}
+                        </p>
+                        <p className="mt-1 text-2xl font-semibold tracking-tight text-label">
+                          {formatNgn(order.totalNgn)}
+                        </p>
+                      </div>
                       <OrderStatusBadge label={stage.label} tone={stage.tone} />
                     </div>
-                  </div>
 
-                  <div className="mt-4 grid gap-4 text-sm text-secondary-label md:grid-cols-2">
-                    <div>{formatTimestamp(order.placedAt)}</div>
-                    <div className="md:text-right">
-                      {order.itemCount} item{order.itemCount === 1 ? "" : "s"}
+                    <div className="grid gap-2 md:hidden">
+                      <CompactOrderStat label="Date" value={formatTimestamp(order.placedAt)} />
+                      <CompactOrderStat
+                        label="Items"
+                        value={`${order.itemCount} item${order.itemCount === 1 ? "" : "s"}`}
+                      />
                     </div>
-                  </div>
 
-                  <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <Link
-                      href={`/account/orders/${order.orderId}`}
-                      className="button-secondary min-h-[44px] text-xs font-semibold uppercase tracking-headline"
-                    >
-                      Open
-                    </Link>
-                    <span className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-                      {order.active ? stage.label : "Completed"}
-                    </span>
+                    <div className="hidden md:flex md:flex-row md:items-start md:justify-between md:gap-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-headline text-secondary-label">
+                          Status
+                        </p>
+                        <p className="mt-1 text-sm text-secondary-label">{stage.detail}</p>
+                      </div>
+                    </div>
+
+                    <div className="hidden md:grid md:grid-cols-2 md:gap-4 md:text-sm md:text-secondary-label">
+                      <div>{formatTimestamp(order.placedAt)}</div>
+                      <div className="md:text-right">
+                        {order.itemCount} item{order.itemCount === 1 ? "" : "s"}
+                      </div>
+                    </div>
+
+                    <div className="text-sm text-secondary-label md:hidden">{stage.detail}</div>
+
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
+                        {order.active ? stage.label : "Completed"}
+                      </span>
+                      <Link
+                        href={`/account/orders/${order.orderId}`}
+                        className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-headline"
+                      >
+                        Open
+                      </Link>
+                    </div>
                   </div>
                 </article>
               );
@@ -123,5 +120,43 @@ export default async function OrdersPage() {
         )}
       </section>
     </div>
+  );
+}
+
+function CompactOrderStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[20px] bg-system-fill/42 px-4 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-medium text-label">{value}</div>
+    </div>
+  );
+}
+
+function OrderStatusBadge({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: "default" | "success" | "muted";
+}) {
+  const toneClass =
+    tone === "success"
+      ? "bg-accent/15 text-accent"
+      : tone === "muted"
+        ? "bg-system-fill/56 text-tertiary-label"
+        : "bg-system-fill/70 text-secondary-label";
+
+  return (
+    <span className={`rounded-full px-3 py-1 text-[11px] font-semibold tracking-tight ${toneClass}`}>
+      {label}
+    </span>
   );
 }

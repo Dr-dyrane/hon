@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Minus,
@@ -50,6 +50,12 @@ export function CartDrawer() {
   const showEmptyState = isCartReady && cartLines.length === 0;
   const canRefreshCart =
     checkoutError === "Cart refreshed." || checkoutError === "Cart is empty.";
+  const [showLocationPin, setShowLocationPin] = useState(() =>
+    Boolean(checkoutForm.latitude || checkoutForm.longitude)
+  );
+  const [showNotesField, setShowNotesField] = useState(() =>
+    Boolean(checkoutForm.notes)
+  );
   useOverlayPresence("commerce-cart", isCartOpen);
 
   useEffect(() => {
@@ -305,21 +311,21 @@ export function CartDrawer() {
                       <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
                         Account
                       </div>
-                      <div className="mt-1 text-sm text-label">Save this order</div>
+                      <div className="mt-1 text-sm text-label">Use saved details</div>
                     </div>
                     <Link
                       href="/account"
                       onClick={closeCart}
                       className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
                     >
-                      Account
+                      Open
                     </Link>
                   </div>
 
                   <div className="mt-5 grid gap-3">
                     <label className="grid gap-2">
                       <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                        Full Name
+                        Name
                       </span>
                       <input
                         type="text"
@@ -349,7 +355,7 @@ export function CartDrawer() {
 
                     <label className="grid gap-2">
                       <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                        Phone Number
+                        Phone
                       </span>
                       <input
                         type="tel"
@@ -361,7 +367,7 @@ export function CartDrawer() {
                         placeholder="080..."
                       />
                       <span className="px-1 text-[10px] text-secondary-label">
-                        Use 080..., 234..., or +234....
+                        Any working number is fine.
                       </span>
                     </label>
 
@@ -394,37 +400,56 @@ export function CartDrawer() {
                       />
                     </div>
 
-                    <MapboxLocationPicker
-                      latitude={
-                        checkoutForm.latitude
-                          ? Number(checkoutForm.latitude)
-                          : null
-                      }
-                      longitude={
-                        checkoutForm.longitude
-                          ? Number(checkoutForm.longitude)
-                          : null
-                      }
-                      onChange={({ latitude, longitude }) => {
-                        updateCheckoutField(
-                          "latitude",
-                          latitude == null ? "" : String(latitude)
-                        );
-                        updateCheckoutField(
-                          "longitude",
-                          longitude == null ? "" : String(longitude)
-                        );
-                      }}
-                      onResolveAddress={(suggestion) => {
-                        updateCheckoutField("deliveryLocation", suggestion.label);
-                        updateCheckoutField("latitude", String(suggestion.latitude));
-                        updateCheckoutField("longitude", String(suggestion.longitude));
-                      }}
-                      className="h-[152px] sm:h-[170px]"
-                      isVisible={isCartOpen}
-                    />
+                    <div className="flex flex-wrap gap-2 md:hidden">
+                      <button
+                        type="button"
+                        onClick={() => setShowLocationPin((current) => !current)}
+                        className="rounded-full bg-system-fill/46 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label"
+                      >
+                        {showLocationPin ? "Hide pin" : "Pin location"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowNotesField((current) => !current)}
+                        className="rounded-full bg-system-fill/46 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label"
+                      >
+                        {showNotesField ? "Hide note" : "Add note"}
+                      </button>
+                    </div>
 
-                    <label className="grid gap-2">
+                    <div className={cn(!showLocationPin && "hidden md:block")}>
+                      <MapboxLocationPicker
+                        latitude={
+                          checkoutForm.latitude
+                            ? Number(checkoutForm.latitude)
+                            : null
+                        }
+                        longitude={
+                          checkoutForm.longitude
+                            ? Number(checkoutForm.longitude)
+                            : null
+                        }
+                        onChange={({ latitude, longitude }) => {
+                          updateCheckoutField(
+                            "latitude",
+                            latitude == null ? "" : String(latitude)
+                          );
+                          updateCheckoutField(
+                            "longitude",
+                            longitude == null ? "" : String(longitude)
+                          );
+                        }}
+                        onResolveAddress={(suggestion) => {
+                          updateCheckoutField("deliveryLocation", suggestion.label);
+                          updateCheckoutField("latitude", String(suggestion.latitude));
+                          updateCheckoutField("longitude", String(suggestion.longitude));
+                        }}
+                        className="h-[152px] sm:h-[170px]"
+                        isVisible={isCartOpen}
+                      />
+                    </div>
+
+                    <label className={cn("grid gap-2", !showNotesField && "hidden md:grid")}>
                       <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
                         Notes
                       </span>
@@ -467,7 +492,7 @@ export function CartDrawer() {
                   disabled={!canCheckout || !isCartReady}
                   className="button-primary min-h-[60px] w-full justify-center text-xs font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:shadow-none"
                 >
-                  {isSubmittingCheckout ? "Sending request" : "Send request"}
+                  {isSubmittingCheckout ? "Placing order" : "Place order"}
                 </button>
               </div>
             </>

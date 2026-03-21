@@ -165,16 +165,20 @@ export function OrderReviewCard({
         className="w-full resize-none rounded-[24px] bg-system-fill/52 px-4 py-3 text-sm text-label placeholder:text-tertiary-label focus:outline-none"
       />
 
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           onClick={() => void handleSubmit()}
           disabled={isPending}
-          className="button-secondary min-h-[44px] text-xs font-semibold uppercase tracking-headline"
+          className="button-secondary min-h-[44px] w-full justify-center text-xs font-semibold uppercase tracking-headline sm:w-auto"
         >
           {isPending ? "Saving" : "Send"}
         </button>
-        {message ? <p className="text-xs text-secondary-label">{message}</p> : null}
+        {message ? (
+          <p className="rounded-[18px] bg-system-fill/32 px-3 py-2 text-xs text-secondary-label">
+            {message}
+          </p>
+        ) : null}
       </div>
     </div>
   );

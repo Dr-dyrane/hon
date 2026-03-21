@@ -14,6 +14,15 @@ export function PortalProfileForm({ profile }: { profile: PortalProfile }) {
   const [messageTone, setMessageTone] = useState<"success" | "error" | null>(null);
   const [activeStep, setActiveStep] = useState<"identity" | "updates">("identity");
   const [marketingOptIn, setMarketingOptIn] = useState(profile.marketingOptIn);
+  const [workspaceEmailEnabled, setWorkspaceEmailEnabled] = useState(
+    profile.workspaceEmailEnabled
+  );
+  const [workspaceInAppEnabled, setWorkspaceInAppEnabled] = useState(
+    profile.workspaceInAppEnabled
+  );
+  const [workspacePushEnabled, setWorkspacePushEnabled] = useState(
+    profile.workspacePushEnabled
+  );
   const [draft, setDraft] = useState({
     fullName: profile.fullName,
     preferredPhone: profile.preferredPhoneE164,
@@ -28,6 +37,9 @@ export function PortalProfileForm({ profile }: { profile: PortalProfile }) {
 
     const formData = new FormData(event.currentTarget);
     formData.set("marketingOptIn", marketingOptIn ? "true" : "false");
+    formData.set("workspaceEmailEnabled", workspaceEmailEnabled ? "true" : "false");
+    formData.set("workspaceInAppEnabled", workspaceInAppEnabled ? "true" : "false");
+    formData.set("workspacePushEnabled", workspacePushEnabled ? "true" : "false");
 
     startTransition(async () => {
       const result = await updateProfileAction(formData);
@@ -108,7 +120,16 @@ export function PortalProfileForm({ profile }: { profile: PortalProfile }) {
       <ProgressiveFormSection
         step="02"
         title="Updates"
-        summary={marketingOptIn ? "On" : "Off"}
+        summary={
+          [
+            marketingOptIn ? "marketing" : null,
+            workspaceEmailEnabled ? "email" : null,
+            workspaceInAppEnabled ? "in-app" : null,
+            workspacePushEnabled ? "push" : null,
+          ]
+            .filter(Boolean)
+            .join(" / ") || "Quiet"
+        }
         open={activeStep === "updates"}
         onOpenChange={(open) => setActiveStep(open ? "updates" : "updates")}
         actions={
@@ -141,6 +162,78 @@ export function PortalProfileForm({ profile }: { profile: PortalProfile }) {
             )}
           >
             {marketingOptIn ? "On" : "Off"}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setWorkspaceEmailEnabled((current) => !current)}
+          className="mt-3 flex min-h-[52px] w-full items-center justify-between rounded-[22px] bg-system-fill/42 px-4"
+        >
+          <div className="text-left">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
+              Email alerts
+            </p>
+            <p className="mt-1 text-sm text-label">
+              {workspaceEmailEnabled ? "Important email on" : "Important email off"}
+            </p>
+          </div>
+          <span
+            className={cn(
+              "inline-flex min-w-[58px] justify-center rounded-full px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.16em]",
+              workspaceEmailEnabled
+                ? "bg-accent/10 text-accent"
+                : "bg-system-fill/52 text-secondary-label"
+            )}
+          >
+            {workspaceEmailEnabled ? "On" : "Off"}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setWorkspaceInAppEnabled((current) => !current)}
+          className="mt-3 flex min-h-[52px] w-full items-center justify-between rounded-[22px] bg-system-fill/42 px-4"
+        >
+          <div className="text-left">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
+              In-app
+            </p>
+            <p className="mt-1 text-sm text-label">
+              {workspaceInAppEnabled ? "Notification sheet on" : "Notification sheet off"}
+            </p>
+          </div>
+          <span
+            className={cn(
+              "inline-flex min-w-[58px] justify-center rounded-full px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.16em]",
+              workspaceInAppEnabled
+                ? "bg-accent/10 text-accent"
+                : "bg-system-fill/52 text-secondary-label"
+            )}
+          >
+            {workspaceInAppEnabled ? "On" : "Off"}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setWorkspacePushEnabled((current) => !current)}
+          className="mt-3 flex min-h-[52px] w-full items-center justify-between rounded-[22px] bg-system-fill/42 px-4"
+        >
+          <div className="text-left">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
+              Push
+            </p>
+            <p className="mt-1 text-sm text-label">
+              {workspacePushEnabled ? "Push allowed when enabled" : "Push off"}
+            </p>
+          </div>
+          <span
+            className={cn(
+              "inline-flex min-w-[58px] justify-center rounded-full px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.16em]",
+              workspacePushEnabled
+                ? "bg-accent/10 text-accent"
+                : "bg-system-fill/52 text-secondary-label"
+            )}
+          >
+            {workspacePushEnabled ? "On" : "Off"}
           </span>
         </button>
       </ProgressiveFormSection>

@@ -10,6 +10,8 @@ import { formatNgn } from "@/lib/commerce";
 import { cn } from "@/lib/utils";
 import type {
   AdminCatalogCategory,
+  AdminCatalogDeleteGuard,
+  AdminCatalogIngredient,
   AdminCatalogProductDetail,
   AdminCatalogProductMedia,
 } from "@/lib/db/types";
@@ -22,11 +24,17 @@ import {
 export function ProductEditorForm({
   product,
   categories,
+  ingredients,
+  selectedIngredientIds,
+  deleteGuard,
   media,
   variantTarget,
 }: {
   product: AdminCatalogProductDetail;
   categories: AdminCatalogCategory[];
+  ingredients: AdminCatalogIngredient[];
+  selectedIngredientIds: string[];
+  deleteGuard: AdminCatalogDeleteGuard | null;
   media: AdminCatalogProductMedia[];
   variantTarget: {
     variantId: string;
@@ -38,6 +46,7 @@ export function ProductEditorForm({
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [messageTone, setMessageTone] = useState<"success" | "error" | null>(null);
+  const [linkedIngredientIds, setLinkedIngredientIds] = useState(selectedIngredientIds);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -101,6 +110,9 @@ export function ProductEditorForm({
   return (
     <form id="admin-product-edit-form" onSubmit={handleSubmit} className="space-y-6 pb-24">
       <input type="hidden" name="productId" value={product.productId} />
+      {linkedIngredientIds.map((ingredientId) => (
+        <input key={ingredientId} type="hidden" name="ingredientIds" value={ingredientId} />
+      ))}
 
       <div className="grid gap-6 min-[1500px]:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-6">
@@ -208,6 +220,55 @@ export function ProductEditorForm({
             </div>
           </EditorSection>
 
+          <EditorSection
+            step="03"
+            title="Formula"
+            summary={
+              linkedIngredientIds.length > 0
+                ? `${linkedIngredientIds.length} linked`
+                : "No ingredients yet"
+            }
+          >
+            <div className="rounded-[24px] bg-system-fill/28 px-4 py-4">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                Variant policy
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-secondary-label">
+                This catalog is operating on one default sellable variant per product. Keep the
+                core variant clear, then link the ingredient formula here so admin, marketing, and
+                the store stay aligned.
+              </p>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {ingredients.map((ingredient) => {
+                const isLinked = linkedIngredientIds.includes(ingredient.ingredientId);
+
+                return (
+                  <button
+                    key={ingredient.ingredientId}
+                    type="button"
+                    onClick={() =>
+                      setLinkedIngredientIds((current) =>
+                        current.includes(ingredient.ingredientId)
+                          ? current.filter((value) => value !== ingredient.ingredientId)
+                          : [...current, ingredient.ingredientId]
+                      )
+                    }
+                    className={cn(
+                      "min-h-[42px] rounded-full px-4 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors duration-200",
+                      isLinked
+                        ? "bg-[var(--accent)] text-[var(--accent-label)]"
+                        : "bg-system-fill/42 text-label hover:bg-system-fill/58"
+                    )}
+                  >
+                    {ingredient.ingredientName}
+                  </button>
+                );
+              })}
+            </div>
+          </EditorSection>
+
           <ProductMediaManager
             productId={product.productId}
             media={media}
@@ -215,7 +276,7 @@ export function ProductEditorForm({
           />
 
           <EditorSection
-            step="03"
+            step="04"
             title="State"
             summary={[product.status, product.isAvailable ? "live" : "off"].join(" / ")}
           >
@@ -303,6 +364,19 @@ export function ProductEditorForm({
             items={[
               { label: "On hand", value: `${product.inventoryOnHand ?? 0}` },
               { label: "Reserved", value: `${product.inventoryReserved ?? 0}` },
+            ]}
+          />
+          <SignalCard
+            title="Delete"
+            description={
+              deleteGuard?.canDelete
+                ? "Archived and clear."
+                : "Archive first. Open orders block deletion."
+            }
+            items={[
+              { label: "Status", value: deleteGuard?.status ?? product.status },
+              { label: "Open orders", value: `${deleteGuard?.openOrderCount ?? 0}` },
+              { label: "Media", value: `${deleteGuard?.mediaCount ?? 0}` },
             ]}
           />
         </aside>
@@ -406,15 +480,20 @@ function EditorSection({
 function SignalCard({
   title,
   items,
+  description,
 }: {
   title: string;
   items: { label: string; value: string }[];
+  description?: string;
 }) {
   return (
     <section className="glass-morphism rounded-[28px] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
       <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-secondary-label">
         {title}
       </h2>
+      {description ? (
+        <p className="mt-2 text-sm leading-relaxed text-secondary-label">{description}</p>
+      ) : null}
       <div className="mt-4 space-y-3">
         {items.map((item) => (
           <div key={item.label} className="rounded-[18px] bg-system-fill/42 px-4 py-3">

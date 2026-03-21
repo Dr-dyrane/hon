@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Save } from "lucide-react";
 import {
+  updateNotificationPreferenceAction,
   updateBankAccountAction,
   updateDeliveryDefaultsAction,
   updateLayoutPreviewAction,
@@ -13,22 +14,26 @@ import type {
   AdminDeliveryDefaults,
   AdminLayoutPreviewSetting,
   BankAccountRow,
+  WorkspaceNotificationPreference,
 } from "@/lib/db/types";
 
 export function AdminSettingsEditor({
   bankAccount,
   deliveryDefaults,
   layoutPreview,
+  notificationPreference,
 }: {
   bankAccount: BankAccountRow | null;
   deliveryDefaults: AdminDeliveryDefaults;
   layoutPreview: AdminLayoutPreviewSetting;
+  notificationPreference: WorkspaceNotificationPreference;
 }) {
   return (
     <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
       <BankAccountPanel bankAccount={bankAccount} />
       <div className="space-y-4">
         <DeliveryDefaultsPanel deliveryDefaults={deliveryDefaults} />
+        <NotificationPanel notificationPreference={notificationPreference} />
         <LayoutPreviewPanel layoutPreview={layoutPreview} />
       </div>
     </section>
@@ -213,6 +218,77 @@ function LayoutPreviewPanel({
   );
 }
 
+function NotificationPanel({
+  notificationPreference,
+}: {
+  notificationPreference: WorkspaceNotificationPreference;
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [message, setMessage] = useState<string | null>(null);
+  const [tone, setTone] = useState<"success" | "error" | null>(null);
+
+  function handleSubmit(formData: FormData) {
+    setMessage(null);
+    setTone(null);
+
+    startTransition(async () => {
+      const result = await updateNotificationPreferenceAction(formData);
+
+      if (!result.success) {
+        setMessage(result.error || "Unable to save.");
+        setTone("error");
+        return;
+      }
+
+      setMessage("Saved.");
+      setTone("success");
+      router.refresh();
+    });
+  }
+
+  return (
+    <SettingsCard
+      title="Notifications"
+      subtitle="Operator"
+      formAction={handleSubmit}
+      footer={message ?? "Important milestones only"}
+      tone={tone}
+      pending={isPending}
+    >
+      <div className="grid gap-4 sm:grid-cols-3">
+        <SelectGroup
+          label="Email"
+          name="workspaceEmailEnabled"
+          defaultValue={notificationPreference.workspaceEmailEnabled ? "true" : "false"}
+          options={[
+            { label: "On", value: "true" },
+            { label: "Off", value: "false" },
+          ]}
+        />
+        <SelectGroup
+          label="In-app"
+          name="workspaceInAppEnabled"
+          defaultValue={notificationPreference.workspaceInAppEnabled ? "true" : "false"}
+          options={[
+            { label: "On", value: "true" },
+            { label: "Off", value: "false" },
+          ]}
+        />
+        <SelectGroup
+          label="Push"
+          name="workspacePushEnabled"
+          defaultValue={notificationPreference.workspacePushEnabled ? "true" : "false"}
+          options={[
+            { label: "On", value: "true" },
+            { label: "Off", value: "false" },
+          ]}
+        />
+      </div>
+    </SettingsCard>
+  );
+}
+
 function SettingsCard({
   title,
   subtitle,
@@ -243,10 +319,10 @@ function SettingsCard({
 
       <div className="mt-5">{children}</div>
 
-      <div className="mt-5 flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/42 px-4 py-3">
+      <div className="mt-5 flex flex-col gap-3 rounded-[24px] bg-system-fill/42 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <p
           className={cn(
-            "text-xs font-medium",
+            "rounded-[18px] bg-system-fill/32 px-3 py-2 text-xs font-medium",
             tone === "success" && "text-accent",
             tone === "error" && "text-red-500",
             !tone && "text-secondary-label"
@@ -258,7 +334,7 @@ function SettingsCard({
           type="submit"
           disabled={pending}
           className={cn(
-            "button-primary min-h-[40px] min-w-[120px] gap-2 px-4 text-[11px] font-semibold uppercase tracking-[0.16em]",
+            "button-primary min-h-[40px] w-full min-w-[120px] gap-2 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] sm:w-auto",
             pending && "pointer-events-none opacity-50"
           )}
         >

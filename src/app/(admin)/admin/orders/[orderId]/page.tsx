@@ -139,93 +139,147 @@ export default async function AdminOrderDetailPage({
 
   return (
     <div className="space-y-6">
-      <WorkspaceContextPanel
-        title={`#${order.orderNumber}`}
-        detail={order.customerName}
-        tags={[{ label: stage.label, tone: stage.tone }]}
-        meta={[
-          {
-            label: "Customer",
-            value: order.customerEmail
-              ? `${order.customerName} / ${order.customerEmail}`
-              : order.customerName,
-          },
-          {
-            label: "Contact",
-            value: order.customerPhone,
-          },
-          {
-            label: "Total",
-            value: `${formatNgn(order.totalNgn)} / ${formatTimestamp(order.placedAt)}`,
-          },
-          {
-            label: "Transfer Ref",
-            value: isRequestPending ? "Pending" : order.transferReference,
-          },
-          {
-            label: "Deadline",
-            value: isRequestPending
-              ? "Pending"
-              : formatTimestamp(order.transferDeadlineAt),
-          },
-          {
-            label: "Address",
-            value: getDeliveryLine(order.deliveryAddressSnapshot),
-          },
-        ]}
-      />
+      <div className="space-y-3 md:hidden">
+        <section className="rounded-[24px] bg-system-fill/40 px-4 py-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                Order
+              </div>
+              <div className="mt-1 truncate text-lg font-semibold tracking-tight text-label">
+                #{order.orderNumber}
+              </div>
+              <div className="mt-1 text-sm text-secondary-label">
+                {order.customerName}
+              </div>
+            </div>
+            <div className="rounded-full bg-system-background px-3 py-1 text-[10px] font-semibold uppercase tracking-headline text-label">
+              {stage.label}
+            </div>
+          </div>
 
-      <QuietValueStrip
-        items={[
-          {
-            label: "Stage",
-            value: stage.label,
-            detail: stage.detail,
-          },
-          {
-            label: "Due",
-            value: formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn),
-            detail: isRequestPending
-              ? "Request pending"
-              : order.payment
-                ? paymentState.label
-                : "Pending",
-          },
-          {
-            label: "Proofs",
-            value: `${paymentProofs.length}`,
-            detail: isRequestPending
-              ? "Locked"
-              : paymentProofs.length > 0
-                ? "Received"
-                : "Waiting",
-          },
-          {
-            label: "Checks",
-            value: `${paymentReviews.length}`,
-            detail: paymentReviews.length > 0 ? "Logged" : "Quiet",
-          },
-          {
-            label: "Rating",
-            value: customerReview ? `${customerReview.rating}/5` : reviewRequest ? "Pending" : "Quiet",
-            detail: customerReview ? "Customer" : reviewRequest ? "Waiting" : "None",
-          },
-          {
-            label: "Timeline",
-            value: `${orderEvents.length}`,
-            detail: orderEvents.length > 0 ? "Events" : "Waiting",
-          },
-          {
-            label: "Return",
-            value: returnCase ? returnStatusLabelMap[returnCase.status] ?? returnCase.status : "Quiet",
-            detail: returnCase ? "Case" : "None",
-          },
-        ]}
-        columns={4}
-      />
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <CompactAdminStat
+              label="Due"
+              value={formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn)}
+            />
+            <CompactAdminStat
+              label="Proofs"
+              value={`${paymentProofs.length}`}
+            />
+            <CompactAdminStat
+              label="Checks"
+              value={`${paymentReviews.length}`}
+            />
+            <CompactAdminStat
+              label="Return"
+              value={returnCase ? "Open" : "Quiet"}
+            />
+          </div>
+        </section>
+      </div>
+
+      <div className="hidden md:block">
+        <WorkspaceContextPanel
+          title={`#${order.orderNumber}`}
+          detail={order.customerName}
+          tags={[{ label: stage.label, tone: stage.tone }]}
+          meta={[
+            {
+              label: "Customer",
+              value: order.customerEmail
+                ? `${order.customerName} / ${order.customerEmail}`
+                : order.customerName,
+            },
+            {
+              label: "Contact",
+              value: order.customerPhone,
+            },
+            {
+              label: "Total",
+              value: `${formatNgn(order.totalNgn)} / ${formatTimestamp(order.placedAt)}`,
+            },
+            {
+              label: "Transfer Ref",
+              value: isRequestPending ? "Pending" : order.transferReference,
+            },
+            {
+              label: "Deadline",
+              value: isRequestPending
+                ? "Pending"
+                : formatTimestamp(order.transferDeadlineAt),
+            },
+            {
+              label: "Address",
+              value: getDeliveryLine(order.deliveryAddressSnapshot),
+            },
+          ]}
+        />
+      </div>
+
+      <div className="hidden md:block">
+        <QuietValueStrip
+          items={[
+            {
+              label: "Stage",
+              value: stage.label,
+              detail: stage.detail,
+            },
+            {
+              label: "Due",
+              value: formatNgn(order.payment?.expectedAmountNgn ?? order.totalNgn),
+              detail: isRequestPending
+                ? "Request pending"
+                : order.payment
+                  ? paymentState.label
+                  : "Pending",
+            },
+            {
+              label: "Proofs",
+              value: `${paymentProofs.length}`,
+              detail: isRequestPending
+                ? "Locked"
+                : paymentProofs.length > 0
+                  ? "Received"
+                  : "Waiting",
+            },
+            {
+              label: "Checks",
+              value: `${paymentReviews.length}`,
+              detail: paymentReviews.length > 0 ? "Logged" : "Quiet",
+            },
+            {
+              label: "Rating",
+              value: customerReview ? `${customerReview.rating}/5` : reviewRequest ? "Pending" : "Quiet",
+              detail: customerReview ? "Customer" : reviewRequest ? "Waiting" : "None",
+            },
+            {
+              label: "Timeline",
+              value: `${orderEvents.length}`,
+              detail: orderEvents.length > 0 ? "Events" : "Waiting",
+            },
+            {
+              label: "Return",
+              value: returnCase ? returnStatusLabelMap[returnCase.status] ?? returnCase.status : "Quiet",
+              detail: returnCase ? "Case" : "None",
+            },
+          ]}
+          columns={4}
+        />
+      </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(300px,0.95fr)]">
         <div className="space-y-4">
+          <DetailSurface title="Actions">
+            <AdminOrderActions
+              orderId={order.orderId}
+              paymentId={order.paymentId}
+              isRequestPending={isRequestPending}
+              paymentActions={paymentActions}
+              canCancel={canCancelOrder(order)}
+            />
+          </DetailSurface>
+
           <DetailSurface
             title="Transfer"
             action={
@@ -262,16 +316,6 @@ export default async function AdminOrderDetailPage({
                 </div>
               </div>
             )}
-          </DetailSurface>
-
-          <DetailSurface title="Actions">
-            <AdminOrderActions
-              orderId={order.orderId}
-              paymentId={order.paymentId}
-              isRequestPending={isRequestPending}
-              paymentActions={paymentActions}
-              canCancel={canCancelOrder(order)}
-            />
           </DetailSurface>
 
           <DetailSurface title="Timeline">
@@ -575,6 +619,23 @@ export default async function AdminOrderDetailPage({
           </DetailSurface>
         </div>
       </div>
+    </div>
+  );
+}
+
+function CompactAdminStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[18px] bg-system-background/80 px-3 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-semibold text-label">{value}</div>
     </div>
   );
 }

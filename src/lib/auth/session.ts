@@ -7,9 +7,10 @@ import {
   AUTH_SESSION_COOKIE_NAME,
   AUTH_SESSION_TTL_SECONDS,
 } from "@/lib/auth/constants";
-import type { AuthChallenge, AuthRole, AuthSession } from "@/lib/auth/types";
+import type { AuthChallenge, AuthSession } from "@/lib/auth/types";
 import { createSignedToken, readSignedToken } from "@/lib/auth/tokens";
 import { serverEnv } from "@/lib/config/server";
+import { resolveAuthRoleForEmail } from "@/lib/db/repositories/user-repository";
 
 function hasExpired(isoDate: string) {
   return new Date(isoDate).getTime() <= Date.now();
@@ -23,10 +24,6 @@ function getCookieOptions(maxAge: number) {
     path: "/",
     maxAge,
   };
-}
-
-function resolveRole(email: string): AuthRole {
-  return serverEnv.auth.adminEmails.includes(email) ? "admin" : "customer";
 }
 
 export function isConfiguredAdminEmail(email: string) {
@@ -98,9 +95,10 @@ export async function setCurrentSession(email: string) {
   const expiresAt = new Date(
     issuedAt.getTime() + AUTH_SESSION_TTL_SECONDS * 1000
   );
+  const role = await resolveAuthRoleForEmail(email);
   const session: AuthSession = {
     email,
-    role: resolveRole(email),
+    role,
     issuedAt: issuedAt.toISOString(),
     expiresAt: expiresAt.toISOString(),
   };

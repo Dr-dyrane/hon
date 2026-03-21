@@ -1,7 +1,10 @@
 import "server-only";
 
 import { isDatabaseConfigured, query } from "@/lib/db/client";
+import { applyWorkspaceNotificationState } from "@/lib/db/repositories/notification-preferences-repository";
 import type { WorkspaceNotification } from "@/lib/db/types";
+
+type PendingWorkspaceNotification = Omit<WorkspaceNotification, "isRead">;
 
 type CustomerOrderNotificationRow = {
   orderId: string;
@@ -80,7 +83,7 @@ function buildAdminActor(email: string) {
   } as const;
 }
 
-function sortAndLimit(notifications: WorkspaceNotification[], limit: number) {
+function sortAndLimit<T extends { createdAt: string }>(notifications: T[], limit: number) {
   return notifications
     .sort((left, right) => {
       return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
@@ -90,10 +93,11 @@ function sortAndLimit(notifications: WorkspaceNotification[], limit: number) {
 
 function mapCustomerOrderNotification(
   row: CustomerOrderNotificationRow
-): WorkspaceNotification | null {
+): PendingWorkspaceNotification | null {
   if (row.status === "checkout_draft") {
     return {
       notificationId: `order:${row.orderId}`,
+      eventKey: "workspace",
       title: "Request received",
       detail: `#${row.orderNumber}`,
       href: `/account/orders/${row.orderId}`,
@@ -106,6 +110,7 @@ function mapCustomerOrderNotification(
   if (row.status === "awaiting_transfer") {
     return {
       notificationId: `order:${row.orderId}`,
+      eventKey: "workspace",
       title: "Transfer ready",
       detail: `#${row.orderNumber}`,
       href: `/account/orders/${row.orderId}`,
@@ -118,6 +123,7 @@ function mapCustomerOrderNotification(
   if (row.status === "payment_submitted" || row.status === "payment_under_review") {
     return {
       notificationId: `order:${row.orderId}`,
+      eventKey: "workspace",
       title: "Payment in review",
       detail: `#${row.orderNumber}`,
       href: `/account/orders/${row.orderId}`,
@@ -130,6 +136,7 @@ function mapCustomerOrderNotification(
   if (row.status === "payment_confirmed") {
     return {
       notificationId: `order:${row.orderId}`,
+      eventKey: "workspace",
       title: "Payment confirmed",
       detail: `#${row.orderNumber}`,
       href: `/account/orders/${row.orderId}`,
@@ -142,6 +149,7 @@ function mapCustomerOrderNotification(
   if (row.status === "out_for_delivery") {
     return {
       notificationId: `order:${row.orderId}`,
+      eventKey: "workspace",
       title: "Out for delivery",
       detail: `#${row.orderNumber}`,
       href: `/account/orders/${row.orderId}`,
@@ -154,6 +162,7 @@ function mapCustomerOrderNotification(
   if (row.status === "delivered") {
     return {
       notificationId: `order:${row.orderId}`,
+      eventKey: "workspace",
       title: "Delivered",
       detail: `#${row.orderNumber}`,
       href: `/account/orders/${row.orderId}`,
@@ -166,6 +175,7 @@ function mapCustomerOrderNotification(
   if (row.status === "cancelled" || row.status === "expired") {
     return {
       notificationId: `order:${row.orderId}`,
+      eventKey: "workspace",
       title: "Order closed",
       detail: `#${row.orderNumber}`,
       href: `/account/orders/${row.orderId}`,
@@ -180,10 +190,11 @@ function mapCustomerOrderNotification(
 
 function mapCustomerReturnNotification(
   row: CustomerReturnNotificationRow
-): WorkspaceNotification | null {
+): PendingWorkspaceNotification | null {
   if (row.status === "approved") {
     return {
       notificationId: `return:${row.returnCaseId}`,
+      eventKey: "workspace",
       title: "Return approved",
       detail: `#${row.orderNumber}`,
       href: `/account/orders/${row.orderId}`,
@@ -196,6 +207,7 @@ function mapCustomerReturnNotification(
   if (row.status === "rejected") {
     return {
       notificationId: `return:${row.returnCaseId}`,
+      eventKey: "workspace",
       title: "Return not approved",
       detail: `#${row.orderNumber}`,
       href: `/account/orders/${row.orderId}`,
@@ -208,6 +220,7 @@ function mapCustomerReturnNotification(
   if (row.status === "received") {
     return {
       notificationId: `return:${row.returnCaseId}`,
+      eventKey: "workspace",
       title: "Return received",
       detail: `#${row.orderNumber}`,
       href: `/account/orders/${row.orderId}`,
@@ -220,6 +233,7 @@ function mapCustomerReturnNotification(
   if (row.status === "refunded") {
     return {
       notificationId: `return:${row.returnCaseId}`,
+      eventKey: "workspace",
       title: "Refund sent",
       detail: `#${row.orderNumber}`,
       href: `/account/orders/${row.orderId}`,
@@ -333,16 +347,19 @@ export async function listWorkspaceNotificationsForCustomer(
     ),
   ]);
 
-  const notifications = [
+  const notifications: PendingWorkspaceNotification[] = [
     ...ordersResult.rows
       .map((row) => mapCustomerOrderNotification(row))
-      .filter((row): row is WorkspaceNotification => row !== null),
+      .filter((row): row is PendingWorkspaceNotification => row !== null),
     ...returnsResult.rows
       .map((row) => mapCustomerReturnNotification(row))
-      .filter((row): row is WorkspaceNotification => row !== null),
+      .filter((row): row is PendingWorkspaceNotification => row !== null),
   ];
 
-  return sortAndLimit(notifications, limit);
+  return applyWorkspaceNotificationState(
+    normalizedEmail,
+    sortAndLimit(notifications, limit)
+  );
 }
 
 export async function listWorkspaceNotificationsForAdmin(email: string, limit = 8) {
@@ -464,9 +481,10 @@ export async function listWorkspaceNotificationsForAdmin(email: string, limit = 
     ),
   ]);
 
-  const notifications: WorkspaceNotification[] = [
+  const notifications: PendingWorkspaceNotification[] = [
     ...requestsResult.rows.map((row) => ({
       notificationId: `request:${row.orderId}`,
+      eventKey: "workspace" as const,
       title: "New request",
       detail: `#${row.orderNumber} ${row.customerName}`,
       href: `/admin/orders/${row.orderId}`,
@@ -476,6 +494,7 @@ export async function listWorkspaceNotificationsForAdmin(email: string, limit = 
     })),
     ...paymentsResult.rows.map((row) => ({
       notificationId: `payment:${row.paymentId}`,
+      eventKey: "workspace" as const,
       title: row.status === "under_review" ? "Proof in review" : "Proof waiting",
       detail: `#${row.orderNumber} ${row.customerName}`,
       href: `/admin/orders/${row.orderId}`,
@@ -485,6 +504,7 @@ export async function listWorkspaceNotificationsForAdmin(email: string, limit = 
     })),
     ...dispatchResult.rows.map((row) => ({
       notificationId: `dispatch:${row.orderId}`,
+      eventKey: "workspace" as const,
       title: "Ready for dispatch",
       detail: `#${row.orderNumber} ${row.customerName}`,
       href: `/admin/delivery`,
@@ -494,6 +514,7 @@ export async function listWorkspaceNotificationsForAdmin(email: string, limit = 
     })),
     ...returnsResult.rows.map((row) => ({
       notificationId: `return:${row.returnCaseId}`,
+      eventKey: "workspace" as const,
       title: "Return request",
       detail: `#${row.orderNumber} ${row.customerName}`,
       href: `/admin/orders/${row.orderId}`,
@@ -503,6 +524,7 @@ export async function listWorkspaceNotificationsForAdmin(email: string, limit = 
     })),
     ...stockResult.rows.map((row) => ({
       notificationId: `stock:${row.productId}:${row.variantName}`,
+      eventKey: "workspace" as const,
       title: "Low stock",
       detail: `${row.productName} - ${row.availableUnits}/${row.reorderThreshold}`,
       href: `/admin/catalog/products/${row.productId}`,
@@ -512,5 +534,5 @@ export async function listWorkspaceNotificationsForAdmin(email: string, limit = 
     })),
   ];
 
-  return sortAndLimit(notifications, limit);
+  return applyWorkspaceNotificationState(email, sortAndLimit(notifications, limit));
 }

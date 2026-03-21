@@ -136,6 +136,7 @@ export async function listMarketingProducts() {
       group by
         p.slug,
         pc.slug,
+        p.marketing_name,
         p.name,
         flavor,
         p.short_description,

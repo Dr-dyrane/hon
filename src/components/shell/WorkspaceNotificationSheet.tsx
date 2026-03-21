@@ -56,7 +56,8 @@ export function WorkspaceNotificationSheet({
   notifications: WorkspaceNotification[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const count = notifications.length;
+  const [localNotifications, setLocalNotifications] = useState(notifications);
+  const count = localNotifications.filter((notification) => !notification.isRead).length;
   useOverlayPresence("workspace-notifications", isOpen);
   const countLabel = useMemo(() => {
     if (count < 10) {
@@ -65,6 +66,10 @@ export function WorkspaceNotificationSheet({
 
     return "9+";
   }, [count]);
+
+  useEffect(() => {
+    setLocalNotifications(notifications);
+  }, [notifications]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -86,6 +91,32 @@ export function WorkspaceNotificationSheet({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
+
+  async function markRead(notificationIds: string[]) {
+    if (notificationIds.length === 0) {
+      return;
+    }
+
+    setLocalNotifications((current) =>
+      current.map((notification) =>
+        notificationIds.includes(notification.notificationId)
+          ? { ...notification, isRead: true }
+          : notification
+      )
+    );
+
+    try {
+      await fetch("/api/workspace-notifications/read", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ notificationIds }),
+      });
+    } catch {
+      // Ignore sync failures and keep the local state responsive.
+    }
+  }
 
   return (
     <>
@@ -136,21 +167,41 @@ export function WorkspaceNotificationSheet({
                 Notifications
               </h2>
               <div className="mt-1.5 text-sm text-secondary-label">
-                {count > 0 ? `${count} important update${count === 1 ? "" : "s"}` : "No updates"}
+                {count > 0
+                  ? `${count} important update${count === 1 ? "" : "s"}`
+                  : localNotifications.length > 0
+                    ? "All caught up"
+                    : "No updates"}
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-system-fill/80 text-label transition-colors duration-300 hover:bg-system-fill"
-              aria-label="Close notifications"
-            >
-              <X className="h-5 w-5" strokeWidth={1.7} />
-            </button>
+            <div className="flex items-center gap-2">
+              {count > 0 ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    markRead(
+                      localNotifications
+                        .filter((notification) => !notification.isRead)
+                        .map((notification) => notification.notificationId)
+                    )
+                  }
+                  className="rounded-full bg-system-fill/72 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label transition-colors duration-300 hover:bg-system-fill"
+                >
+                  Mark all
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-system-fill/80 text-label transition-colors duration-300 hover:bg-system-fill"
+                aria-label="Close notifications"
+              >
+                <X className="h-5 w-5" strokeWidth={1.7} />
+              </button>
+            </div>
           </div>
 
-          {count === 0 ? (
+          {localNotifications.length === 0 ? (
             <div className="flex flex-1 items-center justify-center px-3 text-center">
               <div className="space-y-3">
                 <div className="mx-auto flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-system-fill/80 text-secondary-label shadow-soft">
@@ -162,7 +213,7 @@ export function WorkspaceNotificationSheet({
           ) : (
             <div className="scrollbar-hide flex-1 overflow-y-auto pr-1 pb-2">
               <div className="space-y-3">
-                {notifications.map((notification) => {
+                {localNotifications.map((notification) => {
                   const Icon = ICON_MAP[notification.icon];
                   const toneClass =
                     notification.tone === "success"
@@ -175,8 +226,14 @@ export function WorkspaceNotificationSheet({
                     <Link
                       key={notification.notificationId}
                       href={notification.href}
-                      onClick={() => setIsOpen(false)}
-                      className="block rounded-[28px] bg-system-background/86 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)] transition-transform duration-200 hover:-translate-y-[1px]"
+                      onClick={() => {
+                        markRead([notification.notificationId]);
+                        setIsOpen(false);
+                      }}
+                      className={cn(
+                        "block rounded-[28px] bg-system-background/86 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)] transition-transform duration-200 hover:-translate-y-[1px]",
+                        notification.isRead && "opacity-72"
+                      )}
                     >
                       <div className="flex items-start gap-3">
                         <div

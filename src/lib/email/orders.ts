@@ -7,6 +7,7 @@ import {
   getOrderNotificationSnapshot,
   type OrderNotificationSnapshot,
 } from "@/lib/db/repositories/order-notification-repository";
+import { getWorkspaceNotificationPreference } from "@/lib/db/repositories/notification-preferences-repository";
 import { createGuestOrderAccessToken } from "@/lib/orders/access";
 
 function buildBrandLockup() {
@@ -119,6 +120,45 @@ async function loadOrder(orderId: string) {
   return getOrderNotificationSnapshot(orderId);
 }
 
+async function canSendWorkspaceCustomerEmail(email: string | null | undefined) {
+  if (!email) {
+    return false;
+  }
+
+  const preference = await getWorkspaceNotificationPreference(email);
+  return preference.workspaceEmailEnabled;
+}
+
+async function getSendableCustomerEmail(
+  order: OrderNotificationSnapshot | null | undefined
+) {
+  const customerEmail = order?.customerEmail;
+
+  if (!customerEmail) {
+    return null;
+  }
+
+  if (!(await canSendWorkspaceCustomerEmail(customerEmail))) {
+    return null;
+  }
+
+  return customerEmail;
+}
+
+async function getAdminWorkspaceRecipients() {
+  const recipients: string[] = [];
+
+  for (const email of serverEnv.auth.adminEmails) {
+    const preference = await getWorkspaceNotificationPreference(email);
+
+    if (preference.workspaceEmailEnabled) {
+      recipients.push(email);
+    }
+  }
+
+  return recipients;
+}
+
 export async function sendOrderPlacedNotifications(input: {
   orderId: string;
   customerLink?: string | null;
@@ -154,9 +194,11 @@ export async function sendOrderPlacedNotifications(input: {
       `
       : "";
 
-  if (order.customerEmail) {
+  const customerEmail = await getSendableCustomerEmail(order);
+
+  if (customerEmail) {
     await sendSafe({
-      to: order.customerEmail,
+      to: customerEmail,
       subject: isRequest
         ? `House of Prax request ${order.orderNumber}`
         : `House of Prax order ${order.orderNumber}`,
@@ -177,10 +219,13 @@ export async function sendOrderPlacedNotifications(input: {
     });
   }
 
-  if ((input.notifyAdmin ?? true) && serverEnv.auth.adminEmails.length > 0) {
+  const adminRecipients =
+    input.notifyAdmin ?? true ? await getAdminWorkspaceRecipients() : [];
+
+  if (adminRecipients.length > 0) {
     const adminHref = `${serverEnv.public.appUrl}/admin/orders/${order.orderId}`;
     await sendSafe({
-      to: serverEnv.auth.adminEmails,
+      to: adminRecipients,
       subject: isRequest
         ? `New request ${order.orderNumber}`
         : `New order ${order.orderNumber}`,
@@ -217,10 +262,11 @@ export async function sendPaymentProofSubmittedNotifications(input: {
   }
 
   const proofIncluded = input.proofIncluded ?? true;
+  const customerEmail = await getSendableCustomerEmail(order);
 
-  if (order.customerEmail) {
+  if (customerEmail) {
     await sendSafe({
-      to: order.customerEmail,
+      to: customerEmail,
       subject: proofIncluded
         ? `Proof received for ${order.orderNumber}`
         : `Payment submitted for ${order.orderNumber}`,
@@ -238,10 +284,12 @@ export async function sendPaymentProofSubmittedNotifications(input: {
     });
   }
 
-  if (serverEnv.auth.adminEmails.length > 0) {
+  const adminRecipients = await getAdminWorkspaceRecipients();
+
+  if (adminRecipients.length > 0) {
     const adminHref = `${serverEnv.public.appUrl}/admin/payments`;
     await sendSafe({
-      to: serverEnv.auth.adminEmails,
+      to: adminRecipients,
       subject: proofIncluded
         ? `Payment proof waiting for ${order.orderNumber}`
         : `Payment waiting for ${order.orderNumber}`,
@@ -265,14 +313,20 @@ export async function sendTransferReminderNotification(input: {
 }) {
   const order = await loadOrder(input.orderId);
 
-  if (!order?.customerEmail) {
+  if (!order) {
+    return false;
+  }
+
+  const customerEmail = await getSendableCustomerEmail(order);
+
+  if (!customerEmail) {
     return false;
   }
 
   const orderHref = buildGuestOrderLink(order.orderId);
 
   return sendSafe({
-    to: order.customerEmail,
+    to: customerEmail,
     subject: `Transfer reminder for ${order.orderNumber}`,
     text: `Complete payment for order ${order.orderNumber} before the transfer window closes.`,
     html: buildShell({
@@ -297,14 +351,20 @@ export async function sendReviewReminderNotification(input: {
 }) {
   const order = await loadOrder(input.orderId);
 
-  if (!order?.customerEmail) {
+  if (!order) {
+    return false;
+  }
+
+  const customerEmail = await getSendableCustomerEmail(order);
+
+  if (!customerEmail) {
     return false;
   }
 
   const orderHref = buildGuestOrderLink(order.orderId);
 
   return sendSafe({
-    to: order.customerEmail,
+    to: customerEmail,
     subject: `Rate ${order.orderNumber}`,
     text: `Leave a quick rating for order ${order.orderNumber}.`,
     html: buildShell({
@@ -322,12 +382,14 @@ export async function sendPaymentQueueReminderNotification(input: {
 }) {
   const order = await loadOrder(input.orderId);
 
-  if (!order || serverEnv.auth.adminEmails.length === 0) {
+  const adminRecipients = await getAdminWorkspaceRecipients();
+
+  if (!order || adminRecipients.length === 0) {
     return false;
   }
 
   return sendSafe({
-    to: serverEnv.auth.adminEmails,
+    to: adminRecipients,
     subject: `Payment still waiting for ${order.orderNumber}`,
     text: `Order ${order.orderNumber} still needs payment review.`,
     html: buildShell({
@@ -346,7 +408,9 @@ export async function sendReturnQueueReminderNotification(input: {
 }) {
   const order = await loadOrder(input.orderId);
 
-  if (!order || serverEnv.auth.adminEmails.length === 0) {
+  const adminRecipients = await getAdminWorkspaceRecipients();
+
+  if (!order || adminRecipients.length === 0) {
     return false;
   }
 
@@ -373,7 +437,7 @@ export async function sendReturnQueueReminderNotification(input: {
           };
 
   return sendSafe({
-    to: serverEnv.auth.adminEmails,
+    to: adminRecipients,
     subject: copy.subject,
     text: `${copy.title}. Order ${order.orderNumber}.`,
     html: buildShell({
@@ -393,7 +457,13 @@ export async function sendPaymentDecisionNotification(input: {
 }) {
   const order = await loadOrder(input.orderId);
 
-  if (!order?.customerEmail) {
+  if (!order) {
+    return;
+  }
+
+  const customerEmail = await getSendableCustomerEmail(order);
+
+  if (!customerEmail) {
     return;
   }
 
@@ -417,7 +487,7 @@ export async function sendPaymentDecisionNotification(input: {
           };
 
   await sendSafe({
-    to: order.customerEmail,
+    to: customerEmail,
     subject: copy.subject,
     text: `${copy.title}. Order ${order.orderNumber}.`,
     html: buildShell({
@@ -439,7 +509,13 @@ export async function sendDeliveryStatusNotification(input: {
 }) {
   const order = await loadOrder(input.orderId);
 
-  if (!order?.customerEmail) {
+  if (!order) {
+    return;
+  }
+
+  const customerEmail = await getSendableCustomerEmail(order);
+
+  if (!customerEmail) {
     return;
   }
 
@@ -458,7 +534,7 @@ export async function sendDeliveryStatusNotification(input: {
   const orderHref = buildGuestOrderLink(order.orderId);
 
   await sendSafe({
-    to: order.customerEmail,
+    to: customerEmail,
     subject: copy.subject,
     text: `${copy.title}. Order ${order.orderNumber}.`,
     html: buildShell({
@@ -485,12 +561,18 @@ export async function sendOrderCancelledNotification(input: {
 }) {
   const order = await loadOrder(input.orderId);
 
-  if (!order?.customerEmail) {
+  if (!order) {
+    return;
+  }
+
+  const customerEmail = await getSendableCustomerEmail(order);
+
+  if (!customerEmail) {
     return;
   }
 
   await sendSafe({
-    to: order.customerEmail,
+    to: customerEmail,
     subject: `Order cancelled: ${order.orderNumber}`,
     text: `Order ${order.orderNumber} has been cancelled.`,
     html: buildShell({
@@ -515,9 +597,11 @@ export async function sendOrderReturnRequestedNotifications(input: {
     return;
   }
 
-  if (order.customerEmail) {
+  const customerEmail = await getSendableCustomerEmail(order);
+
+  if (customerEmail) {
     await sendSafe({
-      to: order.customerEmail,
+      to: customerEmail,
       subject: `Return request received for ${order.orderNumber}`,
       text: `Your return request for order ${order.orderNumber} is with Praxy now.`,
       html: buildShell({
@@ -530,9 +614,11 @@ export async function sendOrderReturnRequestedNotifications(input: {
     });
   }
 
-  if (serverEnv.auth.adminEmails.length > 0) {
+  const adminRecipients = await getAdminWorkspaceRecipients();
+
+  if (adminRecipients.length > 0) {
     await sendSafe({
-      to: serverEnv.auth.adminEmails,
+      to: adminRecipients,
       subject: `Return requested for ${order.orderNumber}`,
       text: `Order ${order.orderNumber} has a new return request.`,
       html: buildShell({
@@ -554,9 +640,11 @@ export async function sendOrderReturnProofSubmittedNotifications(input: {
     return;
   }
 
-  if (order.customerEmail) {
+  const customerEmail = await getSendableCustomerEmail(order);
+
+  if (customerEmail) {
     await sendSafe({
-      to: order.customerEmail,
+      to: customerEmail,
       subject: `Return proof received for ${order.orderNumber}`,
       text: `Return proof for order ${order.orderNumber} has been received.`,
       html: buildShell({
@@ -569,9 +657,11 @@ export async function sendOrderReturnProofSubmittedNotifications(input: {
     });
   }
 
-  if (serverEnv.auth.adminEmails.length > 0) {
+  const adminRecipients = await getAdminWorkspaceRecipients();
+
+  if (adminRecipients.length > 0) {
     await sendSafe({
-      to: serverEnv.auth.adminEmails,
+      to: adminRecipients,
       subject: `Return proof waiting for ${order.orderNumber}`,
       text: `Order ${order.orderNumber} now has return proof waiting in the order detail.`,
       html: buildShell({
@@ -592,7 +682,13 @@ export async function sendOrderReturnDecisionNotification(input: {
 }) {
   const order = await loadOrder(input.orderId);
 
-  if (!order?.customerEmail) {
+  if (!order) {
+    return;
+  }
+
+  const customerEmail = await getSendableCustomerEmail(order);
+
+  if (!customerEmail) {
     return;
   }
 
@@ -619,7 +715,7 @@ export async function sendOrderReturnDecisionNotification(input: {
           };
 
   await sendSafe({
-    to: order.customerEmail,
+    to: customerEmail,
     subject: copy.subject,
     text: `${copy.title}. Order ${order.orderNumber}.`,
     html: buildShell({
@@ -644,12 +740,18 @@ export async function sendOrderRefundedNotification(input: {
 }) {
   const order = await loadOrder(input.orderId);
 
-  if (!order?.customerEmail) {
+  if (!order) {
+    return;
+  }
+
+  const customerEmail = await getSendableCustomerEmail(order);
+
+  if (!customerEmail) {
     return;
   }
 
   await sendSafe({
-    to: order.customerEmail,
+    to: customerEmail,
     subject: `Refund sent for ${order.orderNumber}`,
     text: `Refund for order ${order.orderNumber} has been sent.`,
     html: buildShell({

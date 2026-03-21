@@ -37,7 +37,7 @@ export function AdminOrderActions({
   }, [acceptState.status, router]);
 
   return (
-    <div className="grid gap-3 sm:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {isRequestPending ? (
         <>
           <form

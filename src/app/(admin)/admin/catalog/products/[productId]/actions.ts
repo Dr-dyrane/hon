@@ -85,6 +85,10 @@ export async function updateProductAction(formData: FormData) {
   const priceNgn = formData.get("priceNgn") as string;
   const compareAtPriceNgn = formData.get("compareAtPriceNgn") as string || null;
   const variantStatus = formData.get("variantStatus") as string || undefined;
+  const ingredientIds = formData
+    .getAll("ingredientIds")
+    .map((value) => value.toString())
+    .filter(Boolean);
   
   const inventoryOnHand = formData.get("inventoryOnHand") as string || undefined;
   const reorderThreshold = formData.get("reorderThreshold") as string || undefined;
@@ -109,6 +113,7 @@ export async function updateProductAction(formData: FormData) {
       priceNgn,
       compareAtPriceNgn,
       variantStatus,
+      ingredientIds,
       inventoryOnHand,
       reorderThreshold,
       actorUserId: actor.userId,

@@ -111,6 +111,17 @@ Current state:
 - mobile shell header now uses a denser title treatment so the first viewport reaches the task faster
 - portal profile and addresses now use compact mobile task intros instead of large context panels before the form work starts
 - mobile order detail now uses a compact top summary and simpler payment/rating actions instead of stacking full desktop chrome first
+- payments, delivery, and portal order history now switch into denser multi-column desktop layouts earlier instead of holding a narrow single-column web rhythm too long
+- return request and return-proof entry now use simpler phone-first controls instead of desktop-style quantity and upload actions
+- deployed code now self-detects runtime-version changes, clears app-owned stale state, unregisters legacy service workers, and reloads without manual browser cache resets
+- admin order detail, product edit, and section edit now open with compact phone summaries instead of desktop-scale context chrome
+- customer checkout now keeps map pinning and delivery notes behind optional phone-first controls, and guest confirmation uses a calmer wider shell
+- admin payments now uses denser phone queue cards with compact amount stats and full-width action rows instead of a desktop-weight right rail
+- portal order history now uses compact phone cards and spreads into wider desktop grids earlier instead of holding a narrow single-column rhythm
+- customer payment, rating, and return feedback now lands in quiet inline status pills instead of loose helper text
+- guest confirmation now uses a calmer native-style top bar instead of a generic three-cell utility header
+- admin users and catalog taxonomy now exist as real management routes instead of hidden data-only capabilities
+- admin users, taxonomy, and settings now use phone-safe composer and action rows instead of desktop-style footer controls
 
 This means the system has crossed into operational platform work.
 
@@ -327,6 +338,8 @@ Open:
 - [x] assignment-aware delivery operations
 - [x] review moderation
 - [x] catalog creation and editing flows
+- [x] catalog taxonomy management
+- [x] admin user management
 - [x] product media CRUD for image, 3D, and video assets
 - [x] contained product media preview and viewer for image, video, and 3D assets inside product edit
 - [x] availability and featured management actions
@@ -396,6 +409,9 @@ Open:
 - [x] ensure selected navigation states remain legible in every shell
 - [ ] finish no-border, Apple-HIG-consistent surface treatment review
 - [ ] tighten the checkout drawer and confirmation route further toward the marketing-page visual bar
+- [x] keep reducing desktop-style form density on customer return and refund flows
+- [x] keep compressing admin detail and editor flows until phone layouts feel native instead of desktop forms in a smaller frame
+- [x] tighten admin payments and portal order-history density so phone and wide desktop both use the available space truthfully
 
 ---
 

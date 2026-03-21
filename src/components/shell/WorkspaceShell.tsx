@@ -34,7 +34,7 @@ export function WorkspaceShell({
 }) {
   return (
     <div className="min-h-svh bg-[radial-gradient(circle_at_top,rgba(15,61,46,0.08),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,242,234,0.9)_100%)] dark:bg-[radial-gradient(circle_at_top,rgba(215,197,163,0.09),transparent_38%),linear-gradient(180deg,rgba(18,22,18,0.98)_0%,rgba(10,12,10,1)_100%)]">
-      <div className="mx-auto min-h-svh max-w-[1600px] md:grid md:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="min-h-svh w-full md:grid md:grid-cols-[300px_minmax(0,1fr)]">
         <aside className="hidden bg-system-background/48 px-6 py-6 md:sticky md:top-0 md:flex md:h-svh md:flex-col md:self-start md:overflow-hidden">
           <Link href="/" className="inline-flex">
             <Logo />

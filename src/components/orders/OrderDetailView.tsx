@@ -288,6 +288,44 @@ export function OrderDetailView({
             )}
           </OrderSurface>
 
+          <OrderSurface
+            title={order.paymentId ? "Money Sent" : "Payment"}
+            action={
+              <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                {stage.detail}
+              </span>
+            }
+          >
+            {order.paymentId ? (
+              <PaymentProofUploadCard
+                orderId={order.orderId}
+                paymentId={order.paymentId}
+                accessToken={accessToken}
+                paymentStatus={order.payment?.status ?? order.paymentStatus}
+              />
+            ) : (
+              <div className="rounded-[22px] bg-system-fill/36 px-4 py-3 text-sm text-secondary-label">
+                Available after approval.
+              </div>
+            )}
+
+            {proofs.length > 0 ? (
+              <div className="mt-4 grid gap-2 text-xs text-secondary-label">
+                {proofs.map((proof) => (
+                  <Link
+                    key={proof.proofId}
+                    href={proof.publicUrl ?? "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline-offset-4 hover:text-label"
+                  >
+                    {formatTimestamp(proof.createdAt)}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </OrderSurface>
+
           <OrderSurface title="Items">
             <div className="grid gap-3">
               {order.items.map((item) => (
@@ -339,44 +377,6 @@ export function OrderDetailView({
               <div>{order.customerPhone}</div>
               {order.notes ? <div>{order.notes}</div> : null}
             </div>
-          </OrderSurface>
-
-          <OrderSurface
-            title={order.paymentId ? "Money Sent" : "Payment"}
-            action={
-              <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                {stage.detail}
-              </span>
-            }
-          >
-            {order.paymentId ? (
-              <PaymentProofUploadCard
-                orderId={order.orderId}
-                paymentId={order.paymentId}
-                accessToken={accessToken}
-                paymentStatus={order.payment?.status ?? order.paymentStatus}
-              />
-            ) : (
-              <div className="rounded-[22px] bg-system-fill/36 px-4 py-3 text-sm text-secondary-label">
-                Available after approval.
-              </div>
-            )}
-
-            {proofs.length > 0 ? (
-              <div className="mt-4 grid gap-2 text-xs text-secondary-label">
-                {proofs.map((proof) => (
-                  <Link
-                    key={proof.proofId}
-                    href={proof.publicUrl ?? "#"}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline-offset-4 hover:text-label"
-                  >
-                    {formatTimestamp(proof.createdAt)}
-                  </Link>
-                ))}
-              </div>
-            ) : null}
           </OrderSurface>
 
           {returnCase || order.status === "delivered" ? (

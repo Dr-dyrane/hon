@@ -1,6 +1,8 @@
 import "server-only";
 
 import { isDatabaseConfigured, query } from "@/lib/db/client";
+import { serverEnv } from "@/lib/config/server";
+import type { AuthRole } from "@/lib/auth/types";
 
 type UserIdentityRow = {
   userId: string;
@@ -36,4 +38,38 @@ export async function ensureUserByEmail(
   );
 
   return result.rows[0] ?? null;
+}
+
+export async function resolveAuthRoleForEmail(email: string): Promise<AuthRole> {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (!normalizedEmail) {
+    return "customer";
+  }
+
+  if (serverEnv.auth.adminEmails.includes(normalizedEmail)) {
+    return "admin";
+  }
+
+  if (!isDatabaseConfigured()) {
+    return "customer";
+  }
+
+  const result = await query<{ isAdmin: boolean }>(
+    `
+      select exists (
+        select 1
+        from app.users u
+        inner join app.user_roles ur
+          on ur.user_id = u.id
+        inner join app.roles r
+          on r.id = ur.role_id
+        where lower(u.email::text) = $1
+          and r.slug = 'admin'
+      ) as "isAdmin"
+    `,
+    [normalizedEmail]
+  );
+
+  return result.rows[0]?.isAdmin ? "admin" : "customer";
 }

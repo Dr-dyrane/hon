@@ -467,8 +467,8 @@ export default async function AdminDeliveryPage() {
 
   return (
     <div className="space-y-8 pb-20 md:space-y-10">
-      <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="grid gap-4 xl:grid-cols-3">
+      <section className="grid gap-4 2xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
           <StageCard
             title="Preparing"
             count={preparingOrders.length}

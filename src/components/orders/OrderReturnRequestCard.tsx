@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Minus, Plus } from "lucide-react";
 import { formatNgn } from "@/lib/commerce";
 import type {
   OrderReturnCaseRow,
@@ -229,8 +230,8 @@ export function OrderReturnRequestCard({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-4 rounded-[22px] bg-system-fill/36 px-4 py-3 text-sm text-secondary-label">
-        <span>Choose the items to return.</span>
+      <div className="flex flex-col gap-2 rounded-[22px] bg-system-fill/36 px-4 py-3 text-sm text-secondary-label sm:flex-row sm:items-center sm:justify-between">
+        <span>Select what should go back.</span>
         <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
           {selectedUnitCount} selected
         </span>
@@ -274,9 +275,10 @@ export function OrderReturnRequestCard({
                           ),
                         }))
                       }
-                      className="rounded-full bg-system-background px-3 py-2 text-[10px] font-semibold uppercase tracking-headline text-label"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-system-background text-label"
+                      aria-label={`Reduce ${item.title}`}
                     >
-                      Less
+                      <Minus className="h-4 w-4" strokeWidth={1.8} />
                     </button>
                     <button
                       type="button"
@@ -289,9 +291,10 @@ export function OrderReturnRequestCard({
                           ),
                         }))
                       }
-                      className="rounded-full bg-system-background px-3 py-2 text-[10px] font-semibold uppercase tracking-headline text-label"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-system-background text-label"
+                      aria-label={`Increase ${item.title}`}
                     >
-                      More
+                      <Plus className="h-4 w-4" strokeWidth={1.8} />
                     </button>
                   </div>
                 </div>
@@ -315,37 +318,46 @@ export function OrderReturnRequestCard({
         className="w-full resize-none rounded-[24px] bg-system-fill/52 px-4 py-3 text-sm text-label placeholder:text-tertiary-label focus:outline-none"
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <input
-          value={refundBankName}
-          onChange={(event) => setRefundBankName(event.target.value)}
-          placeholder="Refund bank"
-          className="min-h-[44px] w-full rounded-[22px] bg-system-fill/52 px-4 text-sm text-label placeholder:text-tertiary-label focus:outline-none"
-        />
-        <input
-          value={refundAccountName}
-          onChange={(event) => setRefundAccountName(event.target.value)}
-          placeholder="Account name"
-          className="min-h-[44px] w-full rounded-[22px] bg-system-fill/52 px-4 text-sm text-label placeholder:text-tertiary-label focus:outline-none"
-        />
-        <input
-          value={refundAccountNumber}
-          onChange={(event) => setRefundAccountNumber(event.target.value)}
-          placeholder="Account number"
-          className="min-h-[44px] w-full rounded-[22px] bg-system-fill/52 px-4 text-sm text-label placeholder:text-tertiary-label focus:outline-none"
-        />
+      <div className="space-y-3 rounded-[24px] bg-system-fill/36 px-4 py-4">
+        <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+          Refund to
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <input
+            value={refundBankName}
+            onChange={(event) => setRefundBankName(event.target.value)}
+            placeholder="Bank"
+            className="min-h-[44px] w-full rounded-[22px] bg-system-fill/52 px-4 text-sm text-label placeholder:text-tertiary-label focus:outline-none"
+          />
+          <input
+            value={refundAccountName}
+            onChange={(event) => setRefundAccountName(event.target.value)}
+            placeholder="Account name"
+            className="min-h-[44px] w-full rounded-[22px] bg-system-fill/52 px-4 text-sm text-label placeholder:text-tertiary-label focus:outline-none"
+          />
+          <input
+            value={refundAccountNumber}
+            onChange={(event) => setRefundAccountNumber(event.target.value)}
+            placeholder="Account number"
+            className="min-h-[44px] w-full rounded-[22px] bg-system-fill/52 px-4 text-sm text-label placeholder:text-tertiary-label focus:outline-none"
+          />
+        </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           onClick={() => void handleSubmit()}
           disabled={isPending || selectedUnitCount === 0}
-          className="button-secondary min-h-[44px] text-xs font-semibold uppercase tracking-headline"
+          className="button-secondary min-h-[48px] w-full justify-center text-xs font-semibold uppercase tracking-headline sm:w-auto"
         >
           {isPending ? "Sending" : "Send"}
         </button>
-        {message ? <p className="text-xs text-secondary-label">{message}</p> : null}
+        {message ? (
+          <p className="rounded-[18px] bg-system-fill/32 px-3 py-2 text-xs text-secondary-label">
+            {message}
+          </p>
+        ) : null}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileStack, LayoutTemplate, Package2, Plus, Sparkles, Store } from "lucide-react";
+import { FileStack, LayoutTemplate, Package2, Plus, Sparkles, Store, Tags } from "lucide-react";
 import { MetricRail } from "@/components/admin/MetricRail";
 import { CatalogProductBoard } from "@/components/admin/catalog/CatalogProductBoard";
 import { isStorefrontVisibleProduct } from "@/lib/catalog/storefront";
@@ -33,6 +33,13 @@ export default async function AdminProductsPage() {
             >
               <LayoutTemplate size={15} />
               <span>Layout</span>
+            </Link>
+            <Link
+              href="/admin/catalog/taxonomy"
+              className="flex min-h-[42px] items-center gap-2 rounded-[20px] bg-system-fill/42 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label transition-all hover:bg-system-fill/58"
+            >
+              <Tags size={15} />
+              <span>Taxonomy</span>
             </Link>
             <Link
               href="/admin/catalog/products/new"

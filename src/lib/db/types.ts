@@ -67,6 +67,33 @@ export type AdminCatalogCategory = {
   categoryName: string;
 };
 
+export type AdminCatalogCategoryDetail = AdminCatalogCategory & {
+  sortOrder: number;
+  productCount: number;
+};
+
+export type AdminCatalogIngredient = {
+  ingredientId: string;
+  ingredientSlug: string;
+  ingredientName: string;
+  detail: string;
+  benefit: string | null;
+  imagePath: string | null;
+  aliases: string[];
+  sortOrder: number;
+  variantCount: number;
+  productCount: number;
+};
+
+export type AdminCatalogDeleteGuard = {
+  productId: string;
+  status: "draft" | "active" | "archived";
+  mediaCount: number;
+  openOrderCount: number;
+  totalOrderCount: number;
+  canDelete: boolean;
+};
+
 export type AdminCatalogProductDetail = {
   productId: string;
   productSlug: string;
@@ -162,6 +189,19 @@ export type AdminCustomerSummary = {
   latestOrderNumber: string | null;
   latestOrderStatus: string | null;
   latestOrderAt: string | null;
+};
+
+export type AdminUserSummary = {
+  userId: string;
+  email: string;
+  fullName: string | null;
+  phone: string | null;
+  status: "active" | "invited" | "suspended";
+  isAdmin: boolean;
+  orderCount: number;
+  addressCount: number;
+  lastSignedInAt: string | null;
+  createdAt: string;
 };
 
 export type AdminDeliveryOrder = {
@@ -334,6 +374,9 @@ export type PortalProfile = {
   lastName: string;
   preferredPhoneE164: string;
   marketingOptIn: boolean;
+  workspaceEmailEnabled: boolean;
+  workspaceInAppEnabled: boolean;
+  workspacePushEnabled: boolean;
 };
 
 export type PortalAddress = {
@@ -613,12 +656,20 @@ export type PortalReviewRow = {
 
 export type WorkspaceNotification = {
   notificationId: string;
+  eventKey: "workspace";
   title: string;
   detail: string;
   href: string;
   createdAt: string;
+  isRead: boolean;
   tone: "default" | "success" | "warning";
   icon: "order" | "payment" | "delivery" | "return" | "alert";
+};
+
+export type WorkspaceNotificationPreference = {
+  workspaceEmailEnabled: boolean;
+  workspaceInAppEnabled: boolean;
+  workspacePushEnabled: boolean;
 };
 
 export type AdminReviewRow = {

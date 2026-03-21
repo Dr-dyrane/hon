@@ -140,6 +140,15 @@ Current correction:
 
 - profile and address flows now use compact mobile intros instead of full context panels before the task surface
 - order detail now uses a compact phone summary and simpler payment/rating controls instead of leading with desktop-weight chrome
+- return request and return-proof flows now use simpler phone controls instead of desktop-style quantity steppers and upload rhythm
+- payments, delivery, and portal order history now move into denser desktop layouts earlier so wide screens stop leaving dead space on the trailing edge
+- admin order detail, product edit, and layout section edit now open with compact phone summaries instead of desktop-scale workspace headers
+- checkout now hides pin-drop and notes behind optional phone-first controls so the primary address task lands earlier
+- admin payments now uses compact phone queue cards and full-width action rows instead of a desktop-weight trailing action stack
+- portal order history now uses compact phone cards with quieter stats before the open action
+- guest confirmation now uses a calmer utility top bar that feels closer to a native handoff surface than a generic web header
+- payment, rating, and return feedback now uses quiet inline state pills instead of floating helper copy
+- admin users, taxonomy, and settings now use phone-safe composer and save rows instead of desktop-style footer controls
 
 ### Preferred phone rhythm
 

@@ -75,9 +75,9 @@ export default async function AdminPaymentsPage() {
         />
       </section>
 
-      <section className="grid gap-4 min-[1460px]:grid-cols-2">
+      <section className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
         {payments.length === 0 ? (
-          <div className="glass-morphism min-h-[280px] rounded-[32px] bg-system-background/72 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] min-[1460px]:col-span-2">
+          <div className="glass-morphism min-h-[280px] rounded-[32px] bg-system-background/72 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] xl:col-span-2 2xl:col-span-3">
             <div className="flex h-full flex-col justify-between gap-6">
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
@@ -116,6 +116,21 @@ export default async function AdminPaymentsPage() {
                     </div>
                     <div className="mt-2 text-sm text-secondary-label">{paymentState.detail}</div>
 
+                    <div className="mt-3 grid gap-2 sm:hidden">
+                      <CompactQueueStat
+                        label="Due"
+                        value={formatNgn(payment.expectedAmountNgn)}
+                      />
+                      <CompactQueueStat
+                        label="Sent"
+                        value={
+                          payment.submittedAmountNgn !== null
+                            ? formatNgn(payment.submittedAmountNgn)
+                            : "Waiting"
+                        }
+                      />
+                    </div>
+
                     <div className="mt-3 grid gap-3 text-sm text-secondary-label sm:grid-cols-2 xl:grid-cols-4">
                       <MetaItem
                         label="Account"
@@ -131,7 +146,7 @@ export default async function AdminPaymentsPage() {
                   </div>
 
                   <div className="min-w-[220px] shrink-0">
-                    <div className="text-right text-sm text-secondary-label">
+                    <div className="hidden text-right text-sm text-secondary-label sm:block">
                       <div className="text-lg font-semibold text-label">
                         {formatNgn(payment.expectedAmountNgn)}
                       </div>
@@ -141,7 +156,7 @@ export default async function AdminPaymentsPage() {
                           : "Waiting for receipt"}
                       </div>
                     </div>
-                    <div className="mt-4 flex flex-wrap justify-end gap-2">
+                    <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
                       {availablePaymentActions(payment.status).map((action) => (
                         <form key={action} action={reviewPaymentQueueAction} className="flex">
                           <input type="hidden" name="orderId" value={payment.orderId} />
@@ -150,7 +165,7 @@ export default async function AdminPaymentsPage() {
                             type="submit"
                             name="action"
                             value={action}
-                            className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                            className="button-secondary min-h-[40px] w-full px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
                           >
                             {getPaymentReviewActionLabel(action)}
                           </button>
@@ -158,7 +173,7 @@ export default async function AdminPaymentsPage() {
                       ))}
                       <Link
                         href={`/admin/orders/${payment.orderId}`}
-                        className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                        className="button-secondary min-h-[40px] w-full px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
                       >
                         Open
                       </Link>
@@ -170,6 +185,23 @@ export default async function AdminPaymentsPage() {
           })
         )}
       </section>
+    </div>
+  );
+}
+
+function CompactQueueStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[20px] bg-system-fill/42 px-4 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-semibold text-label">{value}</div>
     </div>
   );
 }

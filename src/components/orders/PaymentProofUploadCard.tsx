@@ -207,7 +207,7 @@ export function PaymentProofUploadCard({
           <button
             type="button"
             onClick={() => setShowReceiptField((current) => !current)}
-            className="flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-system-fill/46 px-4 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label"
+            className="flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-system-fill/46 px-4 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label sm:w-auto"
           >
             <Paperclip className="h-4 w-4" strokeWidth={1.8} />
             {showReceiptField ? "Hide receipt" : "Add receipt"}
@@ -224,7 +224,7 @@ export function PaymentProofUploadCard({
         ) : null}
 
         {message ? (
-          <p className="text-xs text-secondary-label">
+          <p className="rounded-[18px] bg-system-fill/32 px-3 py-2 text-xs text-secondary-label">
             {message}
           </p>
         ) : null}

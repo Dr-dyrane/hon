@@ -139,7 +139,7 @@ export function OrderReturnProofUploadCard({
   return (
     <div className="space-y-3">
       <div className="rounded-[22px] bg-system-fill/36 px-4 py-3 text-sm text-secondary-label">
-        Add photo or receipt.
+        Add proof if you have it.
       </div>
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <input
@@ -152,13 +152,13 @@ export function OrderReturnProofUploadCard({
           type="button"
           onClick={() => void handleUpload()}
           disabled={isPending}
-          className="button-secondary min-h-[44px] shrink-0 text-xs font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:shadow-none md:px-5"
+          className="button-secondary min-h-[48px] shrink-0 justify-center text-xs font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:shadow-none md:px-5"
         >
           <Upload className="h-4 w-4" strokeWidth={1.8} />
           {isPending ? "Sending" : "Add proof"}
         </button>
         {message ? (
-          <div className="flex items-center gap-2 text-xs text-secondary-label md:min-w-[72px] md:justify-end md:text-right">
+          <div className="flex items-center gap-2 rounded-[18px] bg-system-fill/32 px-3 py-2 text-xs text-secondary-label md:min-w-[72px] md:justify-end md:text-right">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-label" strokeWidth={1.8} />
             <span>{message}</span>
           </div>

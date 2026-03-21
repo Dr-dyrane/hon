@@ -37,6 +37,9 @@ function emptyProfile(email: string) {
     lastName: "",
     preferredPhoneE164: "",
     marketingOptIn: false,
+    workspaceEmailEnabled: true,
+    workspaceInAppEnabled: true,
+    workspacePushEnabled: false,
   } satisfies PortalProfile;
 }
 
@@ -173,10 +176,15 @@ export async function getPortalProfile(email: string) {
         coalesce(p.first_name, '') as "firstName",
         coalesce(p.last_name, '') as "lastName",
         coalesce(p.preferred_phone_e164, mu.phone_e164, '') as "preferredPhoneE164",
-        coalesce(p.marketing_opt_in, false) as "marketingOptIn"
+        coalesce(p.marketing_opt_in, false) as "marketingOptIn",
+        coalesce(np.workspace_email_enabled, true) as "workspaceEmailEnabled",
+        coalesce(np.workspace_in_app_enabled, true) as "workspaceInAppEnabled",
+        coalesce(np.workspace_push_enabled, false) as "workspacePushEnabled"
       from matched_user mu
       left join app.profiles p
         on p.user_id = mu.id
+      left join app.notification_preferences np
+        on np.user_id = mu.id
       limit 1
     `,
     [normalizedEmail],
@@ -192,6 +200,9 @@ export async function updatePortalProfile(email: string, input: {
   lastName?: string | null;
   preferredPhone: string;
   marketingOptIn: boolean;
+  workspaceEmailEnabled: boolean;
+  workspaceInAppEnabled: boolean;
+  workspacePushEnabled: boolean;
 }) {
   const normalizedEmail = email.trim().toLowerCase();
   const fullName = input.fullName.trim();
@@ -199,6 +210,9 @@ export async function updatePortalProfile(email: string, input: {
   const firstName = normalizeOptionalText(input.firstName);
   const lastName = normalizeOptionalText(input.lastName);
   const marketingOptIn = Boolean(input.marketingOptIn);
+  const workspaceEmailEnabled = Boolean(input.workspaceEmailEnabled);
+  const workspaceInAppEnabled = Boolean(input.workspaceInAppEnabled);
+  const workspacePushEnabled = Boolean(input.workspacePushEnabled);
 
   if (!normalizedEmail || !isDatabaseConfigured()) {
     throw new Error("Profile is unavailable.");
@@ -251,6 +265,30 @@ export async function updatePortalProfile(email: string, input: {
           updated_at = timezone('utc', now())
       `,
       [user.userId, fullName, firstName, lastName, preferredPhoneE164, marketingOptIn]
+    );
+
+    await queryFn(
+      `
+        insert into app.notification_preferences (
+          user_id,
+          workspace_email_enabled,
+          workspace_in_app_enabled,
+          workspace_push_enabled
+        )
+        values ($1, $2, $3, $4)
+        on conflict (user_id)
+        do update set
+          workspace_email_enabled = excluded.workspace_email_enabled,
+          workspace_in_app_enabled = excluded.workspace_in_app_enabled,
+          workspace_push_enabled = excluded.workspace_push_enabled,
+          updated_at = timezone('utc', now())
+      `,
+      [
+        user.userId,
+        workspaceEmailEnabled,
+        workspaceInAppEnabled,
+        workspacePushEnabled,
+      ]
     );
   }, {
     actor: {

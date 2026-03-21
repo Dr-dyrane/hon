@@ -14,6 +14,12 @@ export async function updateProfileAction(formData: FormData) {
       lastName: formData.get("lastName")?.toString() ?? "",
       preferredPhone: formData.get("preferredPhone")?.toString() ?? "",
       marketingOptIn: formData.get("marketingOptIn")?.toString() === "true",
+      workspaceEmailEnabled:
+        formData.get("workspaceEmailEnabled")?.toString() === "true",
+      workspaceInAppEnabled:
+        formData.get("workspaceInAppEnabled")?.toString() === "true",
+      workspacePushEnabled:
+        formData.get("workspacePushEnabled")?.toString() === "true",
     });
 
     revalidatePath("/account");

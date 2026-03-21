@@ -5,6 +5,9 @@ import { slugifyProduct } from "@/lib/catalog/slug";
 import { getStoragePublicUrl } from "@/lib/storage/s3";
 import type {
   AdminCatalogCategory,
+  AdminCatalogCategoryDetail,
+  AdminCatalogDeleteGuard,
+  AdminCatalogIngredient,
   AdminCatalogProduct,
   AdminCatalogProductMedia,
   AdminCatalogProductDetail,
@@ -53,7 +56,11 @@ function normalizeSortOrder(value: string | number | null | undefined) {
 
 async function buildUniqueSlug(
   queryFn: typeof query,
-  table: "app.products" | "app.product_variants",
+  table:
+    | "app.products"
+    | "app.product_variants"
+    | "app.product_categories"
+    | "app.ingredients",
   baseValue: string,
   excludeId?: string | null
 ) {
@@ -116,6 +123,22 @@ function normalizeProductStatus(value: string) {
   return value as "draft" | "active" | "archived";
 }
 
+function normalizeAliases(value: string | string[] | null | undefined) {
+  const source = Array.isArray(value)
+    ? value
+    : (value ?? "")
+        .split(",")
+        .map((entry) => entry.trim());
+
+  return Array.from(
+    new Set(
+      source
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
 function resolveCatalogMediaUrl(storageKey: string) {
   if (/^https?:\/\//i.test(storageKey) || storageKey.startsWith("/")) {
     return storageKey;
@@ -141,6 +164,75 @@ export async function listAdminCatalogCategories() {
         name as "categoryName"
       from app.product_categories
       order by sort_order asc, name asc
+    `
+  );
+
+  return result.rows;
+}
+
+export async function listAdminCatalogCategoryDetails() {
+  if (!isDatabaseConfigured()) {
+    return [] satisfies AdminCatalogCategoryDetail[];
+  }
+
+  const result = await query<AdminCatalogCategoryDetail>(
+    `
+      select
+        pc.id as "categoryId",
+        pc.slug as "categorySlug",
+        pc.name as "categoryName",
+        pc.sort_order as "sortOrder",
+        count(p.id)::int as "productCount"
+      from app.product_categories pc
+      left join app.products p
+        on p.category_id = pc.id
+      group by
+        pc.id,
+        pc.slug,
+        pc.name,
+        pc.sort_order,
+        pc.created_at
+      order by pc.sort_order asc, pc.created_at asc
+    `
+  );
+
+  return result.rows;
+}
+
+export async function listAdminCatalogIngredients() {
+  if (!isDatabaseConfigured()) {
+    return [] satisfies AdminCatalogIngredient[];
+  }
+
+  const result = await query<AdminCatalogIngredient>(
+    `
+      select
+        i.id as "ingredientId",
+        i.slug as "ingredientSlug",
+        i.name as "ingredientName",
+        i.detail,
+        i.benefit,
+        i.image_path as "imagePath",
+        coalesce(i.aliases, '[]'::jsonb) as aliases,
+        i.sort_order as "sortOrder",
+        count(distinct vi.variant_id)::int as "variantCount",
+        count(distinct pv.product_id)::int as "productCount"
+      from app.ingredients i
+      left join app.variant_ingredients vi
+        on vi.ingredient_id = i.id
+      left join app.product_variants pv
+        on pv.id = vi.variant_id
+      group by
+        i.id,
+        i.slug,
+        i.name,
+        i.detail,
+        i.benefit,
+        i.image_path,
+        i.aliases,
+        i.sort_order,
+        i.created_at
+      order by i.sort_order asc, i.created_at asc
     `
   );
 
@@ -397,6 +489,419 @@ export async function listAdminCatalogProductMedia(productId: string) {
   }));
 }
 
+export async function listAdminCatalogVariantIngredientIds(variantId: string) {
+  if (!variantId || !isDatabaseConfigured()) {
+    return [] as string[];
+  }
+
+  const result = await query<{ ingredientId: string }>(
+    `
+      select ingredient_id as "ingredientId"
+      from app.variant_ingredients
+      where variant_id = $1
+      order by sort_order asc, created_at asc
+    `,
+    [variantId]
+  );
+
+  return result.rows.map((row) => row.ingredientId);
+}
+
+async function syncVariantIngredients(
+  queryFn: typeof query,
+  variantId: string,
+  ingredientIds: string[]
+) {
+  const normalizedIds = Array.from(new Set(ingredientIds.filter(Boolean)));
+
+  if (normalizedIds.length > 0) {
+    const validationResult = await queryFn<{ ingredientId: string }>(
+      `
+        select id as "ingredientId"
+        from app.ingredients
+        where id = any($1::uuid[])
+      `,
+      [normalizedIds]
+    );
+
+    if (validationResult.rows.length !== normalizedIds.length) {
+      throw new Error("One or more selected ingredients no longer exist.");
+    }
+  }
+
+  await queryFn(
+    `
+      delete from app.variant_ingredients
+      where variant_id = $1
+        and not (ingredient_id = any($2::uuid[]))
+    `,
+    [variantId, normalizedIds]
+  );
+
+  for (const [index, ingredientId] of normalizedIds.entries()) {
+    await queryFn(
+      `
+        insert into app.variant_ingredients (
+          variant_id,
+          ingredient_id,
+          sort_order,
+          label
+        )
+        select
+          $1,
+          $2,
+          $3,
+          i.name
+        from app.ingredients i
+        where i.id = $2
+        on conflict (variant_id, ingredient_id)
+        do update set
+          sort_order = excluded.sort_order,
+          label = excluded.label
+      `,
+      [variantId, ingredientId, index]
+    );
+  }
+}
+
+export async function createAdminCatalogCategory(input: {
+  categoryName: string;
+  sortOrder?: string | number | null;
+  actorUserId?: string | null;
+  actorEmail?: string | null;
+}) {
+  requireDatabase();
+
+  const categoryName = input.categoryName.trim();
+  const sortOrder = normalizeSortOrder(input.sortOrder);
+
+  if (categoryName.length < 2) {
+    throw new Error("Enter a category name.");
+  }
+
+  return withTransaction(async (queryFn) => {
+    const slug = await buildUniqueSlug(
+      queryFn,
+      "app.product_categories",
+      categoryName
+    );
+
+    const result = await queryFn<{ categoryId: string }>(
+      `
+        insert into app.product_categories (
+          slug,
+          name,
+          sort_order
+        )
+        values ($1, $2, $3)
+        returning id as "categoryId"
+      `,
+      [slug, categoryName, sortOrder]
+    );
+
+    return result.rows[0]?.categoryId ?? null;
+  }, {
+    actor: {
+      userId: input.actorUserId ?? null,
+      email: input.actorEmail ?? null,
+      role: "admin",
+    },
+  });
+}
+
+export async function updateAdminCatalogCategory(input: {
+  categoryId: string;
+  categoryName: string;
+  sortOrder?: string | number | null;
+  actorUserId?: string | null;
+  actorEmail?: string | null;
+}) {
+  requireDatabase();
+
+  const categoryId = input.categoryId;
+  const categoryName = input.categoryName.trim();
+  const sortOrder = normalizeSortOrder(input.sortOrder);
+
+  if (!categoryId) {
+    throw new Error("Category is required.");
+  }
+
+  if (categoryName.length < 2) {
+    throw new Error("Enter a category name.");
+  }
+
+  await withTransaction(async (queryFn) => {
+    const existingResult = await queryFn<{ categoryId: string }>(
+      `
+        select id as "categoryId"
+        from app.product_categories
+        where id = $1
+        limit 1
+      `,
+      [categoryId]
+    );
+
+    if (!existingResult.rows[0]) {
+      throw new Error("Category not found.");
+    }
+
+    const slug = await buildUniqueSlug(
+      queryFn,
+      "app.product_categories",
+      categoryName,
+      categoryId
+    );
+
+    await queryFn(
+      `
+        update app.product_categories
+        set
+          slug = $1,
+          name = $2,
+          sort_order = $3
+        where id = $4
+      `,
+      [slug, categoryName, sortOrder, categoryId]
+    );
+  }, {
+    actor: {
+      userId: input.actorUserId ?? null,
+      email: input.actorEmail ?? null,
+      role: "admin",
+    },
+  });
+}
+
+export async function deleteAdminCatalogCategory(
+  categoryId: string,
+  actor?: {
+    userId?: string | null;
+    email?: string | null;
+  }
+) {
+  requireDatabase();
+
+  if (!categoryId) {
+    throw new Error("Category is required.");
+  }
+
+  await withTransaction(async (queryFn) => {
+    const usageResult = await queryFn<{ productCount: number }>(
+      `
+        select count(*)::int as "productCount"
+        from app.products
+        where category_id = $1
+      `,
+      [categoryId]
+    );
+
+    if ((usageResult.rows[0]?.productCount ?? 0) > 0) {
+      throw new Error("Move or archive products before deleting this category.");
+    }
+
+    await queryFn(
+      `
+        delete from app.product_categories
+        where id = $1
+      `,
+      [categoryId]
+    );
+  }, {
+    actor: {
+      userId: actor?.userId ?? null,
+      email: actor?.email ?? null,
+      role: "admin",
+    },
+  });
+}
+
+export async function createAdminCatalogIngredient(input: {
+  ingredientName: string;
+  detail: string;
+  benefit?: string | null;
+  imagePath?: string | null;
+  aliases?: string | string[] | null;
+  sortOrder?: string | number | null;
+  actorUserId?: string | null;
+  actorEmail?: string | null;
+}) {
+  requireDatabase();
+
+  const ingredientName = input.ingredientName.trim();
+  const detail = input.detail.trim();
+  const benefit = normalizeOptionalText(input.benefit ?? null);
+  const imagePath = normalizeOptionalText(input.imagePath ?? null);
+  const aliases = normalizeAliases(input.aliases);
+  const sortOrder = normalizeSortOrder(input.sortOrder);
+
+  if (ingredientName.length < 2) {
+    throw new Error("Enter an ingredient name.");
+  }
+
+  if (detail.length < 2) {
+    throw new Error("Enter an ingredient detail.");
+  }
+
+  return withTransaction(async (queryFn) => {
+    const slug = await buildUniqueSlug(queryFn, "app.ingredients", ingredientName);
+    const result = await queryFn<{ ingredientId: string }>(
+      `
+        insert into app.ingredients (
+          slug,
+          name,
+          detail,
+          benefit,
+          image_path,
+          aliases,
+          sort_order
+        )
+        values ($1, $2, $3, $4, $5, $6::jsonb, $7)
+        returning id as "ingredientId"
+      `,
+      [slug, ingredientName, detail, benefit, imagePath, JSON.stringify(aliases), sortOrder]
+    );
+
+    return result.rows[0]?.ingredientId ?? null;
+  }, {
+    actor: {
+      userId: input.actorUserId ?? null,
+      email: input.actorEmail ?? null,
+      role: "admin",
+    },
+  });
+}
+
+export async function updateAdminCatalogIngredient(input: {
+  ingredientId: string;
+  ingredientName: string;
+  detail: string;
+  benefit?: string | null;
+  imagePath?: string | null;
+  aliases?: string | string[] | null;
+  sortOrder?: string | number | null;
+  actorUserId?: string | null;
+  actorEmail?: string | null;
+}) {
+  requireDatabase();
+
+  const ingredientId = input.ingredientId;
+  const ingredientName = input.ingredientName.trim();
+  const detail = input.detail.trim();
+  const benefit = normalizeOptionalText(input.benefit ?? null);
+  const imagePath = normalizeOptionalText(input.imagePath ?? null);
+  const aliases = normalizeAliases(input.aliases);
+  const sortOrder = normalizeSortOrder(input.sortOrder);
+
+  if (!ingredientId) {
+    throw new Error("Ingredient is required.");
+  }
+
+  if (ingredientName.length < 2) {
+    throw new Error("Enter an ingredient name.");
+  }
+
+  if (detail.length < 2) {
+    throw new Error("Enter an ingredient detail.");
+  }
+
+  await withTransaction(async (queryFn) => {
+    const existingResult = await queryFn<{ ingredientId: string }>(
+      `
+        select id as "ingredientId"
+        from app.ingredients
+        where id = $1
+        limit 1
+      `,
+      [ingredientId]
+    );
+
+    if (!existingResult.rows[0]) {
+      throw new Error("Ingredient not found.");
+    }
+
+    const slug = await buildUniqueSlug(
+      queryFn,
+      "app.ingredients",
+      ingredientName,
+      ingredientId
+    );
+
+    await queryFn(
+      `
+        update app.ingredients
+        set
+          slug = $1,
+          name = $2,
+          detail = $3,
+          benefit = $4,
+          image_path = $5,
+          aliases = $6::jsonb,
+          sort_order = $7
+        where id = $8
+      `,
+      [
+        slug,
+        ingredientName,
+        detail,
+        benefit,
+        imagePath,
+        JSON.stringify(aliases),
+        sortOrder,
+        ingredientId,
+      ]
+    );
+  }, {
+    actor: {
+      userId: input.actorUserId ?? null,
+      email: input.actorEmail ?? null,
+      role: "admin",
+    },
+  });
+}
+
+export async function deleteAdminCatalogIngredient(
+  ingredientId: string,
+  actor?: {
+    userId?: string | null;
+    email?: string | null;
+  }
+) {
+  requireDatabase();
+
+  if (!ingredientId) {
+    throw new Error("Ingredient is required.");
+  }
+
+  await withTransaction(async (queryFn) => {
+    const usageResult = await queryFn<{ variantCount: number }>(
+      `
+        select count(*)::int as "variantCount"
+        from app.variant_ingredients
+        where ingredient_id = $1
+      `,
+      [ingredientId]
+    );
+
+    if ((usageResult.rows[0]?.variantCount ?? 0) > 0) {
+      throw new Error("Remove this ingredient from products before deleting it.");
+    }
+
+    await queryFn(
+      `
+        delete from app.ingredients
+        where id = $1
+      `,
+      [ingredientId]
+    );
+  }, {
+    actor: {
+      userId: actor?.userId ?? null,
+      email: actor?.email ?? null,
+      role: "admin",
+    },
+  });
+}
+
 export async function createAdminCatalogProduct(input: {
   categoryId: string | null;
   productName: string;
@@ -522,6 +1027,7 @@ export async function updateAdminCatalogProduct(input: {
   priceNgn: string | number;
   compareAtPriceNgn: string | number | null;
   variantStatus?: string;
+  ingredientIds?: string[];
   inventoryOnHand?: string | number;
   reorderThreshold?: string | number | null;
   actorUserId?: string | null;
@@ -549,6 +1055,7 @@ export async function updateAdminCatalogProduct(input: {
       ? null
       : normalizeMoney(input.compareAtPriceNgn);
   const variantStatus = input.variantStatus ? normalizeProductStatus(input.variantStatus) : (status === "archived" ? "archived" : "active");
+  const ingredientIds = input.ingredientIds ?? [];
   const onHand = input.inventoryOnHand != null ? normalizeMoney(input.inventoryOnHand) : null;
   const threshold = input.reorderThreshold == null || input.reorderThreshold === ""
     ? null
@@ -676,6 +1183,8 @@ export async function updateAdminCatalogProduct(input: {
         input.reorderThreshold !== undefined
       ]
     );
+
+    await syncVariantIngredients(queryFn, detail.variantId, ingredientIds);
   }, {
     actor: {
       userId: input.actorUserId ?? null,
@@ -937,6 +1446,69 @@ export async function deleteAdminCatalogProduct(
       role: "admin",
     },
   });
+}
+
+export async function getAdminCatalogProductDeleteGuard(productId: string) {
+  if (!productId || !isDatabaseConfigured()) {
+    return null;
+  }
+
+  const result = await query<AdminCatalogDeleteGuard>(
+    `
+      select
+        p.id as "productId",
+        p.status,
+        (
+          select count(*)::int
+          from app.product_media pm
+          where pm.product_id = p.id
+             or pm.variant_id in (
+               select pv.id
+               from app.product_variants pv
+               where pv.product_id = p.id
+             )
+        ) as "mediaCount",
+        (
+          select count(*)::int
+          from app.orders o
+          inner join app.order_items oi
+            on oi.order_id = o.id
+          where o.status not in ('delivered', 'cancelled', 'expired')
+            and (
+              oi.variant_id in (
+                select id
+                from app.product_variants
+                where product_id = p.id
+              )
+              or oi.snapshot ->> 'productId' = p.slug
+            )
+        ) as "openOrderCount",
+        (
+          select count(*)::int
+          from app.order_items oi
+          where oi.variant_id in (
+            select id
+            from app.product_variants
+            where product_id = p.id
+          )
+        ) as "totalOrderCount"
+      from app.products p
+      where p.id = $1
+      limit 1
+    `,
+    [productId]
+  );
+
+  const row = result.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    ...row,
+    canDelete: row.status === "archived" && row.openOrderCount === 0,
+  } satisfies AdminCatalogDeleteGuard;
 }
 
 export async function createAdminCatalogProductMedia(input: {

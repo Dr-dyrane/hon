@@ -243,6 +243,30 @@ Protection rule:
 - Vercel cron requests must send `Authorization: Bearer <CRON_SECRET>`
 - local development may call the route without a secret only when `NODE_ENV` is not `production`
 
+### Deploy refresh guard
+
+The repo also uses:
+
+- `/api/runtime-version`
+- `/api/runtime-reset`
+
+Purpose:
+
+- detect a new deployed runtime version without waiting for manual hard refresh
+- clear app-owned stale state before reload
+- unregister any legacy service workers left behind by earlier experiments
+
+Behavior:
+
+- the app compares the current runtime version against the last version seen by the browser
+- if a new deploy is detected, it clears app-owned local storage, session storage, cache storage, and the server-managed cart/auth-challenge cookies
+- then it reloads into the fresh build automatically
+
+Rule:
+
+- do not add a new service worker or cache layer unless it is compatible with this deploy refresh path
+- if a future PWA layer is introduced, it must preserve automatic deploy pickup without asking users to clear browser state manually
+
 ### Update a variable
 
 ```powershell
