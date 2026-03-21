@@ -67,7 +67,7 @@ export function HowItWorks() {
         </motion.div>
       </div>
 
-      <div className="container-shell flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+      <div className="container-shell grid md:flex grid-cols-2 md:flex-row items-center justify-between gap-8 relative z-10">
         {steps.map((step, i) => (
           <React.Fragment key={step.label}>
             <div
