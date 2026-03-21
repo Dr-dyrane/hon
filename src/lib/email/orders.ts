@@ -2,6 +2,7 @@ import "server-only";
 
 import { formatNgn } from "@/lib/commerce";
 import { serverEnv } from "@/lib/config/server";
+import { buildEmailBrandLockup } from "@/lib/email/brand";
 import { sendResendEmail } from "@/lib/email/resend";
 import { sendWorkspacePushToEmails } from "@/lib/push/web-push";
 import {
@@ -10,31 +11,6 @@ import {
 } from "@/lib/db/repositories/order-notification-repository";
 import { getWorkspaceNotificationPreference } from "@/lib/db/repositories/notification-preferences-repository";
 import { createGuestOrderAccessToken } from "@/lib/orders/access";
-
-function buildBrandLockup() {
-  const baseUrl = serverEnv.public.appUrl.replace(/\/$/, "");
-  const markUrl = `${baseUrl}/images/hero/hop-mark.svg`;
-  const wordmarkUrl = `${baseUrl}/images/hero/hop-wordmark.svg`;
-
-  return `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;">
-      <img
-        src="${markUrl}"
-        alt="House of Prax"
-        width="28"
-        height="28"
-        style="display:block;width:28px;height:28px;"
-      />
-      <img
-        src="${wordmarkUrl}"
-        alt="House of Prax"
-        width="110"
-        height="30"
-        style="display:block;width:110px;height:30px;"
-      />
-    </div>
-  `;
-}
 
 function buildShell(input: {
   eyebrow: string;
@@ -46,7 +22,7 @@ function buildShell(input: {
   return `
     <div style="background:#f7f4ec;padding:32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#161616;">
       <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:30px;padding:32px;box-shadow:0 18px 50px rgba(15,23,42,0.08);">
-        ${buildBrandLockup()}
+        ${buildEmailBrandLockup()}
         <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#6b7280;font-weight:600;">${input.eyebrow}</div>
         <h1 style="margin:16px 0 10px;font-size:32px;line-height:1.05;color:#111827;">${input.title}</h1>
         <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#4b5563;">${input.intro}</p>
@@ -57,6 +33,100 @@ function buildShell(input: {
             : ""
         }
       </div>
+    </div>
+  `;
+}
+
+function formatEmailTimestamp(value: string | null | undefined) {
+  if (!value) {
+    return "Now";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function getEmailImageUrl(imageUrl: string | null | undefined) {
+  if (!imageUrl) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(imageUrl)) {
+    return imageUrl;
+  }
+
+  if (imageUrl.startsWith("/")) {
+    return `${serverEnv.public.appUrl.replace(/\/$/, "")}${imageUrl}`;
+  }
+
+  return null;
+}
+
+function buildProductSpotlight(order: OrderNotificationSnapshot) {
+  const firstItem = order.items[0];
+  const imageUrl = getEmailImageUrl(firstItem?.imageUrl);
+
+  if (!firstItem || !imageUrl) {
+    return "";
+  }
+
+  return `
+    <div style="margin-top:18px;border-radius:26px;background:#f4f2ea;padding:16px;">
+      <img
+        src="${imageUrl}"
+        alt="${firstItem.title}"
+        width="528"
+        height="240"
+        style="display:block;width:100%;height:240px;object-fit:contain;border-radius:20px;background:radial-gradient(circle at top,rgba(255,255,255,0.92),rgba(243,239,229,0.92) 62%,rgba(230,223,210,0.8) 100%);"
+      />
+      <div style="margin-top:14px;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:600;">Featured in this order</div>
+      <div style="margin-top:6px;font-size:20px;font-weight:700;color:#111827;">${firstItem.title}</div>
+    </div>
+  `;
+}
+
+function buildOrderItems(order: OrderNotificationSnapshot) {
+  if (order.items.length === 0) {
+    return "";
+  }
+
+  const visibleItems = order.items.slice(0, 3);
+
+  return `
+    <div style="margin-top:18px;border-radius:26px;background:#f4f2ea;padding:8px 14px;">
+      ${visibleItems
+        .map((item) => {
+          const imageUrl = getEmailImageUrl(item.imageUrl);
+
+          return `
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;margin:8px 0;">
+              <tr>
+                <td style="width:${imageUrl ? "70px" : "0"};padding:0;vertical-align:middle;">
+                  ${
+                    imageUrl
+                      ? `<img src="${imageUrl}" alt="${item.title}" width="54" height="54" style="display:block;width:54px;height:54px;object-fit:cover;border-radius:16px;background:#ffffff;" />`
+                      : ""
+                  }
+                </td>
+                <td style="padding:0 ${imageUrl ? "14px" : "0"} 0 0;vertical-align:middle;">
+                  <div style="font-size:15px;font-weight:600;color:#111827;">${item.title}</div>
+                  <div style="margin-top:4px;font-size:12px;color:#6b7280;">${item.quantity} × ${formatNgn(item.unitPriceNgn)}</div>
+                </td>
+                <td style="padding:0;vertical-align:middle;text-align:right;">
+                  <div style="font-size:15px;font-weight:600;color:#111827;">${formatNgn(item.lineTotalNgn)}</div>
+                </td>
+              </tr>
+            </table>
+          `;
+        })
+        .join("")}
+      ${
+        order.items.length > visibleItems.length
+          ? `<div style="padding:10px 0 6px;font-size:12px;color:#6b7280;">+${order.items.length - visibleItems.length} more item${order.items.length - visibleItems.length === 1 ? "" : "s"}</div>`
+          : ""
+      }
     </div>
   `;
 }
@@ -74,10 +144,22 @@ function buildOrderFacts(order: OrderNotificationSnapshot) {
           <div style="margin-top:6px;font-size:18px;font-weight:600;color:#111827;">${formatNgn(order.totalNgn)}</div>
         </div>
         <div style="border-radius:22px;background:#f4f2ea;padding:14px 16px;">
+          <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:600;">Items</div>
+          <div style="margin-top:6px;font-size:18px;font-weight:600;color:#111827;">${order.itemCount}</div>
+        </div>
+      </div>
+      <div style="display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr));">
+        <div style="border-radius:22px;background:#f4f2ea;padding:14px 16px;">
           <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:600;">Reference</div>
           <div style="margin-top:6px;font-size:18px;font-weight:600;color:#111827;">${order.transferReference}</div>
         </div>
+        <div style="border-radius:22px;background:#f4f2ea;padding:14px 16px;">
+          <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:600;">Placed</div>
+          <div style="margin-top:6px;font-size:15px;font-weight:600;color:#111827;">${formatEmailTimestamp(order.placedAt)}</div>
+        </div>
       </div>
+      ${buildProductSpotlight(order)}
+      ${buildOrderItems(order)}
     </div>
   `;
 }

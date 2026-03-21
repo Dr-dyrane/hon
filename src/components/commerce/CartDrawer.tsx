@@ -123,7 +123,7 @@ export function CartDrawer() {
             <button
               type="button"
               onClick={closeCart}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-system-fill/80 text-label transition-colors duration-300 hover:bg-system-fill"
+              className="motion-press-soft flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-system-fill/80 text-label transition-colors duration-300 hover:bg-system-fill"
               aria-label="Close cart"
             >
               <X className="h-5 w-5" strokeWidth={1.7} />
@@ -205,7 +205,7 @@ export function CartDrawer() {
                         <button
                           type="button"
                           onClick={() => removeItem(line.productId)}
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-system-fill/80 text-secondary-label transition-colors duration-300 hover:bg-system-fill hover:text-label"
+                          className="motion-press-soft flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-system-fill/80 text-secondary-label transition-colors duration-300 hover:bg-system-fill hover:text-label"
                           aria-label={`Remove ${line.displayName}`}
                         >
                           <Trash2 className="h-[18px] w-[18px]" strokeWidth={1.7} />
@@ -219,7 +219,7 @@ export function CartDrawer() {
                             onClick={() =>
                               setQuantity(line.productId, line.quantity - 1)
                             }
-                            className="flex h-9 w-9 items-center justify-center rounded-full bg-system-background text-label transition-transform duration-300 hover:scale-[1.03]"
+                            className="motion-press-soft flex h-9 w-9 items-center justify-center rounded-full bg-system-background text-label transition-transform duration-300 hover:scale-[1.03]"
                             aria-label={`Decrease ${line.displayName}`}
                           >
                             <Minus className="h-4 w-4" strokeWidth={1.7} />
@@ -232,7 +232,7 @@ export function CartDrawer() {
                             onClick={() =>
                               setQuantity(line.productId, line.quantity + 1)
                             }
-                            className="flex h-9 w-9 items-center justify-center rounded-full bg-system-background text-label transition-transform duration-300 hover:scale-[1.03]"
+                            className="motion-press-soft flex h-9 w-9 items-center justify-center rounded-full bg-system-background text-label transition-transform duration-300 hover:scale-[1.03]"
                             aria-label={`Increase ${line.displayName}`}
                           >
                             <Plus className="h-4 w-4" strokeWidth={1.7} />
@@ -263,7 +263,7 @@ export function CartDrawer() {
                     <button
                       type="button"
                       onClick={clearCart}
-                      className="rounded-full bg-system-fill/80 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill hover:text-label"
+                      className="motion-press-soft rounded-full bg-system-fill/80 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill hover:text-label"
                     >
                       Clear Cart
                     </button>
@@ -404,14 +404,14 @@ export function CartDrawer() {
                       <button
                         type="button"
                         onClick={() => setShowLocationPin((current) => !current)}
-                        className="rounded-full bg-system-fill/46 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label"
+                        className="motion-press-soft rounded-full bg-system-fill/46 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label"
                       >
                         {showLocationPin ? "Hide pin" : "Pin location"}
                       </button>
                       <button
                         type="button"
                         onClick={() => setShowNotesField((current) => !current)}
-                        className="rounded-full bg-system-fill/46 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label"
+                        className="motion-press-soft rounded-full bg-system-fill/46 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label"
                       >
                         {showNotesField ? "Hide note" : "Add note"}
                       </button>

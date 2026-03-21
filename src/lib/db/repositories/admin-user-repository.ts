@@ -2,7 +2,7 @@ import "server-only";
 
 import { isDatabaseConfigured, query, withTransaction } from "@/lib/db/client";
 import { getPhoneValidationMessage, normalizePhoneToE164 } from "@/lib/phone";
-import type { AdminUserSummary } from "@/lib/db/types";
+import type { AdminUserInviteTarget, AdminUserSummary } from "@/lib/db/types";
 
 function normalizeOptionalText(value: string | null | undefined) {
   const trimmed = value?.trim() ?? "";
@@ -151,6 +151,20 @@ export async function createAdminUser(input: {
   }
 
   return withTransaction(async (queryFn) => {
+    const existingResult = await queryFn<{ userId: string }>(
+      `
+        select id as "userId"
+        from app.users
+        where lower(email::text) = $1
+        limit 1
+      `,
+      [email]
+    );
+
+    if (existingResult.rows[0]) {
+      throw new Error("User already exists.");
+    }
+
     const userResult = await queryFn<{ userId: string }>(
       `
         insert into app.users (email, phone_e164, status)
@@ -188,7 +202,13 @@ export async function createAdminUser(input: {
 
     await setAdminRole(queryFn, userId, input.isAdmin, input.actorUserId ?? null);
 
-    return userId;
+    return {
+      userId,
+      email,
+      fullName,
+      isAdmin: input.isAdmin,
+      status,
+    } satisfies AdminUserInviteTarget;
   }, {
     actor: {
       userId: input.actorUserId ?? null,
@@ -221,8 +241,14 @@ export async function updateAdminUser(input: {
     throw new Error("User is required.");
   }
 
-  if (input.actorUserId && input.actorUserId === userId && !input.isAdmin) {
-    throw new Error("You cannot remove your own admin access.");
+  if (input.actorUserId && input.actorUserId === userId) {
+    if (!input.isAdmin) {
+      throw new Error("You cannot remove your own admin access.");
+    }
+
+    if (status !== "active") {
+      throw new Error("You cannot suspend your own account.");
+    }
   }
 
   if (phone && !phoneE164) {
@@ -281,6 +307,47 @@ export async function updateAdminUser(input: {
       role: "admin",
     },
   });
+}
+
+export async function getAdminUserInviteTarget(
+  userId: string,
+  actorEmail?: string | null
+) {
+  if (!isDatabaseConfigured() || !userId) {
+    return null;
+  }
+
+  const result = await query<AdminUserInviteTarget>(
+    `
+      select
+        u.id as "userId",
+        u.email::text as email,
+        p.full_name as "fullName",
+        exists (
+          select 1
+          from app.user_roles ur
+          join app.roles r
+            on r.id = ur.role_id
+          where ur.user_id = u.id
+            and r.slug = 'admin'
+        ) as "isAdmin",
+        u.status
+      from app.users u
+      left join app.profiles p
+        on p.user_id = u.id
+      where u.id = $1
+      limit 1
+    `,
+    [userId],
+    {
+      actor: {
+        email: actorEmail?.trim().toLowerCase() ?? null,
+        role: "admin",
+      },
+    }
+  );
+
+  return result.rows[0] ?? null;
 }
 
 export async function deleteAdminUser(

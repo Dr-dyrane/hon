@@ -234,16 +234,12 @@ function NotificationPanel({
   const [workspaceInAppEnabled, setWorkspaceInAppEnabled] = useState(
     notificationPreference.workspaceInAppEnabled
   );
-  const [workspacePushEnabled, setWorkspacePushEnabled] = useState(
-    notificationPreference.workspacePushEnabled
-  );
 
   function handleSubmit(formData: FormData) {
     setMessage(null);
     setTone(null);
     formData.set("workspaceEmailEnabled", workspaceEmailEnabled ? "true" : "false");
     formData.set("workspaceInAppEnabled", workspaceInAppEnabled ? "true" : "false");
-    formData.set("workspacePushEnabled", workspacePushEnabled ? "true" : "false");
 
     startTransition(async () => {
       const result = await updateNotificationPreferenceAction(formData);
@@ -285,8 +281,7 @@ function NotificationPanel({
         <WorkspacePushPreferenceRow
           label="Push"
           detail="Instant order alerts"
-          value={workspacePushEnabled}
-          onChange={setWorkspacePushEnabled}
+          enabledByDefault={notificationPreference.workspacePushEnabled}
         />
       </div>
     </SettingsCard>

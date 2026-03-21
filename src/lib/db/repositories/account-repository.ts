@@ -202,7 +202,7 @@ export async function updatePortalProfile(email: string, input: {
   marketingOptIn: boolean;
   workspaceEmailEnabled: boolean;
   workspaceInAppEnabled: boolean;
-  workspacePushEnabled: boolean;
+  workspacePushEnabled?: boolean;
 }) {
   const normalizedEmail = email.trim().toLowerCase();
   const fullName = input.fullName.trim();
@@ -212,7 +212,8 @@ export async function updatePortalProfile(email: string, input: {
   const marketingOptIn = Boolean(input.marketingOptIn);
   const workspaceEmailEnabled = Boolean(input.workspaceEmailEnabled);
   const workspaceInAppEnabled = Boolean(input.workspaceInAppEnabled);
-  const workspacePushEnabled = Boolean(input.workspacePushEnabled);
+  const hasWorkspacePushPreference = typeof input.workspacePushEnabled === "boolean";
+  const workspacePushEnabled = input.workspacePushEnabled ?? false;
 
   if (!normalizedEmail || !isDatabaseConfigured()) {
     throw new Error("Profile is unavailable.");
@@ -280,7 +281,10 @@ export async function updatePortalProfile(email: string, input: {
         do update set
           workspace_email_enabled = excluded.workspace_email_enabled,
           workspace_in_app_enabled = excluded.workspace_in_app_enabled,
-          workspace_push_enabled = excluded.workspace_push_enabled,
+          workspace_push_enabled = case
+            when $5 then excluded.workspace_push_enabled
+            else app.notification_preferences.workspace_push_enabled
+          end,
           updated_at = timezone('utc', now())
       `,
       [
@@ -288,6 +292,7 @@ export async function updatePortalProfile(email: string, input: {
         workspaceEmailEnabled,
         workspaceInAppEnabled,
         workspacePushEnabled,
+        hasWorkspacePushPreference,
       ]
     );
   }, {

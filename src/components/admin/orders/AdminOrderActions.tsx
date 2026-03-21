@@ -8,6 +8,7 @@ import {
   cancelOrderAction,
   reviewPaymentAction,
 } from "@/app/(admin)/admin/orders/[orderId]/actions";
+import { useFeedback } from "@/components/providers/FeedbackProvider";
 import { INITIAL_ORDER_ADMIN_ACTION_STATE } from "@/lib/orders/action-state";
 import { getPaymentReviewActionLabel } from "@/lib/orders/presentation";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ export function AdminOrderActions({
   canCancel: boolean;
 }) {
   const router = useRouter();
+  const feedback = useFeedback();
   const [acceptState, acceptFormAction, acceptPending] = useActionState(
     acceptOrderRequestAction,
     INITIAL_ORDER_ADMIN_ACTION_STATE
@@ -35,9 +37,15 @@ export function AdminOrderActions({
 
   useEffect(() => {
     if (acceptState.status === "success") {
+      feedback.success();
       router.refresh();
+      return;
     }
-  }, [acceptState.status, router]);
+
+    if (acceptState.status === "error") {
+      feedback.blocked();
+    }
+  }, [acceptState.status, feedback, router]);
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -47,6 +55,7 @@ export function AdminOrderActions({
             id="admin-order-primary-form"
             action={acceptFormAction}
             className="flex"
+            onSubmitCapture={() => feedback.selection()}
           >
             <input type="hidden" name="orderId" value={orderId} />
             <input type="hidden" name="note" value="Request accepted from order detail." />
@@ -67,6 +76,7 @@ export function AdminOrderActions({
             <input type="hidden" name="note" value="Request declined from order detail." />
             <button
               type="submit"
+              onClick={() => feedback.tap()}
               className="min-h-[44px] w-full rounded-full bg-system-fill/56 px-4 text-xs font-semibold uppercase tracking-headline text-red-500 transition-colors duration-200 hover:bg-system-fill/76"
             >
               Decline
@@ -103,6 +113,7 @@ export function AdminOrderActions({
             id={index === 0 ? "admin-order-primary-form" : undefined}
             action={reviewPaymentAction}
             className="flex"
+            onSubmitCapture={() => feedback.selection()}
           >
             <input type="hidden" name="orderId" value={orderId} />
             <input type="hidden" name="paymentId" value={paymentId} />
@@ -128,6 +139,7 @@ export function AdminOrderActions({
           <input type="hidden" name="note" value="Cancelled from order detail." />
           <button
             type="submit"
+            onClick={() => feedback.tap()}
             className="min-h-[44px] w-full rounded-full bg-system-fill/56 px-4 text-xs font-semibold uppercase tracking-headline text-red-500 transition-colors duration-200 hover:bg-system-fill/76"
           >
             Cancel

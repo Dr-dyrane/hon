@@ -26,6 +26,7 @@ import {
   type ShellNavIcon,
   type ShellNavItem,
 } from "@/lib/app-shell";
+import { useFeedback } from "@/components/providers/FeedbackProvider";
 import { useUI } from "@/components/providers/UIProvider";
 import { cn } from "@/lib/utils";
 
@@ -63,6 +64,7 @@ export function WorkspaceNav({
   const pathname = usePathname();
   const router = useRouter();
   const { hasActiveOverlay } = useUI();
+  const feedback = useFeedback();
 
   if (mode === "mobile") {
     const matchedRoute = getShellMatchedRoute(pathname, headerRoutes);
@@ -72,6 +74,8 @@ export function WorkspaceNav({
       if (!mobileFab) {
         return;
       }
+
+      feedback.selection();
 
       if (mobileFab.kind === "cart") {
         window.dispatchEvent(new Event("commerce:open-cart"));
@@ -117,8 +121,9 @@ export function WorkspaceNav({
                   <Link
                     href={item.href}
                     aria-label={item.label}
+                    onClick={() => feedback.selection()}
                     className={cn(
-                      "flex h-12 items-center justify-center rounded-full text-[11px] font-semibold tracking-tight transition-all duration-200",
+                      "motion-press-soft flex h-12 items-center justify-center rounded-full text-[11px] font-semibold tracking-tight transition-all duration-200",
                       active
                         ? "min-w-[6.75rem] gap-2 px-4 text-label shadow-[0_14px_30px_rgba(15,23,42,0.12)]"
                         : "w-11 text-secondary-label hover:bg-system-fill/80 hover:text-label"
@@ -155,7 +160,7 @@ export function WorkspaceNav({
             onClick={handleMobileFab}
             aria-label={mobileFab.label}
             className={cn(
-              "z-layer-mobile-fab fixed right-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-label)] shadow-[0_18px_40px_rgba(15,23,42,0.16)] transition-transform duration-200 active:scale-[0.98] md:hidden",
+              "motion-press z-layer-mobile-fab fixed right-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-label)] shadow-[0_18px_40px_rgba(15,23,42,0.16)] transition-transform duration-200 md:hidden",
               hasActiveOverlay && "pointer-events-none translate-y-4 opacity-0"
             )}
           >
@@ -179,8 +184,9 @@ export function WorkspaceNav({
           <Link
             key={item.href}
             href={item.href}
+            onClick={() => feedback.selection()}
             className={cn(
-              "block rounded-[28px] px-4 py-4 transition-all duration-200",
+              "motion-press-soft block rounded-[28px] px-4 py-4 transition-all duration-200",
               active
                 ? "bg-[var(--accent)] text-[var(--accent-label)] shadow-button"
                 : "glass-morphism bg-system-fill/56 text-label hover:bg-system-fill/76"

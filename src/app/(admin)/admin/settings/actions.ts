@@ -109,8 +109,9 @@ export async function updateNotificationPreferenceAction(formData: FormData) {
           formData.get("workspaceEmailEnabled")?.toString() === "true",
         workspaceInAppEnabled:
           formData.get("workspaceInAppEnabled")?.toString() === "true",
-        workspacePushEnabled:
-          formData.get("workspacePushEnabled")?.toString() === "true",
+        workspacePushEnabled: formData.has("workspacePushEnabled")
+          ? formData.get("workspacePushEnabled")?.toString() === "true"
+          : undefined,
       },
       "admin"
     );

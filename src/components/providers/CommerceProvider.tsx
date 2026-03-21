@@ -12,6 +12,7 @@ import React, {
 } from "react";
 import { useRouter } from "next/navigation";
 import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
+import { useFeedback } from "@/components/providers/FeedbackProvider";
 import {
   addRemoteCartItem,
   clearRemoteCart,
@@ -208,6 +209,7 @@ function isRecoverableCartMessage(message: string) {
 export function CommerceProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { productIds, productsById } = useMarketingContent();
+  const { blocked, selection, success, tap } = useFeedback();
   const validProductIds = useMemo(() => new Set(productIds), [productIds]);
   const [cartItems, setCartItems] = useState<CartItem[]>(emptyCartSnapshot);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -375,6 +377,7 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
       setCartItems(optimisticItems);
       setIsCartOpen(true);
       setCheckoutError(null);
+      selection();
 
       void addRemoteCartItem(productId, normalizedQuantity)
         .then((snapshot) => {
@@ -383,9 +386,10 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
         .catch((error) => {
           setCartItems(cartItems);
           setCheckoutError(formatCommerceError(error));
+          blocked();
         });
     },
-    [applyRemoteSnapshot, cartItems]
+    [applyRemoteSnapshot, blocked, cartItems, selection]
   );
 
   const setQuantity = useCallback(
@@ -402,6 +406,7 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
 
       setCartItems(optimisticItems);
       setCheckoutError(null);
+      tap();
 
       void setRemoteCartItemQuantity(productId, normalizedQuantity)
         .then((snapshot) => {
@@ -410,9 +415,10 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
         .catch((error) => {
           setCartItems(cartItems);
           setCheckoutError(formatCommerceError(error));
+          blocked();
         });
     },
-    [applyRemoteSnapshot, cartItems]
+    [applyRemoteSnapshot, blocked, cartItems, tap]
   );
 
   const removeItem = useCallback(
@@ -421,6 +427,7 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
 
       setCartItems(optimisticItems);
       setCheckoutError(null);
+      tap();
 
       void removeRemoteCartItem(productId)
         .then((snapshot) => {
@@ -429,9 +436,10 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
         .catch((error) => {
           setCartItems(cartItems);
           setCheckoutError(formatCommerceError(error));
+          blocked();
         });
     },
-    [applyRemoteSnapshot, cartItems]
+    [applyRemoteSnapshot, blocked, cartItems, tap]
   );
 
   const clearCart = useCallback(() => {
@@ -439,6 +447,7 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
 
     setCartItems(emptyCartSnapshot);
     setCheckoutError(null);
+    tap();
 
     void clearRemoteCart()
       .then((snapshot) => {
@@ -447,8 +456,9 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
       .catch((error) => {
         setCartItems(previousItems);
         setCheckoutError(formatCommerceError(error));
+        blocked();
       });
-  }, [applyRemoteSnapshot, cartItems]);
+  }, [applyRemoteSnapshot, blocked, cartItems, tap]);
 
   const openCart = useCallback(() => {
     setIsCartOpen(true);
@@ -484,6 +494,7 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
 
     setIsSubmittingCheckout(true);
     setCheckoutError(null);
+    selection();
 
     try {
       const result = await submitCheckoutOrder({
@@ -500,6 +511,7 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
       setCartItems(emptyCartSnapshot);
       clearLegacyCartSnapshot();
       setIsCartOpen(false);
+      success();
 
       startTransition(() => {
         router.push(result.redirectTo);
@@ -511,6 +523,7 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
       if (isRecoverableCartMessage(message)) {
         try {
           await refreshCart();
+          blocked();
           setCheckoutError(
             message === "Cart is empty." ? "Cart is empty." : "Cart refreshed."
           );
@@ -522,10 +535,11 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
       }
 
       setCheckoutError(formatCommerceError(error));
+      blocked();
     } finally {
       setIsSubmittingCheckout(false);
     }
-  }, [canCheckout, checkoutForm, refreshCart, router]);
+  }, [blocked, canCheckout, checkoutForm, refreshCart, router, selection, success]);
 
   const value = useMemo<CommerceContextType>(
     () => ({

@@ -191,6 +191,40 @@ export type AdminCustomerSummary = {
   latestOrderAt: string | null;
 };
 
+export type AdminCustomerOrderRow = {
+  orderId: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  fulfillmentStatus: string;
+  totalNgn: number;
+  itemCount: number;
+  placedAt: string;
+};
+
+export type AdminCustomerAddressRow = {
+  addressId: string | null;
+  label: string;
+  recipientName: string;
+  phoneE164: string;
+  line1: string;
+  line2: string | null;
+  landmark: string | null;
+  city: string;
+  state: string;
+  postalCode: string | null;
+  deliveryNotes: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  isDefault: boolean;
+  source: "saved" | "recent_order";
+};
+
+export type AdminCustomerDetail = AdminCustomerSummary & {
+  recentOrders: AdminCustomerOrderRow[];
+  addresses: AdminCustomerAddressRow[];
+};
+
 export type AdminUserSummary = {
   userId: string;
   email: string;
@@ -202,6 +236,14 @@ export type AdminUserSummary = {
   addressCount: number;
   lastSignedInAt: string | null;
   createdAt: string;
+};
+
+export type AdminUserInviteTarget = {
+  userId: string;
+  email: string;
+  fullName: string | null;
+  isAdmin: boolean;
+  status: "active" | "invited" | "suspended";
 };
 
 export type AdminDeliveryOrder = {

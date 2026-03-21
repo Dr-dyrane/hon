@@ -7,8 +7,7 @@ import { publicEnv } from "@/lib/config/public";
 type WorkspacePushPreferenceRowProps = {
   label: string;
   detail: string;
-  value: boolean;
-  onChange: (nextValue: boolean) => void;
+  enabledByDefault: boolean;
 };
 
 type PushCapability = {
@@ -113,8 +112,7 @@ async function readResponsePayload(response: Response) {
 export function WorkspacePushPreferenceRow({
   label,
   detail,
-  value,
-  onChange,
+  enabledByDefault,
 }: WorkspacePushPreferenceRowProps) {
   const [capability, setCapability] = useState<PushCapability>({
     supported: false,
@@ -122,9 +120,50 @@ export function WorkspacePushPreferenceRow({
   });
   const [isPending, setIsPending] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [deviceEnabled, setDeviceEnabled] = useState(false);
 
   useEffect(() => {
-    setCapability(getPushCapability());
+    let cancelled = false;
+
+    async function syncDeviceState() {
+      const nextCapability = getPushCapability();
+
+      if (cancelled) {
+        return;
+      }
+
+      setCapability(nextCapability);
+
+      if (!nextCapability.supported) {
+        setDeviceEnabled(false);
+        return;
+      }
+
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        const registration =
+          registrations.find((candidate) =>
+            isRuntimeServiceWorkerRegistration(candidate)
+          ) ?? null;
+        const subscription = registration
+          ? await registration.pushManager.getSubscription()
+          : null;
+
+        if (!cancelled) {
+          setDeviceEnabled(Boolean(subscription));
+        }
+      } catch {
+        if (!cancelled) {
+          setDeviceEnabled(false);
+        }
+      }
+    }
+
+    void syncDeviceState();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function handleToggle(nextValue: boolean) {
@@ -147,7 +186,7 @@ export function WorkspacePushPreferenceRow({
           setFeedback(
             permission === "denied" ? "Browser blocked" : "Permission dismissed"
           );
-          onChange(false);
+          setDeviceEnabled(false);
           return;
         }
 
@@ -179,7 +218,7 @@ export function WorkspacePushPreferenceRow({
           throw new Error(payload?.error || "Unable to enable push.");
         }
 
-        onChange(true);
+        setDeviceEnabled(true);
         setFeedback("Live on this device");
         return;
       }
@@ -192,6 +231,12 @@ export function WorkspacePushPreferenceRow({
       const subscription = registration
         ? await registration.pushManager.getSubscription()
         : null;
+
+      if (!subscription) {
+        setDeviceEnabled(false);
+        setFeedback("Off on this device");
+        return;
+      }
 
       const response = await fetch("/api/push/subscription", {
         method: "DELETE",
@@ -213,7 +258,7 @@ export function WorkspacePushPreferenceRow({
         await subscription.unsubscribe().catch(() => undefined);
       }
 
-      onChange(false);
+      setDeviceEnabled(false);
       setFeedback("Off on this device");
     } catch (error) {
       setFeedback(
@@ -227,13 +272,20 @@ export function WorkspacePushPreferenceRow({
 
   const rowDetail = isPending
     ? "Updating"
-    : feedback ?? (capability.supported ? detail : capability.detail);
+    : feedback ??
+      (capability.supported
+        ? deviceEnabled
+          ? "Live on this device"
+          : enabledByDefault
+            ? "Live on another device"
+            : detail
+        : capability.detail);
 
   return (
     <PreferenceToggleRow
       label={label}
       detail={rowDetail}
-      value={value}
+      value={deviceEnabled}
       onChange={handleToggle}
       disabled={isPending || !capability.supported}
     />

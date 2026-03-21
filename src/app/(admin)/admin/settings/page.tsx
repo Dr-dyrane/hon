@@ -1,5 +1,6 @@
 import { Landmark, Route, ScanSearch } from "lucide-react";
 import { MetricRail } from "@/components/admin/MetricRail";
+import { AdminSettingsSectionNav } from "@/components/admin/settings/AdminSettingsSectionNav";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { AdminSettingsEditor } from "@/components/admin/settings/AdminSettingsEditor";
 import { getAdminSettingsSnapshot } from "@/lib/db/repositories/settings-repository";
@@ -38,6 +39,8 @@ export default async function AdminSettingsPage() {
         ]}
         columns={3}
       />
+
+      <AdminSettingsSectionNav />
 
       <AdminSettingsEditor
         bankAccount={snapshot.bankAccount}

@@ -310,13 +310,6 @@ export const ADMIN_NAV_ITEMS: ShellNavItem[] = [
     icon: "customers",
   },
   {
-    href: "/admin/users",
-    label: "Users",
-    shortLabel: "Users",
-    description: "Access, account status, and admin role management.",
-    icon: "customers",
-  },
-  {
     href: "/admin/reviews",
     label: "Reviews",
     shortLabel: "Reviews",
@@ -423,8 +416,9 @@ export const ADMIN_HEADER_ROUTES: ShellHeaderRoute[] = [
     title: "Customers",
   },
   {
-    pattern: "/admin/users",
-    title: "Users",
+    pattern: "/admin/customers/[customerKey]",
+    title: "Customer Detail",
+    breadcrumbs: [{ href: "/admin/customers", label: "Customers" }],
   },
   {
     pattern: "/admin/reviews",
@@ -433,5 +427,10 @@ export const ADMIN_HEADER_ROUTES: ShellHeaderRoute[] = [
   {
     pattern: "/admin/settings",
     title: "Settings",
+  },
+  {
+    pattern: "/admin/settings/team",
+    title: "Team",
+    breadcrumbs: [{ href: "/admin/settings", label: "Settings" }],
   },
 ];

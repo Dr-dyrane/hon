@@ -122,8 +122,9 @@ Current state:
 - portal order history now uses compact phone cards and spreads into wider desktop grids earlier instead of holding a narrow single-column rhythm
 - customer payment, rating, and return feedback now lands in quiet inline status pills instead of loose helper text
 - guest confirmation now uses a calmer native-style top bar instead of a generic three-cell utility header
-- admin users and catalog taxonomy now exist as real management routes instead of hidden data-only capabilities
-- admin users, taxonomy, and settings now use phone-safe composer and action rows instead of desktop-style footer controls
+- catalog taxonomy and settings now exist as real management routes instead of hidden data-only capabilities
+- settings, taxonomy, and team management now use phone-safe composer and action rows instead of desktop-style footer controls
+- internal access management now lives under `Settings > Team` with invite flow, resend invite actions, search/filter controls, and self-lockout protection on admin access and suspension state
 - admin settings and portal profile now use native-style toggle rows for notification and tracking preferences instead of generic boolean form controls
 - shared context panels now collapse into a tighter phone rhythm with horizontal metadata instead of tall desktop-style grids
 - redundant mobile sticky save rails are now removed where the phone FAB or inline actions already own the primary action
@@ -131,6 +132,8 @@ Current state:
 - local request-flow verification now has a first-class scripted path that covers request, payment, delivery, review, and refund against a running dev server
 - real web push is now live end to end: VAPID-backed browser subscriptions, service-worker delivery, stored device subscriptions, and order/admin milestone push notifications
 - admin order detail now shows stock readiness before request acceptance and blocks the accept action when inventory is missing or short
+- customers now open into a real customer detail view with contact context, recent orders, and delivery-place history instead of stopping at a read-only summary board
+- linked customer accounts can now be updated from admin customer detail for contact info and saved addresses, while guest checkout snapshots remain read-only
 
 This means the system has crossed into operational platform work.
 
@@ -352,6 +355,7 @@ Open:
 - [x] catalog creation and editing flows
 - [x] catalog taxonomy management
 - [x] admin user management
+- [x] admin user invite and resend flow
 - [x] product media CRUD for image, 3D, and video assets
 - [x] contained product media preview and viewer for image, video, and 3D assets inside product edit
 - [x] availability and featured management actions
@@ -362,6 +366,7 @@ Open:
 - [x] safe product delete action
 - [x] variant-level media management
 - [ ] tighter Apple-style visual and copy pass across all admin pages
+- [ ] richer user-management lifecycle beyond invite/edit/suspend/delete, such as session history or customer claim support
 
 --- 
 
@@ -475,6 +480,21 @@ Missing:
 - richer gallery ordering controls beyond numeric sort order
 - explicit archive/delete safeguards for product families
 - image transforms or validation beyond upload-time file typing
+
+### Product management is strong, not fully finished
+
+Current product-management behavior:
+
+- products can be created, edited, archived, and safely deleted
+- ingredients and categories have real CRUD
+- product, variant-default, and media/inventory controls are live
+- image, video, and 3D media upload and in-app preview are live
+
+Remaining product-management gaps:
+
+- deeper multi-variant merchandising beyond the current default-variant-first model
+- ingredient image upload instead of text-path entry only
+- richer media ordering/composition tooling
 
 ### Web push is now operational
 

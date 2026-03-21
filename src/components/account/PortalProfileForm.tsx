@@ -22,9 +22,6 @@ export function PortalProfileForm({ profile }: { profile: PortalProfile }) {
   const [workspaceInAppEnabled, setWorkspaceInAppEnabled] = useState(
     profile.workspaceInAppEnabled
   );
-  const [workspacePushEnabled, setWorkspacePushEnabled] = useState(
-    profile.workspacePushEnabled
-  );
   const [draft, setDraft] = useState({
     fullName: profile.fullName,
     preferredPhone: profile.preferredPhoneE164,
@@ -41,7 +38,6 @@ export function PortalProfileForm({ profile }: { profile: PortalProfile }) {
     formData.set("marketingOptIn", marketingOptIn ? "true" : "false");
     formData.set("workspaceEmailEnabled", workspaceEmailEnabled ? "true" : "false");
     formData.set("workspaceInAppEnabled", workspaceInAppEnabled ? "true" : "false");
-    formData.set("workspacePushEnabled", workspacePushEnabled ? "true" : "false");
 
     startTransition(async () => {
       const result = await updateProfileAction(formData);
@@ -165,8 +161,7 @@ export function PortalProfileForm({ profile }: { profile: PortalProfile }) {
           <WorkspacePushPreferenceRow
             label="Push"
             detail="Instant order alerts"
-            value={workspacePushEnabled}
-            onChange={setWorkspacePushEnabled}
+            enabledByDefault={profile.workspacePushEnabled}
           />
         </div>
       </ProgressiveFormSection>

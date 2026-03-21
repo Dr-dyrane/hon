@@ -83,6 +83,7 @@ export const viewport: Viewport = {
 };
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { FeedbackProvider } from "@/components/providers/FeedbackProvider";
 import { UIProvider } from "@/components/providers/UIProvider";
 
 export default function RootLayout({
@@ -102,11 +103,13 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <UIProvider>
-            <DeploymentRefreshGuard
-              currentVersion={runtimeVersion}
-              enableServiceWorker={process.env.NODE_ENV === "production"}
-            />
-            {children}
+            <FeedbackProvider>
+              <DeploymentRefreshGuard
+                currentVersion={runtimeVersion}
+                enableServiceWorker={process.env.NODE_ENV === "production"}
+              />
+              {children}
+            </FeedbackProvider>
           </UIProvider>
         </ThemeProvider>
         {process.env.NODE_ENV === "production" ? <Analytics /> : null}

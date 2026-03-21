@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CircleUserRound, MapPinHouse, UserRoundCheck } from "lucide-react";
 import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAdminSession } from "@/lib/auth/guards";
@@ -58,9 +59,10 @@ export default async function AdminCustomersPage() {
 
       <section className="grid gap-4">
         {customers.map((customer) => (
-          <article
+          <Link
             key={customer.customerKey}
-            className="glass-morphism rounded-[32px] bg-system-background/72 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
+            href={`/admin/customers/${encodeURIComponent(customer.customerKey)}`}
+            className="glass-morphism block rounded-[32px] bg-system-background/72 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition-colors duration-200 hover:bg-system-background/86"
           >
             <div className="flex flex-col gap-4 min-[980px]:flex-row min-[980px]:items-start min-[980px]:justify-between">
               <div className="min-w-0">
@@ -92,7 +94,7 @@ export default async function AdminCustomersPage() {
                 <CountPill label="Places" value={customer.addressCount} />
               </div>
             </div>
-          </article>
+          </Link>
         ))}
       </section>
     </div>

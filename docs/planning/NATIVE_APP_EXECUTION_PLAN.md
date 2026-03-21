@@ -123,7 +123,7 @@ These are the main non-native behaviors currently visible in the app.
 
 - many interactions still rely on visual state alone
 - there is no formal sensory feedback system yet
-- push is not yet part of the runtime plan
+- push is now part of the runtime plan, but still needs real device review as it spreads through daily operations
 
 ---
 
@@ -150,12 +150,12 @@ Current correction:
 - portal order history now uses compact phone cards with quieter stats before the open action
 - guest confirmation now uses a calmer utility top bar that feels closer to a native handoff surface than a generic web header
 - payment, rating, and return feedback now uses quiet inline state pills instead of floating helper copy
-- admin users, taxonomy, and settings now use phone-safe composer and save rows instead of desktop-style footer controls
+- settings team management, taxonomy, and settings now use phone-safe composer and save rows instead of desktop-style footer controls
 - admin settings and portal profile now use native-style toggle rows for boolean preferences instead of select menus or custom badge buttons
 - mobile dock and FAB now honor safe-area spacing, use stronger active-state contrast, and step out cleanly during overlays
 - shared context panels now collapse into a tighter phone treatment with horizontal meta strips instead of tall desktop-style grids
 - redundant sticky save rails now stay desktop-only where the phone FAB or inline actions already own the primary task
-- push remains a future native-web milestone, so the current settings surfaces only expose live email and in-app controls
+- push is live through browser subscriptions and milestone delivery, so settings surfaces can now expose email, in-app, and push preferences when the browser supports them
 
 ### Preferred phone rhythm
 

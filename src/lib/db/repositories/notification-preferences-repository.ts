@@ -69,7 +69,9 @@ export async function getWorkspaceNotificationPreference(email: string) {
 
 export async function saveWorkspaceNotificationPreference(
   email: string,
-  input: WorkspaceNotificationPreference,
+  input: Omit<WorkspaceNotificationPreference, "workspacePushEnabled"> & {
+    workspacePushEnabled?: boolean;
+  },
   role: "customer" | "admin" = "customer"
 ) {
   const normalizedEmail = normalizeEmail(email);
@@ -98,14 +100,18 @@ export async function saveWorkspaceNotificationPreference(
         do update set
           workspace_email_enabled = excluded.workspace_email_enabled,
           workspace_in_app_enabled = excluded.workspace_in_app_enabled,
-          workspace_push_enabled = excluded.workspace_push_enabled,
+          workspace_push_enabled = case
+            when $5 then excluded.workspace_push_enabled
+            else app.notification_preferences.workspace_push_enabled
+          end,
           updated_at = timezone('utc', now())
       `,
       [
         user.userId,
         input.workspaceEmailEnabled,
         input.workspaceInAppEnabled,
-        input.workspacePushEnabled,
+        input.workspacePushEnabled ?? false,
+        typeof input.workspacePushEnabled === "boolean",
       ]
     );
   }, {
