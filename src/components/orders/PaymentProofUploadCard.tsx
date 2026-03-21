@@ -11,10 +11,12 @@ export function PaymentProofUploadCard({
   orderId,
   paymentId,
   accessToken,
+  paymentStatus,
 }: {
   orderId: string;
   paymentId: string | null;
   accessToken?: string;
+  paymentStatus?: string | null;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -23,6 +25,25 @@ export function PaymentProofUploadCard({
 
   if (!paymentId) {
     return null;
+  }
+
+  if (paymentStatus && !["awaiting_transfer", "rejected"].includes(paymentStatus)) {
+    const message =
+      paymentStatus === "submitted"
+        ? "Proof added."
+        : paymentStatus === "under_review"
+          ? "Under review."
+          : paymentStatus === "confirmed"
+            ? "Confirmed."
+            : paymentStatus === "expired"
+              ? "Window closed."
+              : "Handled.";
+
+    return (
+      <div className="mt-4 rounded-[22px] bg-system-fill/36 px-4 py-3 text-sm text-secondary-label">
+        {message}
+      </div>
+    );
   }
 
   async function handleUpload() {

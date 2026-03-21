@@ -10,7 +10,15 @@ import {
   listPaymentProofs,
   listPaymentReviewEvents,
 } from "@/lib/db/repositories/orders-repository";
-import { reviewPaymentAction } from "./actions";
+import {
+  getLatestOrderReturnCase,
+  listOrderReturnEvents,
+} from "@/lib/db/repositories/order-returns-repository";
+import {
+  advanceReturnCaseAction,
+  cancelOrderAction,
+  reviewPaymentAction,
+} from "./actions";
 
 const statusLabelMap: Record<string, string> = {
   awaiting_transfer: "Awaiting transfer",
@@ -23,6 +31,14 @@ const statusLabelMap: Record<string, string> = {
   delivered: "Delivered",
   cancelled: "Cancelled",
   expired: "Expired",
+};
+
+const returnStatusLabelMap: Record<string, string> = {
+  requested: "Requested",
+  approved: "Approved",
+  rejected: "Rejected",
+  received: "Received",
+  refunded: "Refunded",
 };
 
 function formatTimestamp(value?: string | null) {
@@ -48,6 +64,20 @@ function getDeliveryLine(snapshot: Record<string, unknown>) {
   }
 
   return "Pending";
+}
+
+function canCancelOrder(input: {
+  status: string;
+  fulfillmentStatus: string;
+}) {
+  return [
+    "awaiting_transfer",
+    "payment_submitted",
+    "payment_under_review",
+    "payment_confirmed",
+    "preparing",
+    "ready_for_dispatch",
+  ].includes(input.status) && input.fulfillmentStatus !== "out_for_delivery";
 }
 
 export default async function AdminOrderDetailPage({
@@ -78,10 +108,12 @@ export default async function AdminOrderDetailPage({
     email: session.email,
     role: "admin" as const,
   };
-  const [events, reviews, proofs] = await Promise.all([
+  const [orderEvents, paymentReviews, paymentProofs, returnCase, returnEvents] = await Promise.all([
     listOrderStatusEvents(params.orderId, adminActor),
     order.paymentId ? listPaymentReviewEvents(order.paymentId, session.email) : [],
     order.paymentId ? listPaymentProofs(order.paymentId, adminActor) : [],
+    getLatestOrderReturnCase(params.orderId, adminActor),
+    listOrderReturnEvents(params.orderId, adminActor),
   ]);
 
   return (
@@ -134,18 +166,23 @@ export default async function AdminOrderDetailPage({
           },
           {
             label: "Proofs",
-            value: `${proofs.length}`,
-            detail: proofs.length > 0 ? "Received" : "Waiting",
+            value: `${paymentProofs.length}`,
+            detail: paymentProofs.length > 0 ? "Received" : "Waiting",
           },
           {
             label: "Reviews",
-            value: `${reviews.length}`,
-            detail: reviews.length > 0 ? "Logged" : "Quiet",
+            value: `${paymentReviews.length}`,
+            detail: paymentReviews.length > 0 ? "Logged" : "Quiet",
           },
           {
             label: "Timeline",
-            value: `${events.length}`,
-            detail: events.length > 0 ? "Events" : "Waiting",
+            value: `${orderEvents.length}`,
+            detail: orderEvents.length > 0 ? "Events" : "Waiting",
+          },
+          {
+            label: "Return",
+            value: returnCase ? returnStatusLabelMap[returnCase.status] ?? returnCase.status : "Quiet",
+            detail: returnCase ? "Case" : "None",
           },
         ]}
         columns={4}
@@ -181,9 +218,9 @@ export default async function AdminOrderDetailPage({
           </DetailSurface>
 
           <DetailSurface title="Actions">
-            {order.paymentId ? (
-              <div className="grid gap-3 sm:grid-cols-3">
-                {["confirmed", "under_review", "rejected"].map((action) => (
+            <div className="grid gap-3 sm:grid-cols-4">
+              {order.paymentId ? (
+                ["confirmed", "under_review", "rejected"].map((action) => (
                   <form key={action} action={reviewPaymentAction} className="flex">
                     <input type="hidden" name="orderId" value={order.orderId} />
                     <input type="hidden" name="paymentId" value={order.paymentId ?? ""} />
@@ -200,21 +237,34 @@ export default async function AdminOrderDetailPage({
                           : "Reject"}
                     </button>
                   </form>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-[24px] bg-system-fill/42 px-4 py-4 text-sm text-secondary-label">
-                Waiting for payment.
-              </div>
-            )}
+                ))
+              ) : (
+                <div className="rounded-[24px] bg-system-fill/42 px-4 py-4 text-sm text-secondary-label sm:col-span-3">
+                  Waiting for payment.
+                </div>
+              )}
+
+              {canCancelOrder(order) ? (
+                <form action={cancelOrderAction} className="flex">
+                  <input type="hidden" name="orderId" value={order.orderId} />
+                  <input type="hidden" name="note" value="Cancelled from order detail." />
+                  <button
+                    type="submit"
+                    className="min-h-[44px] w-full rounded-full bg-system-fill/56 px-4 text-xs font-semibold uppercase tracking-headline text-red-500 transition-colors duration-200 hover:bg-system-fill/76"
+                  >
+                    Cancel
+                  </button>
+                </form>
+              ) : null}
+            </div>
           </DetailSurface>
 
           <DetailSurface title="Timeline">
             <div className="grid gap-2 text-sm text-secondary-label">
-              {events.length === 0 ? (
+              {orderEvents.length === 0 ? (
                 <div className="rounded-[22px] bg-system-fill/36 px-4 py-3">Waiting.</div>
               ) : (
-                events.map((event) => (
+                orderEvents.map((event) => (
                   <div
                     key={event.eventId}
                     className="flex items-center justify-between gap-4 rounded-[22px] bg-system-fill/36 px-4 py-3"
@@ -233,10 +283,10 @@ export default async function AdminOrderDetailPage({
         <div className="space-y-4">
           <DetailSurface title="Reviews">
             <div className="grid gap-2 text-sm text-secondary-label">
-              {reviews.length === 0 ? (
+              {paymentReviews.length === 0 ? (
                 <div className="rounded-[22px] bg-system-fill/36 px-4 py-3">Quiet.</div>
               ) : (
-                reviews.map((review) => (
+                paymentReviews.map((review) => (
                   <div
                     key={review.eventId}
                     className="rounded-[22px] bg-system-fill/36 px-4 py-3"
@@ -258,10 +308,10 @@ export default async function AdminOrderDetailPage({
 
           <DetailSurface title="Proofs">
             <div className="grid gap-2 text-sm text-secondary-label">
-              {proofs.length === 0 ? (
+              {paymentProofs.length === 0 ? (
                 <div className="rounded-[22px] bg-system-fill/36 px-4 py-3">No proof.</div>
               ) : (
-                proofs.map((proof) => (
+                paymentProofs.map((proof) => (
                   <Link
                     key={proof.proofId}
                     href={proof.publicUrl ?? "#"}
@@ -275,6 +325,171 @@ export default async function AdminOrderDetailPage({
                 ))
               )}
             </div>
+          </DetailSurface>
+
+          <DetailSurface title="Return">
+            {!returnCase ? (
+              <div className="rounded-[22px] bg-system-fill/36 px-4 py-3 text-sm text-secondary-label">
+                No return.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="rounded-[22px] bg-system-fill/36 px-4 py-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="text-sm font-medium text-label">
+                      {returnStatusLabelMap[returnCase.status] ?? returnCase.status}
+                    </div>
+                    <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                      {formatTimestamp(returnCase.createdAt)}
+                    </div>
+                  </div>
+                  <div className="mt-2 text-sm text-secondary-label">{returnCase.reason}</div>
+                  {returnCase.details ? (
+                    <div className="mt-2 text-sm text-secondary-label">{returnCase.details}</div>
+                  ) : null}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <SurfaceMeta
+                    label="Requested"
+                    value={formatNgn(returnCase.requestedRefundAmountNgn)}
+                  />
+                  <SurfaceMeta
+                    label="Refund"
+                    value={
+                      returnCase.approvedRefundAmountNgn !== null
+                        ? formatNgn(returnCase.approvedRefundAmountNgn)
+                        : "Pending"
+                    }
+                  />
+                </div>
+
+                {returnCase.refundBankName ||
+                returnCase.refundAccountName ||
+                returnCase.refundAccountNumber ? (
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <SurfaceMeta label="Bank" value={returnCase.refundBankName ?? "Pending"} />
+                    <SurfaceMeta label="Name" value={returnCase.refundAccountName ?? "Pending"} />
+                    <SurfaceMeta
+                      label="Number"
+                      value={returnCase.refundAccountNumber ?? "Pending"}
+                    />
+                  </div>
+                ) : null}
+
+                {returnCase.status === "requested" ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {[
+                      {
+                        action: "approved",
+                        label: "Approve",
+                        note: "Return approved from order detail.",
+                      },
+                      {
+                        action: "rejected",
+                        label: "Reject",
+                        note: "Return rejected from order detail.",
+                      },
+                    ].map((item) => (
+                      <form key={item.action} action={advanceReturnCaseAction} className="flex">
+                        <input type="hidden" name="orderId" value={order.orderId} />
+                        <input type="hidden" name="returnCaseId" value={returnCase.returnCaseId} />
+                        <input type="hidden" name="action" value={item.action} />
+                        <input type="hidden" name="note" value={item.note} />
+                        <button
+                          type="submit"
+                          className="button-secondary min-h-[44px] w-full text-xs font-semibold uppercase tracking-headline"
+                        >
+                          {item.label}
+                        </button>
+                      </form>
+                    ))}
+                  </div>
+                ) : null}
+
+                {returnCase.status === "approved" ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <form action={advanceReturnCaseAction} className="flex">
+                      <input type="hidden" name="orderId" value={order.orderId} />
+                      <input type="hidden" name="returnCaseId" value={returnCase.returnCaseId} />
+                      <input type="hidden" name="action" value="received" />
+                      <input type="hidden" name="note" value="Return received from order detail." />
+                      <button
+                        type="submit"
+                        className="button-secondary min-h-[44px] w-full text-xs font-semibold uppercase tracking-headline"
+                      >
+                        Received
+                      </button>
+                    </form>
+                    <form action={advanceReturnCaseAction} className="grid gap-2">
+                      <input type="hidden" name="orderId" value={order.orderId} />
+                      <input type="hidden" name="returnCaseId" value={returnCase.returnCaseId} />
+                      <input type="hidden" name="action" value="refunded" />
+                      <input type="hidden" name="note" value="Refund sent from order detail." />
+                      <input
+                        name="refundReference"
+                        placeholder="Refund reference"
+                        className="min-h-[44px] rounded-[22px] bg-system-fill/42 px-4 text-sm text-label placeholder:text-tertiary-label focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        className="button-secondary min-h-[44px] w-full text-xs font-semibold uppercase tracking-headline"
+                      >
+                        Refund
+                      </button>
+                    </form>
+                  </div>
+                ) : null}
+
+                {returnCase.status === "received" ? (
+                  <form action={advanceReturnCaseAction} className="grid gap-2">
+                    <input type="hidden" name="orderId" value={order.orderId} />
+                    <input type="hidden" name="returnCaseId" value={returnCase.returnCaseId} />
+                    <input type="hidden" name="action" value="refunded" />
+                    <input type="hidden" name="note" value="Refund sent from order detail." />
+                    <input
+                      name="refundReference"
+                      placeholder="Refund reference"
+                      className="min-h-[44px] rounded-[22px] bg-system-fill/42 px-4 text-sm text-label placeholder:text-tertiary-label focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      className="button-secondary min-h-[44px] text-xs font-semibold uppercase tracking-headline"
+                    >
+                      Refund
+                    </button>
+                  </form>
+                ) : null}
+
+                {returnCase.refundReference ? (
+                  <SurfaceMeta label="Reference" value={returnCase.refundReference} />
+                ) : null}
+
+                {returnCase.resolutionNote ? (
+                  <div className="rounded-[22px] bg-system-fill/36 px-4 py-3 text-sm text-secondary-label">
+                    {returnCase.resolutionNote}
+                  </div>
+                ) : null}
+
+                <div className="grid gap-2 text-sm text-secondary-label">
+                  {returnEvents.length === 0 ? (
+                    <div className="rounded-[22px] bg-system-fill/36 px-4 py-3">Quiet.</div>
+                  ) : (
+                    returnEvents.map((event) => (
+                      <div
+                        key={event.eventId}
+                        className="flex items-center justify-between gap-4 rounded-[22px] bg-system-fill/36 px-4 py-3"
+                      >
+                        <span className="text-label">
+                          {returnStatusLabelMap[event.action] ?? event.action}
+                        </span>
+                        <span>{formatTimestamp(event.createdAt)}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </DetailSurface>
         </div>
       </div>

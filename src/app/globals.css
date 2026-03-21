@@ -306,9 +306,6 @@ canvas {
     brightness(1.12) 
     contrast(0.92);
   
-  /* Surface tension borders */
-  border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 24px;
   corner-shape: squircle;
   /* Native Squircle Support */
   

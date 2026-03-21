@@ -3,7 +3,7 @@ import "server-only";
 import { serverEnv } from "@/lib/config/server";
 
 type ResendSendEmailInput = {
-  to: string;
+  to: string | string[];
   subject: string;
   text: string;
   html: string;
@@ -21,6 +21,7 @@ function requireResendConfig() {
 
 export async function sendResendEmail(input: ResendSendEmailInput) {
   requireResendConfig();
+  const recipients = Array.isArray(input.to) ? input.to : [input.to];
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -30,7 +31,7 @@ export async function sendResendEmail(input: ResendSendEmailInput) {
     },
     body: JSON.stringify({
       from: serverEnv.email.resendFromEmail,
-      to: [input.to],
+      to: recipients,
       subject: input.subject,
       text: input.text,
       html: input.html,

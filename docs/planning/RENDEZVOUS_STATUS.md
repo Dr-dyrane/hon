@@ -78,6 +78,11 @@ Current state:
 - selected shell navigation states now use accent surfaces with legible contrast in both light and dark mode
 - auth, cart handoff, and guest confirmation wording is quieter and less technical on the live user path
 - mobile shell navigation now clears the development badge in local testing so the first rail item stays readable
+- product edit now keeps image, video, and 3D asset preview inside the editor with a contained viewer instead of raw file links
+- product edit now has a safe archive path instead of relying on manual status edits alone
+- archived products can now be hard-deleted safely when no open orders still reference them
+- milestone email notifications now cover order placed, proof received, payment resolution, delivery motion, delivery completion, and cancellation
+- product media can now target either the product or its default variant from the same editor flow
 - portal order list now relies more on shell hierarchy instead of repeating route-level headings
 - admin orders and payments now use the same quiet root switcher pattern instead of lone cross-links
 - portal account home labels are shorter and less instructional on the main signed-in path
@@ -86,6 +91,10 @@ Current state:
 - admin payments now supports direct review, confirm, and reject actions from the queue itself
 - proof-upload language is shorter on the customer order flow
 - admin catalog now supports product media CRUD for image, 3D, and video assets through direct S3 upload and audited media mutations
+- customer proof upload now advances payment and order state instead of only storing the file
+- stale awaiting-transfer orders now expire automatically on read-path access and release held stock
+- inventory now reserves on order creation, releases on expiry, and decrements on delivery
+- admin can now cancel pre-dispatch orders from the order detail flow, with stock release and assignment cleanup handled transactionally
 
 This means the system has crossed into operational platform work.
 
@@ -247,6 +256,9 @@ Completed:
 - [x] browser-direct signed upload flow for admin catalog media
 - [x] converted-cart checkout recovery path
 - [x] checkout cart refresh path for expired or replaced carts
+- [x] proof upload now advances payment/order state into `submitted`
+- [x] stale awaiting-transfer orders now expire and release stock
+- [x] inventory reservation/release/delivery decrement now follows the order lifecycle
 - [x] delivery assignment schema and repository path
 - [x] review request and review schema
 - [x] review repository and moderation write path
@@ -257,10 +269,10 @@ Completed:
 - [x] owner/admin RLS policy rollout on order-, profile-, and review-scoped tables
 - [x] low-churn secondary audit coverage for layout presentations, layout bindings, and review requests
 - [x] runtime usage of delivery defaults for checkout deadlines and tracking on/off
+- [x] milestone email notifications for checkout, proof submission, payment review, delivery progression, and cancellation
 
 Open:
 
-- [ ] connect inventory reservation and stock release/decrement to the real order lifecycle
 - [ ] review whether any future low-churn mutable tables should join the audit ledger as new admin surfaces are introduced
 
 ---
@@ -292,12 +304,15 @@ Open:
 - [x] review moderation
 - [x] catalog creation and editing flows
 - [x] product media CRUD for image, 3D, and video assets
+- [x] contained product media preview and viewer for image, video, and 3D assets inside product edit
 - [x] availability and featured management actions
 - [x] layout authoring flow
 - [x] layout publishing flow
+- [x] pre-dispatch admin cancellation flow
+- [x] safe product archive action
+- [x] safe product delete action
+- [x] variant-level media management
 - [ ] tighter Apple-style visual and copy pass across all admin pages
-- [ ] product archive/delete safety flow
-- [ ] variant-level media management
 
 --- 
 
@@ -401,19 +416,35 @@ Missing:
 - explicit archive/delete safeguards for product families
 - image transforms or validation beyond upload-time file typing
 
-### Inventory is not yet order-coupled
-
+### Inventory is now order-coupled
 Current inventory behavior:
 
-- admin can set on-hand and reorder thresholds
-- catalog pages surface stock state
+- admin-set inventory now reserves when checkout creates an order
+- stale awaiting-transfer expiry releases reserved units
+- delivered orders decrement on-hand stock and clear reserved units
+- admin cancellation now releases reserved units before dispatch
+- return receipt now restores on-hand stock for returned orders
 
-Missing:
+Remaining gaps:
 
-- reserve stock when a real order is created or confirmed
-- release reserved stock when orders expire or are cancelled
-- decrement fulfilled stock as orders move through dispatch and delivery
-- operator-visible low-stock behavior tied to real commerce activity
+- operator-visible low-stock intervention is still basic
+
+### Return and refund flow is now operational
+
+Current return/refund behavior:
+
+- delivered orders can open a return request from the signed-in or guest order detail surface
+- admin order detail can approve, reject, mark received, and mark refunded
+- `/admin/orders` now surfaces open return cases directly in the main queue
+- return events now have their own timeline instead of overloading core order status
+- refund and return milestones now send email notifications
+- received returns restore inventory on-hand
+- refund bank details are now captured inside the return case instead of staying manual
+
+Remaining gaps:
+
+- partial returns are not supported yet
+- customer-uploaded proof or media for returns is still not supported
 
 ### RLS is active on the first protected slice
 Current protection model:
@@ -495,9 +526,9 @@ The active build block is Pass 5: admin console expansion.
 Implement in this order:
 
 1. Run one deployed business-flow smoke test from sign-in through payment review and delivery-state progression.
-2. Connect inventory to the order lifecycle so stock becomes operationally truthful.
+2. Run one deployed business-flow smoke test through the return/refund flow as well.
 3. Keep tightening the Apple-HIG execution across admin and portal root/detail screens.
-4. Close the remaining catalog operator gaps: product archive/delete safety and variant-level media handling.
+4. Decide whether the next operational need is partial returns or return-proof uploads.
 
 After that:
 

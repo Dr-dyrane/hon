@@ -80,7 +80,15 @@ export default async function AdminProductDetailPage({
         columns={4}
       />
 
-      <ProductEditorForm product={product} categories={categories} media={media} />
+      <ProductEditorForm
+        product={product}
+        categories={categories}
+        media={media}
+        variantTarget={{
+          variantId: product.variantId,
+          variantName: product.variantName,
+        }}
+      />
     </div>
   );
 }

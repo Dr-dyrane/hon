@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Save } from "lucide-react";
+import { Archive, Save, Trash2 } from "lucide-react";
 import { ProductMediaManager } from "@/components/admin/catalog/ProductMediaManager";
 import { cn } from "@/lib/utils";
 import type {
@@ -10,16 +10,25 @@ import type {
   AdminCatalogProductDetail,
   AdminCatalogProductMedia,
 } from "@/lib/db/types";
-import { updateProductAction } from "@/app/(admin)/admin/catalog/products/[productId]/actions";
+import {
+  archiveProductAction,
+  deleteProductAction,
+  updateProductAction,
+} from "@/app/(admin)/admin/catalog/products/[productId]/actions";
 
 export function ProductEditorForm({
   product,
   categories,
   media,
+  variantTarget,
 }: {
   product: AdminCatalogProductDetail;
   categories: AdminCatalogCategory[];
   media: AdminCatalogProductMedia[];
+  variantTarget: {
+    variantId: string;
+    variantName: string;
+  };
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -44,6 +53,43 @@ export function ProductEditorForm({
 
       setMessage("Saved.");
       setMessageTone("success");
+      router.refresh();
+    });
+  }
+
+  function handleArchive() {
+    setMessage(null);
+    setMessageTone(null);
+
+    startTransition(async () => {
+      const result = await archiveProductAction(product.productId);
+
+      if (!result.success) {
+        setMessage(result.error || "Unable to archive.");
+        setMessageTone("error");
+        return;
+      }
+
+      setMessage("Archived.");
+      setMessageTone("success");
+      router.refresh();
+    });
+  }
+
+  function handleDelete() {
+    setMessage(null);
+    setMessageTone(null);
+
+    startTransition(async () => {
+      const result = await deleteProductAction(product.productId);
+
+      if (!result.success) {
+        setMessage(result.error || "Unable to delete.");
+        setMessageTone("error");
+        return;
+      }
+
+      router.push(result.redirectTo || "/admin/catalog/products");
       router.refresh();
     });
   }
@@ -145,7 +191,11 @@ export function ProductEditorForm({
             </div>
           </EditorSection>
 
-          <ProductMediaManager productId={product.productId} media={media} />
+          <ProductMediaManager
+            productId={product.productId}
+            media={media}
+            variantTarget={variantTarget}
+          />
 
           <EditorSection title="State">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -249,17 +299,51 @@ export function ProductEditorForm({
           >
             {message ?? "Draft safe."}
           </p>
-          <button
-            type="submit"
-            disabled={isPending}
-            className={cn(
-              "button-primary min-h-[44px] min-w-[144px] gap-2 px-5 text-[11px] font-semibold uppercase tracking-[0.16em]",
-              isPending && "pointer-events-none opacity-50"
-            )}
-          >
-            <Save size={16} />
-            <span>{isPending ? "Saving" : "Save"}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {product.status !== "archived" ? (
+              <button
+                type="button"
+                onClick={handleArchive}
+                disabled={isPending}
+                className={cn(
+                  "min-h-[44px] rounded-full bg-system-fill/56 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-red-500 transition-colors duration-200 hover:bg-system-fill/76",
+                  isPending && "pointer-events-none opacity-50"
+                )}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Archive size={15} />
+                  Archive
+                </span>
+              </button>
+            ) : null}
+            {product.status === "archived" ? (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isPending}
+                className={cn(
+                  "min-h-[44px] rounded-full bg-system-fill/56 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-red-500 transition-colors duration-200 hover:bg-system-fill/76",
+                  isPending && "pointer-events-none opacity-50"
+                )}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Trash2 size={15} />
+                  Delete
+                </span>
+              </button>
+            ) : null}
+            <button
+              type="submit"
+              disabled={isPending}
+              className={cn(
+                "button-primary min-h-[44px] min-w-[144px] gap-2 px-5 text-[11px] font-semibold uppercase tracking-[0.16em]",
+                isPending && "pointer-events-none opacity-50"
+              )}
+            >
+              <Save size={16} />
+              <span>{isPending ? "Saving" : "Save"}</span>
+            </button>
+          </div>
         </div>
       </div>
     </form>

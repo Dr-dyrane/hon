@@ -5,6 +5,7 @@ import {
   query,
   type DatabaseActorContext,
 } from "@/lib/db/client";
+import { expireStaleAwaitingTransferOrders } from "@/lib/db/repositories/orders-repository";
 import type {
   AdminCustomerSummary,
   AdminLayoutSection,
@@ -189,6 +190,8 @@ export async function listAdminCustomerSummaries(
   if (!isDatabaseConfigured()) {
     return [] satisfies AdminCustomerSummary[];
   }
+
+  await expireStaleAwaitingTransferOrders();
 
   const result = await query<AdminCustomerSummary>(
     `

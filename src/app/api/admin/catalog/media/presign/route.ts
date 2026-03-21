@@ -26,12 +26,14 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as {
     productId?: string;
+    variantId?: string | null;
     mediaType?: string;
     fileName?: string;
     contentType?: string;
   };
 
   const productId = body.productId?.trim();
+  const variantId = body.variantId?.trim() || null;
   const mediaType = normalizeMediaType(body.mediaType);
   const fileName = body.fileName?.trim();
   const contentType = body.contentType?.trim() || "application/octet-stream";
@@ -46,6 +48,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Product not found." }, { status: 404 });
   }
 
+  if (variantId && variantId !== product.variantId) {
+    return NextResponse.json({ ok: false, error: "Variant is not valid." }, { status: 400 });
+  }
+
   const storageBucket = getStorageBucket();
 
   if (!storageBucket) {
@@ -56,7 +62,8 @@ export async function POST(request: Request) {
   }
 
   const safeName = buildSafeFileName(fileName);
-  const key = `${storageBucket.prefix}/catalog/products/${productId}/${mediaType}/${Date.now()}-${randomBytes(3).toString("hex")}-${safeName}`;
+  const mediaScope = variantId ? `variants/${variantId}` : `products/${productId}`;
+  const key = `${storageBucket.prefix}/catalog/${mediaScope}/${mediaType}/${Date.now()}-${randomBytes(3).toString("hex")}-${safeName}`;
   const signed = await createPresignedUploadUrl({
     key,
     contentType,

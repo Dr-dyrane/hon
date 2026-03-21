@@ -1,15 +1,19 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Box, Image as ImageIcon, LoaderCircle, Star, Trash2 } from "lucide-react";
+import { Eye, LoaderCircle, Star, Trash2 } from "lucide-react";
 import type { AdminCatalogProductMedia } from "@/lib/db/types";
 import {
   deleteProductMediaAction,
   setProductMediaPrimaryAction,
   updateProductMediaAction,
 } from "@/app/(admin)/admin/catalog/products/[productId]/actions";
+import {
+  ProductMediaPreviewSurface,
+  ProductMediaTypeBadge,
+  ProductMediaViewer,
+} from "@/components/admin/catalog/ProductMediaViewer";
 import { cn } from "@/lib/utils";
 
 function getErrorMessage(error: unknown) {
@@ -35,16 +39,23 @@ function formatMediaTypeLabel(mediaType: string) {
 export function ProductMediaManager({
   productId,
   media,
+  variantTarget,
 }: {
   productId: string;
   media: AdminCatalogProductMedia[];
+  variantTarget: {
+    variantId: string;
+    variantName: string;
+  };
 }) {
   const router = useRouter();
   const [isUploading, startUploadTransition] = useTransition();
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [uploadTone, setUploadTone] = useState<"success" | "error" | null>(null);
   const [mediaType, setMediaType] = useState<"image" | "model_3d" | "video">("image");
+  const [mediaTarget, setMediaTarget] = useState<"product" | "variant">("product");
   const [altText, setAltText] = useState("");
+  const [selectedMedia, setSelectedMedia] = useState<AdminCatalogProductMedia | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   async function handleUpload() {
@@ -69,6 +80,7 @@ export function ProductMediaManager({
           },
           body: JSON.stringify({
             productId,
+            variantId: mediaTarget === "variant" ? variantTarget.variantId : null,
             mediaType,
             fileName: file.name,
             contentType: file.type || "application/octet-stream",
@@ -110,6 +122,7 @@ export function ProductMediaManager({
           },
           body: JSON.stringify({
             productId,
+            variantId: mediaTarget === "variant" ? variantTarget.variantId : null,
             mediaType,
             storageKey: presignPayload.data.storageKey,
             publicUrl: presignPayload.data.publicUrl,
@@ -152,7 +165,15 @@ export function ProductMediaManager({
         </span>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-[140px_minmax(0,1fr)_minmax(0,1fr)_auto]">
+      <div className="mt-4 grid gap-3 md:grid-cols-[140px_140px_minmax(0,1fr)_minmax(0,1fr)_auto]">
+        <select
+          value={mediaTarget}
+          onChange={(event) => setMediaTarget(event.target.value as "product" | "variant")}
+          className="min-h-[48px] rounded-[20px] bg-system-fill/42 px-4 text-sm text-label outline-none transition-all focus:bg-system-fill/58"
+        >
+          <option value="product">Product</option>
+          <option value="variant">{variantTarget.variantName}</option>
+        </select>
         <select
           value={mediaType}
           onChange={(event) => setMediaType(event.target.value as "image" | "model_3d" | "video")}
@@ -196,7 +217,7 @@ export function ProductMediaManager({
             {uploadMessage}
           </span>
         ) : (
-          "Image, 3D, video."
+          "Product, variant, image, 3D, video."
         )}
       </div>
 
@@ -207,10 +228,17 @@ export function ProductMediaManager({
           </div>
         ) : (
           media.map((item) => (
-            <MediaRow key={item.mediaId} item={item} productId={productId} />
+            <MediaRow
+              key={item.mediaId}
+              item={item}
+              productId={productId}
+              onView={() => setSelectedMedia(item)}
+            />
           ))
         )}
       </div>
+
+      <ProductMediaViewer item={selectedMedia} onClose={() => setSelectedMedia(null)} />
     </section>
   );
 }
@@ -218,9 +246,11 @@ export function ProductMediaManager({
 function MediaRow({
   item,
   productId,
+  onView,
 }: {
   item: AdminCatalogProductMedia;
   productId: string;
+  onView: () => void;
 }) {
   const router = useRouter();
   const [altText, setAltText] = useState(item.altText ?? "");
@@ -283,45 +313,34 @@ function MediaRow({
     });
   }
 
-  const isImage = item.mediaType === "image";
-  const Icon = isImage ? ImageIcon : Box;
-
   return (
     <article className="rounded-[24px] bg-system-fill/42 p-4">
       <div className="grid gap-4 lg:grid-cols-[120px_minmax(0,1fr)_auto]">
-        <div className="overflow-hidden rounded-[18px] bg-system-background/72">
-          {isImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={item.publicUrl}
-              alt={item.altText || ""}
-              className="aspect-square h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex aspect-square items-center justify-center text-secondary-label">
-              <Icon size={28} />
-            </div>
-          )}
-        </div>
+        <ProductMediaPreviewSurface
+          item={item}
+          onOpen={onView}
+          className="aspect-square h-[120px] w-[120px]"
+        />
 
         <div className="min-w-0 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
+            <ProductMediaTypeBadge mediaType={item.mediaType} />
             <span className="rounded-full bg-system-background px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-              {formatMediaTypeLabel(item.mediaType)}
+              {item.targetLabel}
             </span>
             {item.isPrimary ? (
               <span className="rounded-full bg-system-background px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
                 Primary
               </span>
             ) : null}
-            <Link
-              href={item.publicUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label transition-colors duration-300 hover:text-label"
+            <button
+              type="button"
+              onClick={onView}
+              className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label transition-colors duration-300 hover:text-label"
             >
-              Open
-            </Link>
+              <Eye size={12} />
+              View
+            </button>
           </div>
 
           <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px]">
@@ -342,7 +361,7 @@ function MediaRow({
           </div>
 
           <div className="text-xs text-secondary-label">
-            {message ?? item.storageKey}
+            {message ?? `${formatMediaTypeLabel(item.mediaType)} ready.`}
           </div>
         </div>
 

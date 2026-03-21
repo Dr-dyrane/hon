@@ -6,6 +6,11 @@ import {
   type DatabaseActorContext,
   withTransaction,
 } from "@/lib/db/client";
+import { releaseInventoryReservationForOrder } from "@/lib/db/repositories/order-inventory";
+import {
+  sendOrderCancelledNotification,
+  sendPaymentDecisionNotification,
+} from "@/lib/email/orders";
 import type {
   AdminPaymentQueueRow,
   BankAccountRow,
@@ -48,10 +53,111 @@ function buildCustomerActor(input: {
   };
 }
 
+export async function expireStaleAwaitingTransferOrders() {
+  if (!isDatabaseConfigured()) {
+    return;
+  }
+
+  await withTransaction(async (queryFn) => {
+    const staleOrdersResult = await queryFn<{
+      orderId: string;
+      paymentId: string | null;
+      orderStatus: string;
+      paymentStatus: string;
+    }>(
+      `
+        select
+          o.id as "orderId",
+          p.id as "paymentId",
+          o.status as "orderStatus",
+          coalesce(p.status, o.payment_status) as "paymentStatus"
+        from app.orders o
+        left join app.payments p
+          on p.order_id = o.id
+        where o.status = 'awaiting_transfer'
+          and o.transfer_deadline_at is not null
+          and o.transfer_deadline_at <= timezone('utc', now())
+        for update of o
+      `
+    );
+
+    for (const staleOrder of staleOrdersResult.rows) {
+      await releaseInventoryReservationForOrder(queryFn, staleOrder.orderId);
+
+      await queryFn(
+        `
+          update app.payments
+          set
+            status = 'expired',
+            expires_at = coalesce(expires_at, timezone('utc', now()))
+          where order_id = $1
+            and status in ('awaiting_transfer', 'rejected')
+        `,
+        [staleOrder.orderId]
+      );
+
+      if (staleOrder.paymentId) {
+        await queryFn(
+          `
+            insert into app.payment_review_events (
+              payment_id,
+              actor_user_id,
+              actor_email,
+              action,
+              note
+            )
+            values ($1, null, null, 'expired', 'Transfer window elapsed.')
+          `,
+          [staleOrder.paymentId]
+        );
+      }
+
+      await queryFn(
+        `
+          update app.orders
+          set
+            status = 'expired',
+            payment_status = 'expired',
+            fulfillment_status = 'cancelled'
+          where id = $1
+        `,
+        [staleOrder.orderId]
+      );
+
+      await queryFn(
+        `
+          insert into app.order_status_events (
+            order_id,
+            from_status,
+            to_status,
+            actor_type,
+            actor_user_id,
+            actor_email,
+            note,
+            metadata
+          )
+          values ($1, $2, 'expired', 'system', null, null, 'Transfer window elapsed.', $3::jsonb)
+        `,
+        [
+          staleOrder.orderId,
+          staleOrder.orderStatus,
+          JSON.stringify({ source: "expiry_guard" }),
+        ]
+      );
+    }
+  }, {
+    actor: {
+      role: "admin",
+    },
+  });
+}
+
 export async function listOrdersForAdmin(limit = 40, actorEmail?: string | null) {
   if (!isDatabaseConfigured()) {
     return [] satisfies OrderListRow[];
   }
+
+  await expireStaleAwaitingTransferOrders();
 
   const result = await query<OrderListRow>(
     `
@@ -96,6 +202,8 @@ export async function listPaymentsForAdmin(limit = 40, actorEmail?: string | nul
   if (!isDatabaseConfigured()) {
     return [] satisfies AdminPaymentQueueRow[];
   }
+
+  await expireStaleAwaitingTransferOrders();
 
   const result = await query<AdminPaymentQueueRow>(
     `
@@ -160,6 +268,8 @@ export async function listOrdersForPortal(email: string) {
   if (!isDatabaseConfigured()) {
     return [] satisfies PortalOrderListRow[];
   }
+
+  await expireStaleAwaitingTransferOrders();
 
   const result = await query<PortalOrderListRow>(
     `
@@ -306,6 +416,8 @@ export async function getPortalOrderDetail(email: string, orderId: string) {
     return null;
   }
 
+  await expireStaleAwaitingTransferOrders();
+
   const detailResult = await query<
     PortalOrderDetail & { deliveryAddressSnapshot: Record<string, unknown> }
   >(
@@ -444,6 +556,8 @@ export async function getGuestOrderDetail(orderId: string) {
     return null;
   }
 
+  await expireStaleAwaitingTransferOrders();
+
   const result = await query<
     PortalOrderDetail & { deliveryAddressSnapshot: Record<string, unknown> }
   >(
@@ -489,6 +603,8 @@ export async function getAdminOrderDetail(orderId: string, actorEmail?: string |
   if (!orderId || !isDatabaseConfigured()) {
     return null;
   }
+
+  await expireStaleAwaitingTransferOrders();
 
   const result = await query<
     PortalOrderDetail & { deliveryAddressSnapshot: Record<string, unknown> }
@@ -627,26 +743,337 @@ export async function createPaymentProof(
     return;
   }
 
-  await query(
-    `
-      insert into app.payment_proofs (
-        payment_id,
-        storage_key,
-        public_url,
-        mime_type,
-        submitted_by_email
-      )
-      values ($1, $2, $3, $4, $5)
-    `,
-    [paymentId, storageKey, publicUrl, mimeType, submittedByEmail],
-    {
-      actor: {
-        email: submittedByEmail,
-        role: "customer",
-        guestOrderId: options?.guestOrderId ?? null,
-      },
+  await withTransaction(async (queryFn) => {
+    const paymentResult = await queryFn<{
+      orderId: string;
+      paymentStatus: string;
+      orderStatus: string;
+    }>(
+      `
+        select
+          p.order_id as "orderId",
+          p.status as "paymentStatus",
+          o.status as "orderStatus"
+        from app.payments p
+        inner join app.orders o
+          on o.id = p.order_id
+        where p.id = $1
+        limit 1
+        for update
+      `,
+      [paymentId]
+    );
+
+    const payment = paymentResult.rows[0];
+
+    if (!payment) {
+      throw new Error("Payment not found.");
     }
-  );
+
+    if (["confirmed", "expired"].includes(payment.paymentStatus) || payment.orderStatus === "expired") {
+      throw new Error("Payment is closed.");
+    }
+
+    await queryFn(
+      `
+        insert into app.payment_proofs (
+          payment_id,
+          storage_key,
+          public_url,
+          mime_type,
+          submitted_by_email
+        )
+        values ($1, $2, $3, $4, $5)
+      `,
+      [paymentId, storageKey, publicUrl, mimeType, submittedByEmail]
+    );
+
+    await queryFn(
+      `
+        update app.payments
+        set
+          status = 'submitted',
+          submitted_at = coalesce(submitted_at, timezone('utc', now()))
+        where id = $1
+      `,
+      [paymentId]
+    );
+
+    await queryFn(
+      `
+        insert into app.payment_review_events (
+          payment_id,
+          actor_user_id,
+          actor_email,
+          action,
+          note
+        )
+        values ($1, null, $2, 'submitted', null)
+      `,
+      [paymentId, submittedByEmail]
+    );
+
+    await queryFn(
+      `
+        update app.orders
+        set
+          payment_status = 'submitted',
+          status = 'payment_submitted',
+          fulfillment_status = 'pending'
+        where id = $1
+      `,
+      [payment.orderId]
+    );
+
+    await queryFn(
+      `
+        insert into app.order_status_events (
+          order_id,
+          from_status,
+          to_status,
+          actor_type,
+          actor_user_id,
+          actor_email,
+          note,
+          metadata
+        )
+        values ($1, $2, 'payment_submitted', 'customer', null, $3, null, $4::jsonb)
+      `,
+      [
+        payment.orderId,
+        payment.orderStatus,
+        submittedByEmail,
+        JSON.stringify({ source: "payment_proof_upload" }),
+      ]
+    );
+  }, {
+    actor: {
+      email: submittedByEmail,
+      role: "admin",
+      guestOrderId: options?.guestOrderId ?? null,
+    },
+  });
+}
+
+const CANCELLABLE_ORDER_STATUSES = [
+  "awaiting_transfer",
+  "payment_submitted",
+  "payment_under_review",
+  "payment_confirmed",
+  "preparing",
+  "ready_for_dispatch",
+];
+
+const PRE_CONFIRMATION_PAYMENT_STATUSES = [
+  "awaiting_transfer",
+  "submitted",
+  "under_review",
+  "rejected",
+];
+
+export async function cancelOrderByAdmin(
+  orderId: string,
+  actorEmail: string | null,
+  actorUserId: string | null,
+  note: string | null
+) {
+  if (!isDatabaseConfigured()) {
+    return;
+  }
+
+  let cancelledOrderId: string | null = null;
+
+  await withTransaction(async (queryFn) => {
+    const orderResult = await queryFn<{
+      orderId: string;
+      status: string;
+      paymentStatus: string;
+      fulfillmentStatus: string;
+      paymentId: string | null;
+      assignmentId: string | null;
+      assignmentStatus: string | null;
+    }>(
+      `
+        select
+          o.id as "orderId",
+          o.status,
+          o.payment_status as "paymentStatus",
+          o.fulfillment_status as "fulfillmentStatus",
+          p.id as "paymentId",
+          da.id as "assignmentId",
+          da.status as "assignmentStatus"
+        from app.orders o
+        left join app.payments p
+          on p.order_id = o.id
+        left join lateral (
+          select
+            id,
+            status
+          from app.delivery_assignments
+          where order_id = o.id
+            and status in ('unassigned', 'assigned', 'picked_up', 'out_for_delivery', 'failed')
+          order by updated_at desc, created_at desc
+          limit 1
+        ) da on true
+        where o.id = $1
+        limit 1
+        for update of o, p
+      `,
+      [orderId]
+    );
+
+    const order = orderResult.rows[0];
+
+    if (!order) {
+      throw new Error("Order not found.");
+    }
+
+    if (["cancelled", "expired", "delivered"].includes(order.status)) {
+      throw new Error("Order is already closed.");
+    }
+
+    if (!CANCELLABLE_ORDER_STATUSES.includes(order.status)) {
+      throw new Error("Order cannot be cancelled here.");
+    }
+
+    if (["picked_up", "out_for_delivery"].includes(order.assignmentStatus ?? "")) {
+      throw new Error("Order is already with a rider.");
+    }
+
+    await releaseInventoryReservationForOrder(queryFn, order.orderId);
+
+    if (order.paymentId && PRE_CONFIRMATION_PAYMENT_STATUSES.includes(order.paymentStatus)) {
+      await queryFn(
+        `
+          update app.payments
+          set
+            status = 'expired',
+            expires_at = coalesce(expires_at, timezone('utc', now())),
+            reviewed_by_user_id = coalesce(reviewed_by_user_id, $2),
+            reviewed_by_email = coalesce(reviewed_by_email, $3),
+            reviewed_at = coalesce(reviewed_at, timezone('utc', now())),
+            rejection_reason = coalesce(rejection_reason, $4)
+          where id = $1
+        `,
+        [order.paymentId, actorUserId, actorEmail, note]
+      );
+
+      await queryFn(
+        `
+          insert into app.payment_review_events (
+            payment_id,
+            actor_user_id,
+            actor_email,
+            action,
+            note,
+            metadata
+          )
+          values ($1, $2, $3, 'expired', $4, $5::jsonb)
+        `,
+        [
+          order.paymentId,
+          actorUserId,
+          actorEmail,
+          note,
+          JSON.stringify({ source: "admin_cancel" }),
+        ]
+      );
+    }
+
+    if (order.assignmentId) {
+      await queryFn(
+        `
+          update app.delivery_assignments
+          set
+            status = 'returned',
+            returned_at = coalesce(returned_at, timezone('utc', now())),
+            note = $2
+          where id = $1
+        `,
+        [order.assignmentId, note]
+      );
+
+      await queryFn(
+        `
+          insert into app.delivery_events (
+            order_id,
+            assignment_id,
+            event_type,
+            actor_type,
+            actor_user_id,
+            actor_email,
+            note,
+            metadata
+          )
+          values ($1, $2, 'cancelled', 'admin', $3, $4, $5, $6::jsonb)
+        `,
+        [
+          order.orderId,
+          order.assignmentId,
+          actorUserId,
+          actorEmail,
+          note,
+          JSON.stringify({ source: "admin_cancel" }),
+        ]
+      );
+    }
+
+    const nextPaymentStatus = PRE_CONFIRMATION_PAYMENT_STATUSES.includes(order.paymentStatus)
+      ? "expired"
+      : order.paymentStatus;
+
+    await queryFn(
+      `
+        update app.orders
+        set
+          status = 'cancelled',
+          payment_status = $2,
+          fulfillment_status = 'cancelled',
+          cancelled_at = coalesce(cancelled_at, timezone('utc', now()))
+        where id = $1
+      `,
+      [order.orderId, nextPaymentStatus]
+    );
+
+    await queryFn(
+      `
+        insert into app.order_status_events (
+          order_id,
+          from_status,
+          to_status,
+          actor_type,
+          actor_user_id,
+          actor_email,
+          note,
+          metadata
+        )
+        values ($1, $2, 'cancelled', 'admin', $3, $4, $5, $6::jsonb)
+      `,
+      [
+        order.orderId,
+        order.status,
+        actorUserId,
+        actorEmail,
+        note,
+        JSON.stringify({ source: "admin_cancel" }),
+      ]
+    );
+
+    cancelledOrderId = order.orderId;
+  }, {
+    actor: {
+      userId: actorUserId,
+      email: actorEmail,
+      role: "admin",
+    },
+  });
+
+  if (cancelledOrderId) {
+    await sendOrderCancelledNotification({
+      orderId: cancelledOrderId,
+      note,
+    });
+  }
 }
 
 const PAYMENT_ACTIONS: Record<
@@ -701,6 +1128,8 @@ export async function reviewPayment(
     throw new Error("Unsupported payment action");
   }
 
+  let updatedOrderId: string | null = null;
+
   await withTransaction(async (queryFn) => {
     const paymentOrderResult = await queryFn<{
       order_id: string;
@@ -731,12 +1160,19 @@ export async function reviewPayment(
         update app.payments
         set
           status = $1,
-          reviewed_by_user_id = $2,
-          reviewed_by_email = $3,
+          rejection_reason = $2,
+          reviewed_by_user_id = $3,
+          reviewed_by_email = $4,
           reviewed_at = timezone('utc', now())
-        where id = $4
+        where id = $5
       `,
-      [transition.paymentStatus, actorUserId, actorEmail, paymentId]
+      [
+        transition.paymentStatus,
+        action === "rejected" ? note : null,
+        actorUserId,
+        actorEmail,
+        paymentId,
+      ]
     );
 
     await queryFn(
@@ -759,7 +1195,11 @@ export async function reviewPayment(
         set
           payment_status = $1,
           status = $2,
-          fulfillment_status = $3
+          fulfillment_status = $3,
+          confirmed_at = case
+            when $1 = 'confirmed' then timezone('utc', now())
+            else confirmed_at
+          end
         where id = $4
       `,
       [transition.paymentStatus, transition.orderStatus, transition.fulfillmentStatus, orderId]
@@ -780,6 +1220,8 @@ export async function reviewPayment(
       `,
       [orderId, currentStatus, transition.orderStatus, actorUserId, actorEmail, note]
     );
+
+    updatedOrderId = orderId;
   }, {
     actor: {
       userId: actorUserId,
@@ -787,4 +1229,12 @@ export async function reviewPayment(
       role: "admin",
     },
   });
+
+  if (updatedOrderId && ["under_review", "confirmed", "rejected"].includes(action)) {
+    await sendPaymentDecisionNotification({
+      orderId: updatedOrderId,
+      action: action as "under_review" | "confirmed" | "rejected",
+      note,
+    });
+  }
 }

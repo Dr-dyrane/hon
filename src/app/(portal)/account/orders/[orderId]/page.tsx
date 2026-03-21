@@ -1,6 +1,10 @@
 import { requireAuthenticatedSession } from "@/lib/auth/guards";
 import { OrderDetailView } from "@/components/orders/OrderDetailView";
 import {
+  getLatestOrderReturnCase,
+  listOrderReturnEvents,
+} from "@/lib/db/repositories/order-returns-repository";
+import {
   getPortalOrderDetail,
   listOrderStatusEvents,
   listPaymentProofs,
@@ -17,9 +21,11 @@ export default async function OrderDetailPage({
     email: session.email,
     role: "customer" as const,
   };
-  const [timeline, proofs] = await Promise.all([
+  const [timeline, proofs, returnCase, returnEvents] = await Promise.all([
     listOrderStatusEvents(params.orderId, customerActor),
     listPaymentProofs(order?.paymentId ?? "", customerActor),
+    getLatestOrderReturnCase(params.orderId, customerActor),
+    listOrderReturnEvents(params.orderId, customerActor),
   ]);
 
   return (
@@ -27,6 +33,8 @@ export default async function OrderDetailPage({
       order={order}
       timeline={timeline}
       proofs={proofs}
+      returnCase={returnCase}
+      returnEvents={returnEvents}
       backHref="/account/orders"
       trackingHref={`/account/tracking/${params.orderId}`}
     />

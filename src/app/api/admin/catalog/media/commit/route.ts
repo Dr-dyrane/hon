@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentSession } from "@/lib/auth/session";
-import { createAdminCatalogProductMedia } from "@/lib/db/repositories/catalog-admin-repository";
+import {
+  createAdminCatalogProductMedia,
+  getAdminCatalogProductDetail,
+} from "@/lib/db/repositories/catalog-admin-repository";
 import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
 
 function normalizeMediaType(value: string | undefined) {
@@ -20,6 +23,7 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as {
     productId?: string;
+    variantId?: string | null;
     mediaType?: string;
     storageKey?: string;
     altText?: string | null;
@@ -29,6 +33,7 @@ export async function POST(request: Request) {
   };
 
   const productId = body.productId?.trim();
+  const variantId = body.variantId?.trim() || null;
   const mediaType = normalizeMediaType(body.mediaType);
   const storageKey = body.storageKey?.trim();
 
@@ -36,10 +41,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Missing media reference." }, { status: 400 });
   }
 
+  const product = await getAdminCatalogProductDetail(productId);
+
+  if (!product) {
+    return NextResponse.json({ ok: false, error: "Product not found." }, { status: 404 });
+  }
+
+  if (variantId && variantId !== product.variantId) {
+    return NextResponse.json({ ok: false, error: "Variant is not valid." }, { status: 400 });
+  }
+
   const actor = await ensureUserByEmail(session.email);
 
   await createAdminCatalogProductMedia({
     productId,
+    variantId,
     mediaType,
     storageKey,
     altText: body.altText?.trim() || null,

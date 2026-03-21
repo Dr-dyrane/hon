@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Clock3, Landmark, PackageCheck } from "lucide-react";
+import { Clock3, Landmark, PackageCheck, RotateCcw } from "lucide-react";
 import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
+import { listOpenOrderReturnCasesForAdmin } from "@/lib/db/repositories/order-returns-repository";
 import { listOrdersForAdmin } from "@/lib/db/repositories/orders-repository";
 
 const friendlyStatusLabel: Record<string, string> = {
@@ -35,7 +36,10 @@ function formatStatusLabel(value: string) {
 
 export default async function AdminOrdersPage() {
   const session = await requireAdminSession("/admin/orders");
-  const orders = await listOrdersForAdmin(40, session.email);
+  const [orders, openReturns] = await Promise.all([
+    listOrdersForAdmin(40, session.email),
+    listOpenOrderReturnCasesForAdmin(12, session.email),
+  ]);
   const awaitingTransfer = orders.filter(
     (order) => order.paymentStatus === "awaiting_transfer"
   ).length;
@@ -77,10 +81,82 @@ export default async function AdminOrdersPage() {
               icon: PackageCheck,
               tone: "success",
             },
+            {
+              label: "Returns",
+              value: `${openReturns.length}`,
+              detail: "Open",
+              icon: RotateCcw,
+            },
           ]}
-          columns={3}
+          columns={4}
         />
       </section>
+
+      {openReturns.length > 0 ? (
+        <section className="space-y-3">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
+            Returns
+          </div>
+          <div className="grid gap-3">
+            {openReturns.map((returnCase) => (
+              <article
+                key={returnCase.returnCaseId}
+                className="glass-morphism rounded-[28px] bg-system-background/72 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
+              >
+                <div className="flex flex-col gap-3 min-[980px]:flex-row min-[980px]:items-start min-[980px]:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="text-base font-semibold tracking-tight text-label">
+                        #{returnCase.orderNumber}
+                      </div>
+                      <span className="rounded-full bg-system-fill/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+                        {formatStatusLabel(returnCase.status)}
+                      </span>
+                    </div>
+                    <div className="mt-2 text-sm text-secondary-label">{returnCase.reason}</div>
+                    <div className="mt-3 grid gap-3 text-sm text-secondary-label sm:grid-cols-2 xl:grid-cols-4">
+                      <MetaItem label="Customer" value={returnCase.customerName} />
+                      <MetaItem label="Phone" value={returnCase.customerPhone} />
+                      <MetaItem
+                        label="Refund"
+                        value={formatNgn(
+                          returnCase.approvedRefundAmountNgn ??
+                            returnCase.requestedRefundAmountNgn
+                        )}
+                      />
+                      <MetaItem
+                        label="Account"
+                        value={
+                          [
+                            returnCase.refundBankName,
+                            returnCase.refundAccountNumber,
+                          ]
+                            .filter(Boolean)
+                            .join(" / ") || "Pending"
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="min-w-[150px] shrink-0">
+                    <div className="text-right text-sm text-secondary-label">
+                      <div>{formatTimestamp(returnCase.requestedAt)}</div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap justify-end gap-2">
+                      <Link
+                        href={`/admin/orders/${returnCase.orderId}`}
+                        className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                      >
+                        Open
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="grid gap-4">
         {orders.map((order) => (

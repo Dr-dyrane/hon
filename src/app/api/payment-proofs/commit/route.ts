@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createPaymentProof } from "@/lib/db/repositories/orders-repository";
+import { sendPaymentProofSubmittedNotifications } from "@/lib/email/orders";
+import { serverEnv } from "@/lib/config/server";
 import { resolveOrderProofAccess } from "@/lib/orders/proof-access";
 
 export async function POST(request: Request) {
@@ -50,6 +52,16 @@ export async function POST(request: Request) {
     access.mode === "session" ? access.sessionEmail : access.order.customerEmail,
     access.mode === "guest" ? { guestOrderId: orderId } : undefined
   );
+
+  await sendPaymentProofSubmittedNotifications({
+    orderId,
+    customerLink:
+      access.mode === "guest" && body.accessToken?.trim()
+        ? `${serverEnv.public.appUrl}/checkout/orders/${orderId}?access=${encodeURIComponent(body.accessToken.trim())}`
+        : access.mode === "session"
+          ? `${serverEnv.public.appUrl}/account/orders/${orderId}`
+          : null,
+  });
 
   return NextResponse.json(
     {

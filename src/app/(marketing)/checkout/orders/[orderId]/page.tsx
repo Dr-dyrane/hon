@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { OrderDetailView } from "@/components/orders/OrderDetailView";
+import {
+  getLatestOrderReturnCase,
+  listOrderReturnEvents,
+} from "@/lib/db/repositories/order-returns-repository";
 import { verifyGuestOrderAccessToken } from "@/lib/orders/access";
 import {
   getGuestOrderDetail,
@@ -39,9 +43,11 @@ export default async function GuestCheckoutOrderPage({
     role: "customer" as const,
     guestOrderId: params.orderId,
   };
-  const [timeline, proofs] = await Promise.all([
+  const [timeline, proofs, returnCase, returnEvents] = await Promise.all([
     listOrderStatusEvents(params.orderId, guestActor),
     listPaymentProofs(order?.paymentId ?? "", guestActor),
+    getLatestOrderReturnCase(params.orderId, guestActor),
+    listOrderReturnEvents(params.orderId, guestActor),
   ]);
 
   return (
@@ -68,6 +74,8 @@ export default async function GuestCheckoutOrderPage({
         order={order}
         timeline={timeline}
         proofs={proofs}
+        returnCase={returnCase}
+        returnEvents={returnEvents}
         backHref="/"
         accessToken={accessToken}
       />

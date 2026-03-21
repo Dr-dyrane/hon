@@ -6,7 +6,11 @@ import {
 import { createCheckoutOrder } from "@/lib/checkout/service";
 
 function resolveCheckoutStatus(message: string) {
-  if (message === "Cart is empty." || message === "Cart is no longer active.") {
+  if (
+    message === "Cart is empty." ||
+    message === "Cart is no longer active." ||
+    /unavailable|stock/i.test(message)
+  ) {
     return 409;
   }
 

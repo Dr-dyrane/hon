@@ -38,7 +38,7 @@ export function WorkspaceNav({
                   className={cn(
                     "flex min-h-[52px] items-center justify-center rounded-[20px] px-4 text-[11px] font-semibold tracking-headline whitespace-nowrap transition-all duration-200",
                     active
-                      ? "bg-system-background text-label shadow-[0_14px_30px_rgba(15,23,42,0.08)]"
+                      ? "bg-[var(--accent)] text-[var(--accent-ink)] shadow-[0_14px_30px_rgba(15,23,42,0.08)]"
                       : "text-secondary-label hover:bg-system-fill/80 hover:text-label"
                   )}
                 >

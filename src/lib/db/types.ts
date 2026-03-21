@@ -88,6 +88,8 @@ export type AdminCatalogProductMedia = {
   mediaId: string;
   productId: string | null;
   variantId: string | null;
+  targetType: "product" | "variant";
+  targetLabel: string;
   mediaType: "image" | "model_3d" | "video";
   storageKey: string;
   publicUrl: string;
@@ -461,6 +463,59 @@ export type PaymentProofRow = {
   publicUrl: string | null;
   mimeType: string;
   submittedByEmail: string | null;
+  createdAt: string;
+};
+
+export type AdminOrderReturnQueueRow = {
+  returnCaseId: string;
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  status: "requested" | "approved" | "rejected" | "received" | "refunded";
+  reason: string;
+  requestedRefundAmountNgn: number;
+  approvedRefundAmountNgn: number | null;
+  refundBankName: string | null;
+  refundAccountName: string | null;
+  refundAccountNumber: string | null;
+  requestedAt: string;
+};
+
+export type OrderReturnCaseRow = {
+  returnCaseId: string;
+  orderId: string;
+  requestedByUserId: string | null;
+  requestedByEmail: string | null;
+  status: "requested" | "approved" | "rejected" | "received" | "refunded";
+  reason: string;
+  details: string | null;
+  requestedRefundAmountNgn: number;
+  approvedRefundAmountNgn: number | null;
+  refundBankName: string | null;
+  refundAccountName: string | null;
+  refundAccountNumber: string | null;
+  reviewedByUserId: string | null;
+  reviewedByEmail: string | null;
+  reviewedAt: string | null;
+  rejectedAt: string | null;
+  receivedAt: string | null;
+  refundedAt: string | null;
+  refundReference: string | null;
+  resolutionNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type OrderReturnEventRow = {
+  eventId: string;
+  returnCaseId: string;
+  orderId: string;
+  actorType: string;
+  actorEmail: string | null;
+  action: string;
+  note: string | null;
+  metadata: Record<string, unknown>;
   createdAt: string;
 };
 

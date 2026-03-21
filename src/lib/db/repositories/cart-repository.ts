@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { getShotBundlePricing } from "@/lib/commerce";
 import { isDatabaseConfigured, query, withTransaction } from "@/lib/db/client";
 import { getDeliveryDefaultsSetting } from "@/lib/db/repositories/settings-repository";
+import { reserveInventoryForOrder } from "@/lib/db/repositories/order-inventory";
 import type { CartSnapshot } from "@/lib/db/types";
 
 type CartContext = {
@@ -806,6 +807,8 @@ export async function createOrderFromCart(input: CheckoutInput) {
       `,
       [createdOrder.orderId, bankAccountId, totals.totalNgn, transferDeadlineAt]
     );
+
+    await reserveInventoryForOrder(queryFn, createdOrder.orderId);
 
     await queryFn(
       `

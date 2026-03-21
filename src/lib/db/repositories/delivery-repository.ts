@@ -6,7 +6,9 @@ import {
   type DatabaseActorContext,
   withTransaction,
 } from "@/lib/db/client";
+import { finalizeInventoryForDeliveredOrder } from "@/lib/db/repositories/order-inventory";
 import { getDeliveryDefaultsSetting } from "@/lib/db/repositories/settings-repository";
+import { sendDeliveryStatusNotification } from "@/lib/email/orders";
 import { readCourierAccessToken } from "@/lib/delivery/access";
 import type {
   AdminDeliveryOrder,
@@ -841,7 +843,7 @@ export async function updateDeliveryAssignmentStatus(input: {
 }) {
   requireDatabase();
 
-  return withTransaction(async (queryFn) => {
+  const result = await withTransaction(async (queryFn) => {
     const assignment = await getAssignmentStateForUpdate(queryFn, input.assignmentId);
 
     if (!assignment) {
@@ -912,6 +914,8 @@ export async function updateDeliveryAssignmentStatus(input: {
     });
 
     if (input.nextStatus === "delivered") {
+      await finalizeInventoryForDeliveredOrder(queryFn, assignment.orderId);
+
       await createReviewRequestIfNeeded(queryFn, {
         orderId: assignment.orderId,
         userId: order.userId,
@@ -938,6 +942,15 @@ export async function updateDeliveryAssignmentStatus(input: {
       role: "admin",
     },
   });
+
+  if (["out_for_delivery", "delivered"].includes(input.nextStatus)) {
+    await sendDeliveryStatusNotification({
+      orderId: result.orderId,
+      status: input.nextStatus as "out_for_delivery" | "delivered",
+    });
+  }
+
+  return result;
 }
 
 function normalizeCoordinate(value: number, min: number, max: number, label: string) {

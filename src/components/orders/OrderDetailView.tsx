@@ -2,10 +2,13 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { PaymentProofUploadCard } from "@/components/orders/PaymentProofUploadCard";
+import { OrderReturnRequestCard } from "@/components/orders/OrderReturnRequestCard";
 import { WorkspaceContextPanel } from "@/components/shell/WorkspaceContextPanel";
 import { QuietValueStrip } from "@/components/ui/QuietValueStrip";
 import { formatNgn } from "@/lib/commerce";
 import type {
+  OrderReturnCaseRow,
+  OrderReturnEventRow,
   OrderStatusEventRow,
   PaymentProofRow,
   PortalOrderDetail,
@@ -80,6 +83,8 @@ export function OrderDetailView({
   order,
   timeline,
   proofs,
+  returnCase,
+  returnEvents,
   backHref,
   accessToken,
   trackingHref,
@@ -87,6 +92,8 @@ export function OrderDetailView({
   order: PortalOrderDetail | null;
   timeline: OrderStatusEventRow[];
   proofs: PaymentProofRow[];
+  returnCase: OrderReturnCaseRow | null;
+  returnEvents: OrderReturnEventRow[];
   backHref: string;
   accessToken?: string;
   trackingHref?: string | null;
@@ -160,6 +167,11 @@ export function OrderDetailView({
             label: "Proofs",
             value: `${proofs.length}`,
             detail: proofs.length > 0 ? "Received" : "Waiting",
+          },
+          {
+            label: "Return",
+            value: returnCase ? formatStatusLabel(returnCase.status) : "Quiet",
+            detail: returnCase ? "Case" : "None",
           },
         ]}
         columns={4}
@@ -258,6 +270,7 @@ export function OrderDetailView({
               orderId={order.orderId}
               paymentId={order.paymentId}
               accessToken={accessToken}
+              paymentStatus={order.payment?.status ?? order.paymentStatus}
             />
 
             {proofs.length > 0 ? (
@@ -276,6 +289,27 @@ export function OrderDetailView({
               </div>
             ) : null}
           </OrderSurface>
+
+          {returnCase || order.status === "delivered" ? (
+            <OrderSurface
+              title="Return"
+              action={
+                returnCase ? (
+                  <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                    {formatStatusLabel(returnCase.status)}
+                  </span>
+                ) : null
+              }
+            >
+              <OrderReturnRequestCard
+                orderId={order.orderId}
+                accessToken={accessToken}
+                orderStatus={order.status}
+                returnCase={returnCase}
+                returnEvents={returnEvents}
+              />
+            </OrderSurface>
+          ) : null}
 
           <OrderSurface title="Updates">
             <div className="grid gap-2 text-sm text-secondary-label">

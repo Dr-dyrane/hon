@@ -315,6 +315,14 @@ export async function listAdminCatalogProductMedia(productId: string) {
         id as "mediaId",
         product_id as "productId",
         variant_id as "variantId",
+        case
+          when variant_id is not null then 'variant'
+          else 'product'
+        end as "targetType",
+        case
+          when variant_id is not null then coalesce(v.name, 'Variant')
+          else coalesce(p.marketing_name, p.name, 'Product')
+        end as "targetLabel",
         media_type as "mediaType",
         storage_key as "storageKey",
         alt_text as "altText",
@@ -323,8 +331,17 @@ export async function listAdminCatalogProductMedia(productId: string) {
         metadata,
         created_at as "createdAt"
       from app.product_media
+      left join app.products p
+        on p.id = app.product_media.product_id
+      left join app.product_variants v
+        on v.id = app.product_media.variant_id
       where product_id = $1
-      order by media_type asc, is_primary desc, sort_order asc, created_at asc
+         or variant_id in (
+           select id
+           from app.product_variants
+           where product_id = $1
+         )
+      order by "targetType" asc, media_type asc, is_primary desc, sort_order asc, created_at asc
     `,
     [productId]
   );
@@ -722,8 +739,159 @@ export async function setAdminCatalogProductMerchandising(
   );
 }
 
+export async function archiveAdminCatalogProduct(
+  productId: string,
+  actor?: {
+    userId?: string | null;
+    email?: string | null;
+  }
+) {
+  requireDatabase();
+
+  if (!productId) {
+    throw new Error("Product is required.");
+  }
+
+  await withTransaction(async (queryFn) => {
+    const result = await queryFn<{ productId: string }>(
+      `
+        select id as "productId"
+        from app.products
+        where id = $1
+        limit 1
+      `,
+      [productId]
+    );
+
+    if (!result.rows[0]) {
+      throw new Error("Product not found.");
+    }
+
+    await queryFn(
+      `
+        update app.products
+        set
+          status = 'archived',
+          is_available = false,
+          merchandising_state = 'hidden'
+        where id = $1
+      `,
+      [productId]
+    );
+
+    await queryFn(
+      `
+        update app.product_variants
+        set status = 'archived'
+        where product_id = $1
+      `,
+      [productId]
+    );
+  }, {
+    actor: {
+      userId: actor?.userId ?? null,
+      email: actor?.email ?? null,
+      role: "admin",
+    },
+  });
+}
+
+export async function deleteAdminCatalogProduct(
+  productId: string,
+  actor?: {
+    userId?: string | null;
+    email?: string | null;
+  }
+) {
+  requireDatabase();
+
+  if (!productId) {
+    throw new Error("Product is required.");
+  }
+
+  return withTransaction(async (queryFn) => {
+    const productResult = await queryFn<{
+      productId: string;
+      productSlug: string;
+      status: string;
+    }>(
+      `
+        select
+          id as "productId",
+          slug as "productSlug",
+          status
+        from app.products
+        where id = $1
+        limit 1
+      `,
+      [productId]
+    );
+
+    const product = productResult.rows[0];
+
+    if (!product) {
+      throw new Error("Product not found.");
+    }
+
+    if (product.status !== "archived") {
+      throw new Error("Archive the product first.");
+    }
+
+    const openOrderResult = await queryFn<{ hasOpenOrders: boolean }>(
+      `
+        select exists (
+          select 1
+          from app.order_items oi
+          inner join app.orders o
+            on o.id = oi.order_id
+          where o.status not in ('delivered', 'cancelled', 'expired')
+            and (
+              oi.variant_id in (
+                select id
+                from app.product_variants
+                where product_id = $1
+              )
+              or oi.snapshot ->> 'productId' = $2
+            )
+        ) as "hasOpenOrders"
+      `,
+      [productId, product.productSlug]
+    );
+
+    if (openOrderResult.rows[0]?.hasOpenOrders) {
+      throw new Error("This product is still attached to an open order.");
+    }
+
+    const mediaResult = await queryFn<{ storageKey: string }>(
+      `
+        select storage_key as "storageKey"
+        from app.product_media
+        where product_id = $1
+      `,
+      [productId]
+    );
+
+    await queryFn(
+      `
+        delete from app.products
+        where id = $1
+      `,
+      [productId]
+    );
+
+    return mediaResult.rows.map((row) => row.storageKey);
+  }, {
+    actor: {
+      userId: actor?.userId ?? null,
+      email: actor?.email ?? null,
+      role: "admin",
+    },
+  });
+}
+
 export async function createAdminCatalogProductMedia(input: {
   productId: string;
+  variantId?: string | null;
   mediaType: "image" | "model_3d" | "video";
   storageKey: string;
   altText?: string | null;
@@ -734,6 +902,7 @@ export async function createAdminCatalogProductMedia(input: {
   requireDatabase();
 
   const productId = input.productId;
+  const variantId = input.variantId ?? null;
   const mediaType = input.mediaType;
   const storageKey = input.storageKey.trim();
   const altText = normalizeOptionalText(input.altText ?? null);
@@ -744,40 +913,60 @@ export async function createAdminCatalogProductMedia(input: {
   }
 
   return withTransaction(async (queryFn) => {
-    const productResult = await queryFn<{ productId: string }>(
+    const productResult = await queryFn<{ productId: string; variantId: string }>(
       `
-        select id as "productId"
+        select
+          p.id as "productId",
+          v.id as "variantId"
         from app.products
-        where id = $1
+        left join app.product_variants v
+          on v.product_id = p.id
+         and v.is_default = true
+        where p.id = $1
         limit 1
       `,
       [productId]
     );
 
-    if (!productResult.rows[0]) {
+    const product = productResult.rows[0];
+
+    if (!product) {
       throw new Error("Product not found.");
     }
+
+    if (variantId && variantId !== product.variantId) {
+      throw new Error("Variant does not belong to this product.");
+    }
+
+    const targetProductId = variantId ? null : productId;
+    const targetVariantId = variantId ? variantId : null;
 
     const primaryResult = await queryFn<{ mediaId: string }>(
       `
         select id as "mediaId"
         from app.product_media
-        where product_id = $1
+        where (
+            (product_id = $1 and $3::uuid is null)
+            or (variant_id = $3 and $3::uuid is not null)
+          )
           and media_type = $2
           and is_primary = true
         limit 1
       `,
-      [productId, mediaType]
+      [targetProductId, mediaType, targetVariantId]
     );
 
     const sortOrderResult = await queryFn<{ nextSortOrder: number }>(
       `
         select coalesce(max(sort_order), -1) + 1 as "nextSortOrder"
         from app.product_media
-        where product_id = $1
+        where (
+            (product_id = $1 and $3::uuid is null)
+            or (variant_id = $3 and $3::uuid is not null)
+          )
           and media_type = $2
       `,
-      [productId, mediaType]
+      [targetProductId, mediaType, targetVariantId]
     );
 
     const shouldBePrimary = !primaryResult.rows[0];
@@ -787,6 +976,7 @@ export async function createAdminCatalogProductMedia(input: {
       `
         insert into app.product_media (
           product_id,
+          variant_id,
           media_type,
           storage_key,
           alt_text,
@@ -794,11 +984,12 @@ export async function createAdminCatalogProductMedia(input: {
           is_primary,
           metadata
         )
-        values ($1, $2, $3, $4, $5, $6, $7::jsonb)
+        values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
         returning id as "mediaId"
       `,
       [
-        productId,
+        targetProductId,
+        targetVariantId,
         mediaType,
         storageKey,
         altText,
@@ -847,7 +1038,14 @@ export async function updateAdminCatalogProductMedia(input: {
         alt_text = $1,
         sort_order = coalesce($2, sort_order)
       where id = $3
-        and product_id = $4
+        and (
+          product_id = $4
+          or variant_id in (
+            select id
+            from app.product_variants
+            where product_id = $4
+          )
+        )
     `,
     [altText, sortOrder, mediaId, productId],
     {
@@ -878,15 +1076,26 @@ export async function setAdminCatalogProductMediaPrimary(input: {
   await withTransaction(async (queryFn) => {
     const mediaResult = await queryFn<{
       mediaId: string;
+      productId: string | null;
+      variantId: string | null;
       mediaType: "image" | "model_3d" | "video";
     }>(
       `
         select
           id as "mediaId",
+          product_id as "productId",
+          variant_id as "variantId",
           media_type as "mediaType"
         from app.product_media
         where id = $1
-          and product_id = $2
+          and (
+            product_id = $2
+            or variant_id in (
+              select id
+              from app.product_variants
+              where product_id = $2
+            )
+          )
         limit 1
       `,
       [mediaId, productId]
@@ -902,10 +1111,13 @@ export async function setAdminCatalogProductMediaPrimary(input: {
       `
         update app.product_media
         set is_primary = false
-        where product_id = $1
+        where (
+            (product_id = $1 and $3::uuid is null)
+            or (variant_id = $3 and $3::uuid is not null)
+          )
           and media_type = $2
       `,
-      [productId, media.mediaType]
+      [media.productId, media.mediaType, media.variantId]
     );
 
     await queryFn(
@@ -955,7 +1167,14 @@ export async function deleteAdminCatalogProductMedia(input: {
           is_primary as "isPrimary"
         from app.product_media
         where id = $1
-          and product_id = $2
+          and (
+            product_id = $2
+            or variant_id in (
+              select id
+              from app.product_variants
+              where product_id = $2
+            )
+          )
         limit 1
       `,
       [mediaId, productId]

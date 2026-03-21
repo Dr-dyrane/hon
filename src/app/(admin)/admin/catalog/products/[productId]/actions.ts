@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
 import { 
+  archiveAdminCatalogProduct,
   createAdminCatalogProduct,
+  deleteAdminCatalogProduct,
   deleteAdminCatalogProductMedia,
   setAdminCatalogProductMediaPrimary,
   updateAdminCatalogProduct, 
@@ -157,6 +159,35 @@ export async function updateInventoryAction(variantId: string, onHand: number, r
     revalidateCatalogPaths();
     // Note: revalidating by productId would be better if we had it here, but revalidatePath works on the route
     return { success: true };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function archiveProductAction(productId: string) {
+  try {
+    const actor = await getAdminActor(`/admin/catalog/products/${productId}`);
+    await archiveAdminCatalogProduct(productId, actor);
+    revalidateCatalogPaths(productId);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function deleteProductAction(productId: string) {
+  try {
+    const actor = await getAdminActor(`/admin/catalog/products/${productId}`);
+    const storageKeys = await deleteAdminCatalogProduct(productId, actor);
+
+    for (const storageKey of storageKeys) {
+      if (storageKey && isManagedBucketKey(storageKey)) {
+        await deleteFromS3(storageKey);
+      }
+    }
+
+    revalidateCatalogPaths();
+    return { success: true, redirectTo: "/admin/catalog/products" };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }
