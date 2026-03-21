@@ -123,17 +123,19 @@ export function WorkspaceNotificationSheet({
         aria-label="Notifications"
         aria-hidden={!isOpen}
         className={cn(
-          "z-layer-sheet fixed right-0 top-0 h-svh w-full max-w-full transition-transform duration-500 ease-[var(--ease-premium)] sm:max-w-[28rem] lg:max-w-[30rem]",
-          isOpen ? "translate-x-0" : "translate-x-full"
+          "z-layer-sheet fixed inset-x-0 bottom-0 top-auto max-h-[calc(100svh-0.75rem)] w-full transition-transform duration-500 ease-[var(--ease-premium)] sm:inset-x-auto sm:right-0 sm:top-0 sm:h-svh sm:max-h-none sm:w-full sm:max-w-[28rem] lg:max-w-[30rem]",
+          isOpen ? "translate-y-0 sm:translate-x-0 sm:translate-y-0" : "translate-y-full sm:translate-x-full sm:translate-y-0"
         )}
       >
-        <div className="flex h-full flex-col overflow-hidden bg-[color:var(--system-background)] p-4 shadow-[0_32px_120px_rgba(0,0,0,0.22)] sm:rounded-l-[36px] sm:p-5">
-          <div className="flex items-start justify-between gap-4 px-1 pb-5 pt-2">
+        <div className="flex h-full max-h-[inherit] flex-col overflow-hidden rounded-t-[34px] bg-[color:var(--system-background)] p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-22px_60px_rgba(0,0,0,0.18)] sm:rounded-l-[36px] sm:rounded-tr-none sm:p-5 sm:shadow-[0_32px_120px_rgba(0,0,0,0.22)]">
+          <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-system-fill/90 sm:hidden" />
+
+          <div className="flex items-start justify-between gap-4 px-1 pb-4 pt-1 sm:pb-5 sm:pt-2">
             <div>
-              <h2 className="text-3xl font-headline font-bold tracking-display text-label">
+              <h2 className="text-2xl font-headline font-bold tracking-display text-label sm:text-3xl">
                 Notifications
               </h2>
-              <div className="mt-2 text-sm text-secondary-label">
+              <div className="mt-1.5 text-sm text-secondary-label">
                 {count > 0 ? `${count} important update${count === 1 ? "" : "s"}` : "No updates"}
               </div>
             </div>
@@ -158,7 +160,7 @@ export function WorkspaceNotificationSheet({
               </div>
             </div>
           ) : (
-            <div className="scrollbar-hide flex-1 overflow-y-auto pr-1">
+            <div className="scrollbar-hide flex-1 overflow-y-auto pr-1 pb-2">
               <div className="space-y-3">
                 {notifications.map((notification) => {
                   const Icon = ICON_MAP[notification.icon];

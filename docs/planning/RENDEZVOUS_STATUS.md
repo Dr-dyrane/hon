@@ -107,6 +107,8 @@ Current state:
 - scheduled order automation now also reminds Praxy about stuck payment reviews and return cases that have gone quiet
 - delivery tracking now surfaces cached route ETA and distance on both the customer tracking view and Praxy's live delivery map
 - guest checkout tracking now runs on the same live snapshot model as the signed-in tracking route
+- mobile cart and notifications now present as bottom sheets on phone instead of side drawers
+- mobile shell header now uses a denser title treatment so the first viewport reaches the task faster
 
 This means the system has crossed into operational platform work.
 
@@ -386,6 +388,7 @@ Open:
 - [ ] finish the same quiet-copy pass on auth and checkout edge screens
 - [ ] align page chrome more closely with the marketing visual language
 - [ ] enforce viewport-native mobile, tablet, and desktop compositions across admin and portal
+- [x] move mobile cart and notification overlays away from side-drawer behavior
 - [x] ensure selected navigation states remain legible in every shell
 - [ ] finish no-border, Apple-HIG-consistent surface treatment review
 - [ ] tighten the checkout drawer and confirmation route further toward the marketing-page visual bar

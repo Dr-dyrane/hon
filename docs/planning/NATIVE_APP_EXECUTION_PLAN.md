@@ -103,7 +103,7 @@ These are the main non-native behaviors currently visible in the app.
 
 - mobile bottom navigation is a custom dock, not a true tab-bar-like experience
 - mobile FAB logic is useful, but the surrounding navigation rhythm is still web-custom rather than Apple-native
-- cart and notifications are still structurally closer to side drawers than bottom-presented task sheets
+- cart and notifications now use bottom-presented sheets on phone, but the surrounding task rhythm still needs refinement
 
 ### Shell chrome
 

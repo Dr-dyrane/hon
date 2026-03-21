@@ -78,8 +78,8 @@ export function WorkspaceShell({
         </aside>
 
         <div className="min-w-0">
-          <header className="z-layer-header sticky top-0 px-4 pt-4 md:px-6 md:pt-6">
-            <div className="glass-morphism rounded-[30px] bg-system-background/78 px-5 py-4 shadow-soft">
+          <header className="z-layer-header sticky top-0 px-3 pt-3 md:px-6 md:pt-6">
+            <div className="glass-morphism rounded-[26px] bg-system-background/78 px-4 py-3 shadow-soft md:rounded-[30px] md:px-5 md:py-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <WorkspaceHeaderTitle
@@ -103,7 +103,7 @@ export function WorkspaceShell({
             </div>
           </header>
 
-          <main className="w-full px-4 pb-28 pt-6 md:px-6 md:pb-12 md:pt-8">
+          <main className="w-full px-3 pb-28 pt-4 md:px-6 md:pb-12 md:pt-8">
             {children}
           </main>
         </div>

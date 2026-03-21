@@ -34,7 +34,7 @@ export function WorkspaceHeaderTitle({
       {context.breadcrumbs.length > 0 ? (
         <nav
           aria-label="Breadcrumb"
-          className="scrollbar-hide flex items-center gap-1 overflow-x-auto text-[10px] font-semibold uppercase tracking-headline text-secondary-label"
+          className="scrollbar-hide hidden items-center gap-1 overflow-x-auto text-[10px] font-semibold uppercase tracking-headline text-secondary-label md:flex"
         >
           {context.breadcrumbs.map((breadcrumb, index) => (
             <div key={breadcrumb.href} className="flex items-center gap-1 shrink-0">
@@ -52,12 +52,12 @@ export function WorkspaceHeaderTitle({
           ))}
         </nav>
       ) : (
-        <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+        <div className="hidden text-[10px] font-semibold uppercase tracking-headline text-secondary-label md:block">
           {eyebrow}
         </div>
       )}
 
-      <div className="mt-1 truncate text-xl font-semibold tracking-title text-label md:text-2xl">
+      <div className="truncate text-lg font-semibold tracking-title text-label md:mt-1 md:text-2xl">
         {context.title}
       </div>
     </div>
