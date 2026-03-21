@@ -109,6 +109,7 @@ Current state:
 - guest checkout tracking now runs on the same live snapshot model as the signed-in tracking route
 - mobile cart and notifications now present as bottom sheets on phone instead of side drawers
 - mobile shell header now uses a denser title treatment so the first viewport reaches the task faster
+- mobile shell dock and FAB now sit on safe-area spacing with stronger active-state contrast and cleaner overlay handoff
 - portal profile and addresses now use compact mobile task intros instead of large context panels before the form work starts
 - mobile order detail now uses a compact top summary and simpler payment/rating actions instead of stacking full desktop chrome first
 - payments, delivery, and portal order history now switch into denser multi-column desktop layouts earlier instead of holding a narrow single-column web rhythm too long
@@ -123,6 +124,8 @@ Current state:
 - admin users and catalog taxonomy now exist as real management routes instead of hidden data-only capabilities
 - admin users, taxonomy, and settings now use phone-safe composer and action rows instead of desktop-style footer controls
 - admin settings and portal profile now use native-style toggle rows for notification and tracking preferences instead of generic boolean form controls
+- shared context panels now collapse into a tighter phone rhythm with horizontal metadata instead of tall desktop-style grids
+- redundant mobile sticky save rails are now removed where the phone FAB or inline actions already own the primary action
 - push preference remains stored in the data model, but visible push controls are hidden until real end-to-end web push is live
 - local request-flow verification now has a first-class scripted path that covers request, payment, delivery, review, and refund against a running dev server
 

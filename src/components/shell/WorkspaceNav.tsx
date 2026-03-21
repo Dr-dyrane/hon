@@ -103,7 +103,7 @@ export function WorkspaceNav({
         <nav
           aria-label="Section navigation"
           className={cn(
-            "z-layer-mobile-nav fixed bottom-3 left-3 w-[calc(100vw-5.75rem)] max-w-[24rem] rounded-[28px] bg-[color:var(--system-background)]/24 p-2 shadow-[0_20px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm md:hidden",
+            "z-layer-mobile-nav fixed bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] left-3 w-[calc(100vw-5.75rem)] max-w-[24rem] rounded-[28px] bg-[color:var(--system-background)]/88 p-1.5 shadow-[0_20px_48px_rgba(15,23,42,0.14)] backdrop-blur-xl md:hidden",
             hasActiveOverlay && "pointer-events-none translate-y-4 opacity-0"
           )}
         >
@@ -120,9 +120,18 @@ export function WorkspaceNav({
                     className={cn(
                       "flex h-12 items-center justify-center rounded-full text-[11px] font-semibold tracking-tight transition-all duration-200",
                       active
-                        ? "min-w-[7rem] gap-2 bg-[var(--accent)]/20 px-4 shadow-[0_14px_30px_rgba(15,23,42,0.12)]"
+                        ? "min-w-[6.75rem] gap-2 px-4 text-label shadow-[0_14px_30px_rgba(15,23,42,0.12)]"
                         : "w-11 text-secondary-label hover:bg-system-fill/80 hover:text-label"
                     )}
+                    aria-current={active ? "page" : undefined}
+                    style={
+                      active
+                        ? {
+                            backgroundColor:
+                              "color-mix(in srgb, var(--accent) 16%, var(--system-background) 84%)",
+                          }
+                        : undefined
+                    }
                   >
                     <Icon className="h-[17px] w-[17px]" strokeWidth={1.9} />
                     <span
@@ -146,7 +155,7 @@ export function WorkspaceNav({
             onClick={handleMobileFab}
             aria-label={mobileFab.label}
             className={cn(
-              "z-layer-mobile-fab fixed right-3 bottom-5 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-label)] shadow-[0_16px_36px_rgba(15,23,42,0.12)] transition-transform duration-200 active:scale-[0.98] md:hidden",
+              "z-layer-mobile-fab fixed right-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-label)] shadow-[0_18px_40px_rgba(15,23,42,0.16)] transition-transform duration-200 active:scale-[0.98] md:hidden",
               hasActiveOverlay && "pointer-events-none translate-y-4 opacity-0"
             )}
           >

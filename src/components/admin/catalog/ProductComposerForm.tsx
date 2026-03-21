@@ -151,7 +151,7 @@ export function ProductComposerForm({
 
       <div
         className={cn(
-          "z-layer-sticky-action sticky bottom-6",
+          "z-layer-sticky-action sticky bottom-6 hidden md:block",
           hasActiveOverlay && "pointer-events-none translate-y-4 opacity-0"
         )}
       >

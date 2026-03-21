@@ -152,6 +152,9 @@ Current correction:
 - payment, rating, and return feedback now uses quiet inline state pills instead of floating helper copy
 - admin users, taxonomy, and settings now use phone-safe composer and save rows instead of desktop-style footer controls
 - admin settings and portal profile now use native-style toggle rows for boolean preferences instead of select menus or custom badge buttons
+- mobile dock and FAB now honor safe-area spacing, use stronger active-state contrast, and step out cleanly during overlays
+- shared context panels now collapse into a tighter phone treatment with horizontal meta strips instead of tall desktop-style grids
+- redundant sticky save rails now stay desktop-only where the phone FAB or inline actions already own the primary task
 - push remains a future native-web milestone, so the current settings surfaces only expose live email and in-app controls
 
 ### Preferred phone rhythm
