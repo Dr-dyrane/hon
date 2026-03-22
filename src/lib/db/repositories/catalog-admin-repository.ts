@@ -151,23 +151,81 @@ function resolveCatalogMediaUrl(storageKey: string) {
   }
 }
 
+let categoryImagePathColumnCache: boolean | null = null;
+
+async function hasCategoryImagePathColumn() {
+  if (!isDatabaseConfigured()) {
+    return false;
+  }
+
+  if (categoryImagePathColumnCache !== null) {
+    return categoryImagePathColumnCache;
+  }
+
+  try {
+    const result = await query<{ exists: boolean }>(
+      `
+        select exists (
+          select 1
+          from information_schema.columns
+          where table_schema = 'app'
+            and table_name = 'product_categories'
+            and column_name = 'image_path'
+        ) as "exists"
+      `
+    );
+
+    const hasColumn = Boolean(result.rows[0]?.exists);
+    categoryImagePathColumnCache = hasColumn;
+    return hasColumn;
+  } catch {
+    return false;
+  }
+}
+
 export async function listAdminCatalogCategories() {
   if (!isDatabaseConfigured()) {
     return [] satisfies AdminCatalogCategory[];
   }
 
+  const supportsCategoryImagePath = await hasCategoryImagePathColumn();
   const result = await query<AdminCatalogCategory>(
     `
       select
-        id as "categoryId",
-        slug as "categorySlug",
-        name as "categoryName"
-      from app.product_categories
-      order by sort_order asc, name asc
+        pc.id as "categoryId",
+        pc.slug as "categorySlug",
+        pc.name as "categoryName",
+        ${
+          supportsCategoryImagePath
+            ? `coalesce(pc.image_path, fallback_media."imageStorageKey") as "imagePath"`
+            : `null::text as "imagePath"`
+        }
+      from app.product_categories pc
+      left join lateral (
+        select
+          pm.storage_key as "imageStorageKey"
+        from app.products p
+        left join app.product_media pm
+          on pm.product_id = p.id
+         and pm.media_type = 'image'
+        where p.category_id = pc.id
+        order by
+          case when pm.storage_key is null then 1 else 0 end asc,
+          p.sort_order asc,
+          pm.is_primary desc,
+          pm.sort_order asc,
+          pm.created_at asc
+        limit 1
+      ) fallback_media
+        on true
+      order by pc.sort_order asc, pc.name asc
     `
   );
 
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    imagePath: row.imagePath ? resolveCatalogMediaUrl(row.imagePath) : null,
+  }));
 }
 
 export async function listAdminCatalogCategoryDetails() {
@@ -175,28 +233,115 @@ export async function listAdminCatalogCategoryDetails() {
     return [] satisfies AdminCatalogCategoryDetail[];
   }
 
+  const supportsCategoryImagePath = await hasCategoryImagePathColumn();
   const result = await query<AdminCatalogCategoryDetail>(
     `
       select
         pc.id as "categoryId",
         pc.slug as "categorySlug",
         pc.name as "categoryName",
+        ${
+          supportsCategoryImagePath
+            ? `coalesce(pc.image_path, fallback_media."imageStorageKey") as "imagePath"`
+            : `fallback_media."imageStorageKey" as "imagePath"`
+        },
         pc.sort_order as "sortOrder",
-        count(p.id)::int as "productCount"
+        coalesce(product_stats."productCount", 0)::int as "productCount"
       from app.product_categories pc
-      left join app.products p
-        on p.category_id = pc.id
-      group by
-        pc.id,
-        pc.slug,
-        pc.name,
-        pc.sort_order,
-        pc.created_at
+      left join lateral (
+        select
+          count(*)::int as "productCount"
+        from app.products p
+        where p.category_id = pc.id
+      ) product_stats
+        on true
+      left join lateral (
+        select
+          pm.storage_key as "imageStorageKey"
+        from app.products p
+        left join app.product_media pm
+          on pm.product_id = p.id
+         and pm.media_type = 'image'
+        where p.category_id = pc.id
+        order by
+          case when pm.storage_key is null then 1 else 0 end asc,
+          p.sort_order asc,
+          pm.is_primary desc,
+          pm.sort_order asc,
+          pm.created_at asc
+        limit 1
+      ) fallback_media
+        on true
       order by pc.sort_order asc, pc.created_at asc
     `
   );
 
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    imagePath: row.imagePath ? resolveCatalogMediaUrl(row.imagePath) : null,
+  }));
+}
+
+export async function getAdminCatalogCategoryDetail(categoryId: string) {
+  if (!categoryId || !isDatabaseConfigured()) {
+    return null;
+  }
+
+  const supportsCategoryImagePath = await hasCategoryImagePathColumn();
+  const result = await query<AdminCatalogCategoryDetail>(
+    `
+      select
+        pc.id as "categoryId",
+        pc.slug as "categorySlug",
+        pc.name as "categoryName",
+        ${
+          supportsCategoryImagePath
+            ? `coalesce(pc.image_path, fallback_media."imageStorageKey") as "imagePath"`
+            : `fallback_media."imageStorageKey" as "imagePath"`
+        },
+        pc.sort_order as "sortOrder",
+        coalesce(product_stats."productCount", 0)::int as "productCount"
+      from app.product_categories pc
+      left join lateral (
+        select
+          count(*)::int as "productCount"
+        from app.products p
+        where p.category_id = pc.id
+      ) product_stats
+        on true
+      left join lateral (
+        select
+          pm.storage_key as "imageStorageKey"
+        from app.products p
+        left join app.product_media pm
+          on pm.product_id = p.id
+         and pm.media_type = 'image'
+        where p.category_id = pc.id
+        order by
+          case when pm.storage_key is null then 1 else 0 end asc,
+          p.sort_order asc,
+          pm.is_primary desc,
+          pm.sort_order asc,
+          pm.created_at asc
+        limit 1
+      ) fallback_media
+        on true
+      where pc.id = $1
+      limit 1
+    `,
+    [categoryId]
+  );
+
+  const row = result.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    ...row,
+    imagePath: row.imagePath ? resolveCatalogMediaUrl(row.imagePath) : null,
+  };
 }
 
 export async function listAdminCatalogIngredients() {
@@ -236,7 +381,61 @@ export async function listAdminCatalogIngredients() {
     `
   );
 
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    imagePath: row.imagePath ? resolveCatalogMediaUrl(row.imagePath) : null,
+  }));
+}
+
+export async function getAdminCatalogIngredientDetail(ingredientId: string) {
+  if (!ingredientId || !isDatabaseConfigured()) {
+    return null;
+  }
+
+  const result = await query<AdminCatalogIngredient>(
+    `
+      select
+        i.id as "ingredientId",
+        i.slug as "ingredientSlug",
+        i.name as "ingredientName",
+        i.detail,
+        i.benefit,
+        i.image_path as "imagePath",
+        coalesce(i.aliases, '[]'::jsonb) as aliases,
+        i.sort_order as "sortOrder",
+        count(distinct vi.variant_id)::int as "variantCount",
+        count(distinct pv.product_id)::int as "productCount"
+      from app.ingredients i
+      left join app.variant_ingredients vi
+        on vi.ingredient_id = i.id
+      left join app.product_variants pv
+        on pv.id = vi.variant_id
+      where i.id = $1
+      group by
+        i.id,
+        i.slug,
+        i.name,
+        i.detail,
+        i.benefit,
+        i.image_path,
+        i.aliases,
+        i.sort_order,
+        i.created_at
+      limit 1
+    `,
+    [ingredientId]
+  );
+
+  const row = result.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    ...row,
+    imagePath: row.imagePath ? resolveCatalogMediaUrl(row.imagePath) : null,
+  };
 }
 
 export async function listAllAdminCatalogProducts() {
@@ -566,6 +765,7 @@ async function syncVariantIngredients(
 
 export async function createAdminCatalogCategory(input: {
   categoryName: string;
+  imagePath?: string | null;
   sortOrder?: string | number | null;
   actorUserId?: string | null;
   actorEmail?: string | null;
@@ -573,6 +773,7 @@ export async function createAdminCatalogCategory(input: {
   requireDatabase();
 
   const categoryName = input.categoryName.trim();
+  const imagePath = normalizeOptionalText(input.imagePath ?? null);
   const sortOrder = normalizeSortOrder(input.sortOrder);
 
   if (categoryName.length < 2) {
@@ -580,24 +781,39 @@ export async function createAdminCatalogCategory(input: {
   }
 
   return withTransaction(async (queryFn) => {
+    const supportsCategoryImagePath = await hasCategoryImagePathColumn();
     const slug = await buildUniqueSlug(
       queryFn,
       "app.product_categories",
       categoryName
     );
 
-    const result = await queryFn<{ categoryId: string }>(
-      `
-        insert into app.product_categories (
-          slug,
-          name,
-          sort_order
+    const result = supportsCategoryImagePath
+      ? await queryFn<{ categoryId: string }>(
+          `
+            insert into app.product_categories (
+              slug,
+              name,
+              image_path,
+              sort_order
+            )
+            values ($1, $2, $3, $4)
+            returning id as "categoryId"
+          `,
+          [slug, categoryName, imagePath, sortOrder]
         )
-        values ($1, $2, $3)
-        returning id as "categoryId"
-      `,
-      [slug, categoryName, sortOrder]
-    );
+      : await queryFn<{ categoryId: string }>(
+          `
+            insert into app.product_categories (
+              slug,
+              name,
+              sort_order
+            )
+            values ($1, $2, $3)
+            returning id as "categoryId"
+          `,
+          [slug, categoryName, sortOrder]
+        );
 
     return result.rows[0]?.categoryId ?? null;
   }, {
@@ -612,6 +828,7 @@ export async function createAdminCatalogCategory(input: {
 export async function updateAdminCatalogCategory(input: {
   categoryId: string;
   categoryName: string;
+  imagePath?: string | null;
   sortOrder?: string | number | null;
   actorUserId?: string | null;
   actorEmail?: string | null;
@@ -620,6 +837,7 @@ export async function updateAdminCatalogCategory(input: {
 
   const categoryId = input.categoryId;
   const categoryName = input.categoryName.trim();
+  const imagePath = normalizeOptionalText(input.imagePath ?? null);
   const sortOrder = normalizeSortOrder(input.sortOrder);
 
   if (!categoryId) {
@@ -631,6 +849,7 @@ export async function updateAdminCatalogCategory(input: {
   }
 
   await withTransaction(async (queryFn) => {
+    const supportsCategoryImagePath = await hasCategoryImagePathColumn();
     const existingResult = await queryFn<{ categoryId: string }>(
       `
         select id as "categoryId"
@@ -652,17 +871,32 @@ export async function updateAdminCatalogCategory(input: {
       categoryId
     );
 
-    await queryFn(
-      `
-        update app.product_categories
-        set
-          slug = $1,
-          name = $2,
-          sort_order = $3
-        where id = $4
-      `,
-      [slug, categoryName, sortOrder, categoryId]
-    );
+    if (supportsCategoryImagePath) {
+      await queryFn(
+        `
+          update app.product_categories
+          set
+            slug = $1,
+            name = $2,
+            image_path = $3,
+            sort_order = $4
+          where id = $5
+        `,
+        [slug, categoryName, imagePath, sortOrder, categoryId]
+      );
+    } else {
+      await queryFn(
+        `
+          update app.product_categories
+          set
+            slug = $1,
+            name = $2,
+            sort_order = $3
+          where id = $4
+        `,
+        [slug, categoryName, sortOrder, categoryId]
+      );
+    }
   }, {
     actor: {
       userId: input.actorUserId ?? null,

@@ -78,6 +78,7 @@ export type AdminCatalogCategory = {
   categoryId: string;
   categorySlug: string;
   categoryName: string;
+  imagePath: string | null;
 };
 
 export type AdminCatalogCategoryDetail = AdminCatalogCategory & {

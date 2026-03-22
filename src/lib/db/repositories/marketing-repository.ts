@@ -175,7 +175,10 @@ export async function listMarketingIngredients() {
     `
   );
 
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    image: resolveMarketingMediaUrl(row.image),
+  }));
 }
 
 export async function listMarketingSiteSettings(keys: string[]) {

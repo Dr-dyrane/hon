@@ -397,6 +397,28 @@ export const ADMIN_HEADER_ROUTES: ShellHeaderRoute[] = [
     breadcrumbs: [{ href: "/admin/catalog/products", label: "Catalog" }],
   },
   {
+    pattern: "/admin/catalog/taxonomy/new",
+    title: "New Taxonomy",
+    breadcrumbs: [{ href: "/admin/catalog/taxonomy", label: "Taxonomy" }],
+    mobileFab: {
+      label: "Create taxonomy",
+      icon: "add",
+      kind: "submit",
+      formId: "admin-taxonomy-create-form",
+    },
+  },
+  {
+    pattern: "/admin/catalog/taxonomy/[taxonomyType]/[taxonomyId]",
+    title: "Edit Taxonomy",
+    breadcrumbs: [{ href: "/admin/catalog/taxonomy", label: "Taxonomy" }],
+    mobileFab: {
+      label: "Save taxonomy",
+      icon: "save",
+      kind: "submit",
+      formId: "admin-taxonomy-edit-form",
+    },
+  },
+  {
     pattern: "/admin/layout",
     title: "Layout",
   },

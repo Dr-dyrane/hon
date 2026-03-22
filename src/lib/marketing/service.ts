@@ -27,6 +27,58 @@ function readSetting<T>(settings: Map<string, unknown>, key: string, fallback: T
   return value !== undefined ? (value as T) : fallback;
 }
 
+function normalizeIngredientToken(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function createBootstrapIngredientImageLookup() {
+  const lookup = new Map<string, string>();
+
+  for (const ingredient of marketingBootstrap.ingredients) {
+    const keys = [ingredient.id, ingredient.name, ...ingredient.aliases];
+
+    for (const rawKey of keys) {
+      const key = normalizeIngredientToken(rawKey);
+
+      if (key && !lookup.has(key)) {
+        lookup.set(key, ingredient.image);
+      }
+    }
+  }
+
+  return lookup;
+}
+
+function resolveIngredientImage(
+  ingredient: {
+    id: string;
+    name: string;
+    aliases: string[];
+    image: string | null;
+  },
+  lookup: Map<string, string>
+) {
+  if (ingredient.image) {
+    return ingredient.image;
+  }
+
+  const candidates = [ingredient.id, ingredient.name, ...ingredient.aliases];
+
+  for (const candidate of candidates) {
+    const key = normalizeIngredientToken(candidate);
+    const match = key ? lookup.get(key) : null;
+
+    if (match) {
+      return match;
+    }
+  }
+
+  return null;
+}
+
 // Use a shared cache key that includes the version type
 export const getMarketingSnapshot = cache(async (mode: "published" | "draft" = "published"): Promise<MarketingSnapshot> => {
   if (!isDatabaseConfigured()) {
@@ -71,6 +123,8 @@ export const getMarketingSnapshot = cache(async (mode: "published" | "draft" = "
 
     const settings = new Map(settingRows.map((entry) => [entry.key, entry.value]));
 
+    const bootstrapIngredientImageLookup = createBootstrapIngredientImageLookup();
+
     return createMarketingSnapshot(
       {
         brand: readSetting(settings, "marketing_brand", marketingBootstrap.brand),
@@ -91,11 +145,24 @@ export const getMarketingSnapshot = cache(async (mode: "published" | "draft" = "
           flavor: product.flavor ?? undefined,
         })),
         ingredients: ingredients
-          .filter((ingredient) => ingredient.image)
-          .map((ingredient) => ({
-            ...ingredient,
-            image: ingredient.image ?? "",
-          })),
+          .map((ingredient) => {
+            const image = resolveIngredientImage(
+              ingredient,
+              bootstrapIngredientImageLookup
+            );
+
+            if (!image) {
+              return null;
+            }
+
+            return {
+              ...ingredient,
+              image,
+            };
+          })
+          .filter((ingredient): ingredient is NonNullable<typeof ingredient> =>
+            Boolean(ingredient)
+          ),
         homeSections: sectionRows.map((section) => ({
           sectionKey: section.sectionKey,
           sectionType: section.sectionType as MarketingSnapshot["homeSections"][number]["sectionType"],

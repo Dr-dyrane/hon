@@ -9,6 +9,7 @@
     "lint": "eslint",
     "db:migrate": "node scripts/db/apply-migrations.mjs",
     "db:seed": "node scripts/db/run-seeds.mjs",
+    "db:sync-ingredient-images": "node scripts/db/sync-ingredient-images-to-s3.mjs",
     "flow:verify": "tsx scripts/verify-request-flow.mts"
   },
   "dependencies": {

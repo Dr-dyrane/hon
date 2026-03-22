@@ -32,6 +32,8 @@ function applyEnvFile(filePath) {
 
 export function loadProjectEnv(rootDir = process.cwd()) {
   applyEnvFile(path.join(rootDir, ".vercel", ".env.development.local"));
+  applyEnvFile(path.join(rootDir, ".env.production.local"));
+  applyEnvFile(path.join(rootDir, ".env.preview.local"));
   applyEnvFile(path.join(rootDir, ".env.local"));
   applyEnvFile(path.join(rootDir, ".env"));
 }

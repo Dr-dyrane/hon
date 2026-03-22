@@ -23,27 +23,74 @@ export function CatalogTaxonomyManager({
   categories: AdminCatalogCategoryDetail[];
   ingredients: AdminCatalogIngredient[];
 }) {
+  const categoriesInUse = categories.filter((category) => category.productCount > 0).length;
+  const ingredientsInUse = ingredients.filter((ingredient) => ingredient.productCount > 0).length;
+
   return (
-    <div className="grid gap-6 2xl:grid-cols-[0.78fr_1.22fr]">
-      <section className="space-y-4">
-        <ComposerCard title="New Category">
-          <CategoryComposer />
-        </ComposerCard>
-        <div className="space-y-3">
-          {categories.map((category) => (
-            <CategoryCard key={category.categoryId} category={category} />
-          ))}
+    <div className="grid gap-6 xl:grid-cols-[minmax(320px,0.78fr)_minmax(0,1.22fr)]">
+      <section className="glass-morphism rounded-[32px] bg-[color:var(--surface)]/88 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
+              Catalog
+            </div>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-label">Categories</h2>
+          </div>
+          <span className="rounded-full bg-system-fill/56 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+            {categories.length}
+          </span>
+        </div>
+        <p className="mt-2 text-sm text-secondary-label">{categoriesInUse} linked to products.</p>
+
+        <div className="mt-5">
+          <ComposerCard title="Create category" detail="Group storefront products.">
+            <CategoryComposer />
+          </ComposerCard>
+        </div>
+
+        <div className="mt-4 grid gap-3">
+          {categories.length === 0 ? (
+            <div className="rounded-[24px] bg-system-fill/36 px-4 py-4 text-sm text-secondary-label">
+              No categories yet.
+            </div>
+          ) : (
+            categories.map((category) => (
+              <CategoryCard key={category.categoryId} category={category} />
+            ))
+          )}
         </div>
       </section>
 
-      <section className="space-y-4">
-        <ComposerCard title="New Ingredient">
-          <IngredientComposer />
-        </ComposerCard>
-        <div className="space-y-3">
-          {ingredients.map((ingredient) => (
-            <IngredientCard key={ingredient.ingredientId} ingredient={ingredient} />
-          ))}
+      <section className="glass-morphism rounded-[32px] bg-[color:var(--surface)]/88 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
+              Catalog
+            </div>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-label">Ingredients</h2>
+          </div>
+          <span className="rounded-full bg-system-fill/56 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+            {ingredients.length}
+          </span>
+        </div>
+        <p className="mt-2 text-sm text-secondary-label">{ingredientsInUse} linked to products.</p>
+
+        <div className="mt-5">
+          <ComposerCard title="Create ingredient" detail="Define reusable nutrition metadata.">
+            <IngredientComposer />
+          </ComposerCard>
+        </div>
+
+        <div className="mt-4 grid gap-3">
+          {ingredients.length === 0 ? (
+            <div className="rounded-[24px] bg-system-fill/36 px-4 py-4 text-sm text-secondary-label">
+              No ingredients yet.
+            </div>
+          ) : (
+            ingredients.map((ingredient) => (
+              <IngredientCard key={ingredient.ingredientId} ingredient={ingredient} />
+            ))
+          )}
         </div>
       </section>
     </div>
@@ -52,16 +99,19 @@ export function CatalogTaxonomyManager({
 
 function ComposerCard({
   title,
+  detail,
   children,
 }: {
   title: string;
+  detail: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="glass-morphism rounded-[32px] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+    <section className="rounded-[28px] bg-system-fill/34 p-4 sm:p-5">
       <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
         {title}
       </div>
+      <p className="mt-2 text-sm text-secondary-label">{detail}</p>
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -92,11 +142,13 @@ function CategoryComposer() {
           router.refresh();
         });
       }}
-      className="space-y-3"
+      className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px]"
     >
       <Field label="Name" name="categoryName" required />
       <Field label="Sort" name="sortOrder" type="number" defaultValue="0" />
-      <ActionRow message={message} pending={isPending} submitLabel="Create" />
+      <div className="sm:col-span-2">
+        <ActionRow message={message} pending={isPending} submitLabel="Create" />
+      </div>
     </form>
   );
 }
@@ -126,9 +178,9 @@ function CategoryCard({ category }: { category: AdminCatalogCategoryDetail }) {
           router.refresh();
         });
       }}
-      className="glass-morphism rounded-[32px] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]"
+      className="rounded-[28px] bg-system-fill/34 p-4 sm:p-5"
     >
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px_100px]">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px_120px]">
         <Field label="Name" name="categoryName" defaultValue={category.categoryName} required />
         <Field label="Sort" name="sortOrder" type="number" defaultValue={`${category.sortOrder}`} />
         <MetricPill label="Products" value={`${category.productCount}`} />
@@ -227,7 +279,7 @@ function IngredientCard({ ingredient }: { ingredient: AdminCatalogIngredient }) 
           router.refresh();
         });
       }}
-      className="glass-morphism rounded-[32px] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]"
+      className="rounded-[28px] bg-system-fill/34 p-4 sm:p-5"
     >
       <div className="grid gap-3 md:grid-cols-2">
         <Field
@@ -310,9 +362,7 @@ function ActionRow({
 }) {
   return (
     <div className="mt-4 flex flex-col gap-3 rounded-[24px] bg-system-fill/42 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <p className="rounded-[18px] bg-system-fill/32 px-3 py-2 text-xs font-medium text-secondary-label">
-        {message ?? "Ready."}
-      </p>
+      <p className="text-xs font-medium text-secondary-label">{message ?? "Ready."}</p>
       <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
         {dangerLabel && onDanger ? (
           <button
@@ -365,7 +415,7 @@ function Field({
       </label>
       <input
         {...props}
-        className="flex min-h-[48px] w-full rounded-[20px] bg-system-fill/42 px-4 text-sm text-label outline-none transition-all placeholder:text-tertiary-label focus:bg-system-fill/58"
+        className="flex min-h-[48px] w-full rounded-[20px] bg-[color:var(--surface)]/88 px-4 text-sm text-label outline-none transition-all placeholder:text-tertiary-label focus:bg-[color:var(--surface)]"
       />
     </div>
   );
@@ -383,7 +433,7 @@ function TextField({
       </label>
       <textarea
         {...props}
-        className="flex w-full resize-none rounded-[20px] bg-system-fill/42 px-4 py-3 text-sm text-label outline-none transition-all placeholder:text-tertiary-label focus:bg-system-fill/58"
+        className="flex w-full resize-none rounded-[20px] bg-[color:var(--surface)]/88 px-4 py-3 text-sm text-label outline-none transition-all placeholder:text-tertiary-label focus:bg-[color:var(--surface)]"
       />
     </div>
   );
