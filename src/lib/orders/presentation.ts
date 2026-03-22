@@ -12,6 +12,7 @@ export type OrderStagePresentation = {
     | "expired";
   label: string;
   detail: string;
+  nextAction: string;
   tone: OrderStageTone;
 };
 
@@ -64,6 +65,7 @@ export function getOrderStagePresentation(input: {
       key: "requested",
       label: "Request received",
       detail: "Waiting for approval",
+      nextAction: "Accept request",
       tone: "default",
     };
   }
@@ -73,6 +75,7 @@ export function getOrderStagePresentation(input: {
       key: "cancelled",
       label: "Cancelled",
       detail: "Order closed",
+      nextAction: "Closed",
       tone: "muted",
     };
   }
@@ -82,6 +85,7 @@ export function getOrderStagePresentation(input: {
       key: "expired",
       label: "Transfer window closed",
       detail: "Start a fresh order",
+      nextAction: "Closed",
       tone: "muted",
     };
   }
@@ -91,6 +95,7 @@ export function getOrderStagePresentation(input: {
       key: "delivered",
       label: "Delivered",
       detail: "Completed",
+      nextAction: "Completed",
       tone: "success",
     };
   }
@@ -103,6 +108,7 @@ export function getOrderStagePresentation(input: {
       key: "out_for_delivery",
       label: "Out for delivery",
       detail: "On the way",
+      nextAction: "Mark delivered",
       tone: "success",
     };
   }
@@ -112,6 +118,7 @@ export function getOrderStagePresentation(input: {
       key: "preparing",
       label: "Preparing order",
       detail: "Ready to send",
+      nextAction: "Send for delivery",
       tone: "default",
     };
   }
@@ -126,6 +133,7 @@ export function getOrderStagePresentation(input: {
       key: "preparing",
       label: "Preparing order",
       detail: "Payment confirmed",
+      nextAction: "Start preparing",
       tone: "default",
     };
   }
@@ -135,6 +143,7 @@ export function getOrderStagePresentation(input: {
       key: "money_sent",
       label: "Money sent",
       detail: "Checking transfer",
+      nextAction: "Confirm payment",
       tone: "default",
     };
   }
@@ -144,6 +153,7 @@ export function getOrderStagePresentation(input: {
       key: "money_sent",
       label: "Money sent",
       detail: "Waiting for confirmation",
+      nextAction: "Confirm payment",
       tone: "default",
     };
   }
@@ -153,6 +163,7 @@ export function getOrderStagePresentation(input: {
       key: "awaiting_transfer",
       label: "Awaiting transfer",
       detail: "Send payment again",
+      nextAction: "Wait for transfer",
       tone: "default",
     };
   }
@@ -161,6 +172,7 @@ export function getOrderStagePresentation(input: {
     key: "awaiting_transfer",
     label: "Awaiting transfer",
     detail: "Send payment",
+    nextAction: "Wait for transfer",
     tone: "default",
   };
 }
