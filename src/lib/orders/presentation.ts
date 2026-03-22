@@ -1,3 +1,5 @@
+import { resolveOrderLedgerState } from "@/lib/orders/ledger-policy";
+
 export type OrderStageTone = "default" | "success" | "muted";
 
 export type OrderStagePresentation = {
@@ -229,4 +231,71 @@ export function formatPaymentReviewActionLabel(value: string) {
 
 export function getPaymentReviewActionLabel(value: string) {
   return PAYMENT_REVIEW_BUTTON_LABELS[value] ?? value.replace(/_/g, " ");
+}
+
+export type PortalOrderEntryAction = {
+  label: "Pay now" | "Continue" | "Track" | "Open";
+  hrefKind: "detail" | "track";
+  emphasis: "primary" | "secondary";
+};
+
+export type PortalOrderLifecycleBucket =
+  | "action_required"
+  | "in_progress"
+  | "history";
+
+export function getPortalOrderEntryAction(input: {
+  status?: string | null;
+  paymentStatus?: string | null;
+  fulfillmentStatus?: string | null;
+}): PortalOrderEntryAction {
+  const ledger = resolveOrderLedgerState(input);
+
+  if (ledger.key === "awaiting_transfer") {
+    return {
+      label: "Pay now",
+      hrefKind: "detail",
+      emphasis: "primary",
+    };
+  }
+
+  if (ledger.key === "payment_submitted" || ledger.key === "payment_under_review") {
+    return {
+      label: "Continue",
+      hrefKind: "detail",
+      emphasis: "secondary",
+    };
+  }
+
+  if (["ready_for_dispatch", "out_for_delivery"].includes(input.fulfillmentStatus ?? "")) {
+    return {
+      label: "Track",
+      hrefKind: "track",
+      emphasis: "secondary",
+    };
+  }
+
+  return {
+    label: "Open",
+    hrefKind: "detail",
+    emphasis: "secondary",
+  };
+}
+
+export function getPortalOrderLifecycleBucket(input: {
+  status?: string | null;
+  paymentStatus?: string | null;
+  fulfillmentStatus?: string | null;
+}): PortalOrderLifecycleBucket {
+  const ledger = resolveOrderLedgerState(input);
+
+  if (ledger.key === "awaiting_transfer") {
+    return "action_required";
+  }
+
+  if (ledger.key === "delivered" || ledger.key === "closed") {
+    return "history";
+  }
+
+  return "in_progress";
 }

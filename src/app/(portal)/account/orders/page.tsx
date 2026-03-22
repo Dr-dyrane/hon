@@ -1,11 +1,27 @@
 import Link from "next/link";
-import { Clock3, PackageCheck } from "lucide-react";
-import { MetricRail } from "@/components/admin/MetricRail";
 import { requireAuthenticatedSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
+import type { PortalOrderListRow } from "@/lib/db/types";
 import { listOrdersForPortal } from "@/lib/db/repositories/orders-repository";
-import { resolveOrderLedgerState } from "@/lib/orders/ledger-policy";
-import { getOrderStagePresentation } from "@/lib/orders/presentation";
+import {
+  getOrderStagePresentation,
+  type PortalOrderEntryAction,
+  getPortalOrderEntryAction,
+  getPortalOrderLifecycleBucket,
+  type PortalOrderLifecycleBucket,
+} from "@/lib/orders/presentation";
+import { cn } from "@/lib/utils";
+import styles from "./orders-page.module.css";
+
+type OrderEntry = {
+  order: PortalOrderListRow;
+  stage: ReturnType<typeof getOrderStagePresentation>;
+  action: PortalOrderEntryAction;
+  bucket: PortalOrderLifecycleBucket;
+  href: string;
+};
+
+type BannerTone = "idle" | "active" | "action";
 
 function formatTimestamp(value?: string | null) {
   if (!value) {
@@ -18,161 +34,225 @@ function formatTimestamp(value?: string | null) {
   }).format(new Date(value));
 }
 
-function getOrderEntryAction(input: {
-  ledgerKey: ReturnType<typeof resolveOrderLedgerState>["key"];
-  fulfillmentStatus: string;
+function formatDate(value?: string | null) {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(value));
+}
+
+function getBannerState(input: {
+  activeCount: number;
+  needsActionCount: number;
 }) {
-  const { ledgerKey, fulfillmentStatus } = input;
-
-  if (ledgerKey === "awaiting_transfer" || ledgerKey === "payment_submitted" || ledgerKey === "payment_under_review") {
+  const { activeCount, needsActionCount } = input;
+  if (activeCount === 0) {
     return {
-      label: "Continue",
-      hrefKind: "detail" as const,
+      title: "All caught up",
+      detail: "No active orders right now.",
+      tone: "idle" as BannerTone,
     };
   }
 
-  if (["ready_for_dispatch", "out_for_delivery"].includes(fulfillmentStatus)) {
+  if (needsActionCount > 0) {
     return {
-      label: "Track",
-      hrefKind: "track" as const,
-    };
-  }
-
-  if (ledgerKey === "delivered") {
-    return {
-      label: "Review",
-      hrefKind: "detail" as const,
-    };
-  }
-
-  if (ledgerKey === "request_received") {
-    return {
-      label: "Awaiting",
-      hrefKind: "detail" as const,
+      title: `${needsActionCount} order${needsActionCount === 1 ? "" : "s"} need action`,
+      detail: "Complete required steps first.",
+      tone: "action" as BannerTone,
     };
   }
 
   return {
-    label: "Open",
-    hrefKind: "detail" as const,
+    title: `${activeCount} order${activeCount === 1 ? "" : "s"} in progress`,
+    detail: "Track progress or open details.",
+    tone: "active" as BannerTone,
   };
+}
+
+function getBucketFootnote(bucket: PortalOrderLifecycleBucket) {
+  if (bucket === "action_required") return "Needs action";
+  if (bucket === "in_progress") return "In progress";
+  return "Completed";
 }
 
 export default async function OrdersPage() {
   const session = await requireAuthenticatedSession("/account/orders");
   const orders = await listOrdersForPortal(session.email);
-  const activeOrders = orders.filter(
-    (order) => !["delivered", "cancelled", "expired"].includes(order.status)
-  ).length;
+
+  const entries = orders.map((order) => {
+    const stage = getOrderStagePresentation(order);
+    const action = getPortalOrderEntryAction(order);
+    const bucket = getPortalOrderLifecycleBucket(order);
+    const href =
+      action.hrefKind === "track"
+        ? `/account/tracking/${order.orderId}`
+        : `/account/orders/${order.orderId}`;
+
+    return {
+      order,
+      stage,
+      action,
+      bucket,
+      href,
+    };
+  });
+
+  const lifecycleRank: Record<PortalOrderLifecycleBucket, number> = {
+    action_required: 0,
+    in_progress: 1,
+    history: 2,
+  };
+
+  const sortedEntries = [...entries].sort((left, right) => {
+    const rank = lifecycleRank[left.bucket] - lifecycleRank[right.bucket];
+    if (rank !== 0) return rank;
+
+    return (
+      new Date(right.order.placedAt).getTime() - new Date(left.order.placedAt).getTime()
+    );
+  });
+
+  const activeEntries = sortedEntries.filter((entry) => entry.bucket !== "history");
+  const completedEntries = sortedEntries.filter((entry) => entry.bucket === "history");
+  const needsActionCount = entries.filter((entry) => entry.bucket === "action_required").length;
+
+  const bannerState = getBannerState({
+    activeCount: activeEntries.length,
+    needsActionCount,
+  });
 
   return (
-    <div className="space-y-8">
-      <section className="space-y-5">
-        <MetricRail
-          items={[
-            {
-              label: "Active",
-              value: `${activeOrders}`,
-              detail: "Live",
-              icon: Clock3,
-            },
-            {
-              label: "Total",
-              value: `${orders.length}`,
-              detail: "History",
-              icon: PackageCheck,
-              tone: "success",
-            },
-          ]}
-          columns={2}
-        />
-      </section>
-
-      <section className="space-y-4">
-        {orders.length === 0 ? (
-          <div className="glass-morphism rounded-[32px] bg-[color:var(--surface)]/88 p-6 text-sm text-secondary-label shadow-soft">
-            No orders yet.
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
-            {orders.map((order) => {
-              const stage = getOrderStagePresentation(order);
-              const ledger = resolveOrderLedgerState({
-                orderStatus: order.status,
-                paymentStatus: order.paymentStatus,
-                fulfillmentStatus: order.fulfillmentStatus,
-              });
-              const action = getOrderEntryAction({
-                ledgerKey: ledger.key,
-                fulfillmentStatus: order.fulfillmentStatus,
-              });
-              const orderHref =
-                action.hrefKind === "track"
-                  ? `/account/tracking/${order.orderId}`
-                  : `/account/orders/${order.orderId}`;
-
-              return (
-                <article
-                  key={order.orderId}
-                  className="glass-morphism rounded-[32px] bg-[color:var(--surface)]/88 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
-                >
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-[11px] font-semibold uppercase tracking-headline text-secondary-label">
-                          Order #{order.orderNumber}
-                        </p>
-                        <p className="mt-1 text-2xl font-semibold tracking-tight text-label">
-                          {formatNgn(order.totalNgn)}
-                        </p>
-                      </div>
-                      <OrderStatusBadge label={stage.label} tone={stage.tone} />
-                    </div>
-
-                    <div className="grid gap-2 md:hidden">
-                      <CompactOrderStat label="Date" value={formatTimestamp(order.placedAt)} />
-                      <CompactOrderStat
-                        label="Items"
-                        value={`${order.itemCount} item${order.itemCount === 1 ? "" : "s"}`}
-                      />
-                    </div>
-
-                    <div className="hidden md:flex md:flex-row md:items-start md:justify-between md:gap-3">
-                      <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-headline text-secondary-label">
-                          Status
-                        </p>
-                        <p className="mt-1 text-sm text-secondary-label">{stage.detail}</p>
-                      </div>
-                    </div>
-
-                    <div className="hidden md:grid md:grid-cols-2 md:gap-4 md:text-sm md:text-secondary-label">
-                      <div>{formatTimestamp(order.placedAt)}</div>
-                      <div className="md:text-right">
-                        {order.itemCount} item{order.itemCount === 1 ? "" : "s"}
-                      </div>
-                    </div>
-
-                    <div className="text-sm text-secondary-label md:hidden">{stage.detail}</div>
-
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs font-semibold uppercase tracking-headline text-secondary-label">
-                        {order.active ? stage.label : "Completed"}
-                      </span>
-                      <Link
-                        href={orderHref}
-                        className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-headline"
-                      >
-                        {action.label}
-                      </Link>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+    <div className={styles.page}>
+      <section
+        className={cn(
+          styles.stateBanner,
+          bannerState.tone === "action"
+            ? styles.bannerAction
+            : bannerState.tone === "active"
+              ? styles.bannerActive
+              : styles.bannerIdle
         )}
+      >
+        <h1 className={styles.bannerTitle}>{bannerState.title}</h1>
+        <p className={styles.bannerText}>{bannerState.detail}</p>
       </section>
+
+      {orders.length === 0 ? (
+        <section className={styles.emptyState}>
+          When you place an order, it appears here.
+        </section>
+      ) : (
+        <div className={styles.sectionStack}>
+          {activeEntries.length > 0 ? (
+            <OrderSection title="In progress" entries={activeEntries} />
+          ) : null}
+
+          {completedEntries.length > 0 ? (
+            <OrderSection
+              title={activeEntries.length === 0 ? "Orders" : "Completed"}
+              entries={completedEntries}
+            />
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OrderSection({
+  title,
+  entries,
+}: {
+  title: string;
+  entries: OrderEntry[];
+}) {
+  return (
+    <section className={styles.section}>
+      <header className={styles.sectionHeader}>
+        <h2 className={styles.sectionTitle}>{title}</h2>
+        <span className={styles.sectionCount}>{entries.length}</span>
+      </header>
+
+      <div className={styles.mobileBladeList}>
+        {entries.map((entry) => (
+          <details
+            key={entry.order.orderId}
+            className={cn(
+              styles.blade,
+              entry.bucket === "action_required" && styles.bladePriority
+            )}
+            open={entry.bucket === "action_required"}
+          >
+            <summary className={styles.bladeSummary}>
+              <div className={styles.bladeMain}>
+                <p className={styles.orderLabel}>Order #{entry.order.orderNumber}</p>
+                <p className={styles.bladeStatus}>{entry.stage.label}</p>
+              </div>
+              <div className={styles.bladeSide}>
+                <p className={styles.bladeTotal}>{formatNgn(entry.order.totalNgn)}</p>
+                <p className={styles.bladeDate}>{formatDate(entry.order.placedAt)}</p>
+              </div>
+            </summary>
+
+            <div className={styles.bladeContent}>
+              <OrderEntryBody entry={entry} />
+            </div>
+          </details>
+        ))}
+      </div>
+
+      <div className={styles.desktopGrid}>
+        {entries.map((entry) => (
+          <article
+            key={entry.order.orderId}
+            className={cn(
+              styles.card,
+              entry.bucket === "action_required" && styles.cardPriority
+            )}
+          >
+            <div className={styles.cardHeader}>
+              <div>
+                <p className={styles.orderLabel}>Order #{entry.order.orderNumber}</p>
+                <p className={styles.orderTotal}>{formatNgn(entry.order.totalNgn)}</p>
+              </div>
+              <OrderStatusBadge label={entry.stage.label} tone={entry.stage.tone} />
+            </div>
+
+            <OrderEntryBody entry={entry} />
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function OrderEntryBody({ entry }: { entry: OrderEntry }) {
+  return (
+    <div className={styles.entryBody}>
+      <p className={styles.stageDetail}>{entry.stage.detail}</p>
+
+      <div className={styles.metaRow}>
+        <CompactOrderStat label="Placed" value={formatTimestamp(entry.order.placedAt)} />
+        <CompactOrderStat
+          label="Items"
+          value={`${entry.order.itemCount} item${entry.order.itemCount === 1 ? "" : "s"}`}
+        />
+      </div>
+
+      <div className={styles.cardFooter}>
+        <span className={styles.footerState}>
+          {getBucketFootnote(entry.bucket)} - {formatDate(entry.order.placedAt)}
+        </span>
+        <Link
+          href={entry.href}
+          className={cn(
+            styles.actionButton,
+            entry.action.emphasis === "primary"
+              ? styles.actionButtonPrimary
+              : styles.actionButtonSecondary
+          )}
+        >
+          {entry.action.label}
+        </Link>
+      </div>
     </div>
   );
 }
@@ -185,11 +265,9 @@ function CompactOrderStat({
   value: string;
 }) {
   return (
-    <div className="rounded-[20px] bg-system-fill/42 px-4 py-3">
-      <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-        {label}
-      </div>
-      <div className="mt-1 text-sm font-medium text-label">{value}</div>
+    <div className={styles.metaItem}>
+      <div className={styles.metaLabel}>{label}</div>
+      <div className={styles.metaValue}>{value}</div>
     </div>
   );
 }
@@ -203,13 +281,13 @@ function OrderStatusBadge({
 }) {
   const toneClass =
     tone === "success"
-      ? "bg-accent/15 text-accent"
+      ? styles.statusSuccess
       : tone === "muted"
-        ? "bg-system-fill/56 text-tertiary-label"
-        : "bg-system-fill/70 text-secondary-label";
+        ? styles.statusMuted
+        : styles.statusDefault;
 
   return (
-    <span className={`rounded-full px-3 py-1 text-[11px] font-semibold tracking-tight ${toneClass}`}>
+    <span className={cn(styles.statusBadge, toneClass)}>
       {label}
     </span>
   );
