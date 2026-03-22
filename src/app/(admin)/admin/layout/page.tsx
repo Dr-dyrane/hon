@@ -3,35 +3,43 @@ import { MetricRail } from "@/components/admin/MetricRail";
 import {
   getLayoutDraftDetail,
   getPublishedPageSections,
+  listLayoutVersions,
 } from "@/lib/db/repositories/layout-repository";
 import { LayoutDashboard } from "@/components/admin/layout/LayoutDashboard";
 
 export default async function AdminLayoutPage() {
-  const publishedSections = await getPublishedPageSections("home");
-  const draftDetail = await getLayoutDraftDetail("home");
+  const [publishedSections, draftDetail, versions] = await Promise.all([
+    getPublishedPageSections("home"),
+    getLayoutDraftDetail("home"),
+    listLayoutVersions("home", 10),
+  ]);
 
   const publishedCount = publishedSections.length;
   const enabledCount = publishedSections.filter((section) => section.isEnabled).length;
+  const hasDraft = Boolean(draftDetail);
   const draftVersionId = draftDetail?.version.versionId || null;
-  const latestVersionLabel = publishedSections[0]?.versionLabel || "Bootstrap Home v1";
+  const latestVersionLabel =
+    versions.find((version) => version.status === "published")?.label ||
+    publishedSections[0]?.versionLabel ||
+    "Bootstrap Home v1";
   const metrics = [
     {
-      label: "Published",
-      value: publishedCount.toString(),
-      detail: `${enabledCount} on`,
+      label: "Sections",
+      value: `${enabledCount}`,
+      detail: `${publishedCount} total`,
       icon: Layers3,
     },
     {
-      label: "Version",
-      value: latestVersionLabel,
-      detail: "Live",
+      label: "Live",
+      value: "Ready",
+      detail: latestVersionLabel,
       icon: CheckCircle2,
       tone: "success" as const,
     },
     {
       label: "Draft",
-      value: draftVersionId ? "Edit" : "None",
-      detail: draftVersionId ? "Open" : "Empty",
+      value: hasDraft ? "Open" : "None",
+      detail: draftVersionId ? "Private edits" : "Create one",
       icon: FileStack,
     },
   ];
@@ -52,8 +60,20 @@ export default async function AdminLayoutPage() {
       </header>
 
       <MetricRail items={metrics} columns={3} />
+      <div className="md:hidden rounded-[20px] bg-[color:var(--surface)]/88 px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+          Live version
+        </p>
+        <p className="mt-1 truncate text-sm font-medium text-label">
+          {latestVersionLabel}
+        </p>
+      </div>
 
-      <LayoutDashboard publishedSections={publishedSections} draftDetail={draftDetail} />
+      <LayoutDashboard
+        publishedSections={publishedSections}
+        draftDetail={draftDetail}
+        versions={versions}
+      />
     </div>
   );
 }

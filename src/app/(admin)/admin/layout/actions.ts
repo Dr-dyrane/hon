@@ -83,3 +83,22 @@ export async function publishDraftAction(versionId: string) {
     return { success: false, error: "Failed to publish layout version." };
   }
 }
+
+export async function restoreLayoutVersionAction(versionId: string) {
+  if (!versionId) return { success: false, error: "Missing version ID" };
+
+  try {
+    const actor = await getAdminActor("/admin/layout");
+    await publishLayoutVersion(versionId, {
+      userId: actor.userId,
+      email: actor.email,
+      role: "admin",
+    });
+    revalidatePath("/admin/layout");
+    revalidatePath("/"); // Revalidate marketing home
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to restore version:", error);
+    return { success: false, error: "Failed to restore this version." };
+  }
+}

@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  getActiveShellNavItem,
   getShellMatchedRoute,
   isActiveShellPath,
+  type ShellFabAction,
   type ShellFabIcon,
   type ShellHeaderRoute,
   type ShellNavIcon,
@@ -55,8 +57,20 @@ export function WorkspaceNav({
   const feedback = useFeedback();
 
   if (mode === "mobile") {
+    const activeItem = getActiveShellNavItem(pathname, items);
+    const orderedItems = activeItem
+      ? [activeItem, ...items.filter((item) => item.href !== activeItem.href)]
+      : items;
     const matchedRoute = getShellMatchedRoute(pathname, headerRoutes);
-    const mobileFab = matchedRoute?.mobileFab ?? null;
+    const defaultAdminFab: ShellFabAction | null = pathname.startsWith("/admin")
+      ? {
+          label: "New product",
+          icon: "add",
+          kind: "link",
+          href: "/admin/catalog/products/new",
+        }
+      : null;
+    const mobileFab = matchedRoute?.mobileFab ?? defaultAdminFab;
 
     const handleMobileFab = () => {
       if (!mobileFab) {
@@ -100,7 +114,7 @@ export function WorkspaceNav({
           )}
         >
           <ul className="scrollbar-hide flex min-w-0 items-center gap-1 overflow-x-auto">
-            {items.map((item) => {
+            {orderedItems.map((item) => {
               const active = isActiveShellPath(pathname, item);
 
               return (

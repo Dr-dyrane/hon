@@ -239,6 +239,44 @@ export async function getLayoutDraftSectionDetail(
   return result.rows[0] ?? null;
 }
 
+export async function listLayoutVersions(
+  pageKey: string,
+  limit = 12
+): Promise<AdminLayoutVersion[]> {
+  if (!isDatabaseConfigured()) {
+    return [] satisfies AdminLayoutVersion[];
+  }
+
+  const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(50, limit)) : 12;
+  const result = await query<AdminLayoutVersion>(
+    `
+      select
+        pv.id as "versionId",
+        pv.page_id as "pageId",
+        pv.label,
+        pv.status,
+        pv.published_at as "publishedAt",
+        pv.created_at as "createdAt",
+        pv.updated_at as "updatedAt"
+      from app.pages p
+      inner join app.page_versions pv
+        on pv.page_id = p.id
+      where p.key = $1
+      order by
+        case pv.status
+          when 'published' then 0
+          when 'draft' then 1
+          else 2
+        end asc,
+        coalesce(pv.published_at, pv.updated_at, pv.created_at) desc
+      limit $2
+    `,
+    [pageKey, safeLimit]
+  );
+
+  return result.rows;
+}
+
 export async function ensureLayoutDraft(
   pageKey: string,
   actor?: DatabaseActorContext
