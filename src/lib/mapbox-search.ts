@@ -62,6 +62,10 @@ function getMapboxAccessToken() {
   return publicEnv.mapboxAccessToken;
 }
 
+function isMapboxGeocodingEnabled() {
+  return publicEnv.mapboxGeocodingEnabled;
+}
+
 function hasFeatureCoordinates(feature: MapboxFeature) {
   const latitude =
     feature.properties?.coordinates?.latitude ?? feature.geometry?.coordinates?.[1];
@@ -147,7 +151,7 @@ export async function searchMapboxAddresses(input: {
   const token = getMapboxAccessToken();
   const query = input.query.trim();
 
-  if (!token || query.length < 3) {
+  if (!token || !isMapboxGeocodingEnabled() || query.length < 3) {
     return [] as MapboxAddressSuggestion[];
   }
 
@@ -155,7 +159,6 @@ export async function searchMapboxAddresses(input: {
   url.searchParams.set("q", query);
   url.searchParams.set("access_token", token);
   url.searchParams.set("autocomplete", "true");
-  url.searchParams.set("permanent", "true");
   url.searchParams.set("country", "NG");
   url.searchParams.set("language", "en");
   url.searchParams.set("limit", "5");
@@ -181,7 +184,7 @@ export async function reverseMapboxAddress(input: {
 }) {
   const token = getMapboxAccessToken();
 
-  if (!token) {
+  if (!token || !isMapboxGeocodingEnabled()) {
     return null;
   }
 
@@ -189,7 +192,6 @@ export async function reverseMapboxAddress(input: {
   url.searchParams.set("latitude", String(input.latitude));
   url.searchParams.set("longitude", String(input.longitude));
   url.searchParams.set("access_token", token);
-  url.searchParams.set("permanent", "true");
   url.searchParams.set("language", "en");
   url.searchParams.set("country", "NG");
 
