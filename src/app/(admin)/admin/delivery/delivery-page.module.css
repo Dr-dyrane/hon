@@ -1,0 +1,578 @@
+.page {
+  display: grid;
+  gap: 1rem;
+  padding-bottom: 5rem;
+}
+
+.hero {
+  border-radius: 2rem;
+  box-shadow: var(--shadow-soft);
+  padding: 1.1rem 1rem;
+}
+
+.heroIdle {
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+}
+
+.heroActive {
+  background: color-mix(in srgb, var(--surface) 84%, var(--accent) 16%);
+}
+
+.heroOverloaded {
+  background: color-mix(in srgb, var(--surface) 78%, var(--accent) 22%);
+}
+
+.heroEyebrow {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.heroTitle {
+  margin: 0.32rem 0 0;
+  color: var(--label);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+.heroDetail {
+  margin: 0.42rem 0 0;
+  color: var(--secondary-label);
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.heroActions {
+  margin-top: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.52rem;
+}
+
+.primaryLink,
+.secondaryLink,
+.primaryButton,
+.secondaryButton {
+  min-height: 2.5rem;
+  border-radius: 999px;
+  border: 0;
+  padding: 0 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+  transition:
+    transform var(--duration-fast) var(--ease-premium),
+    background-color var(--duration-base) var(--ease-premium),
+    color var(--duration-base) var(--ease-premium),
+    opacity var(--duration-fast) var(--ease-premium);
+}
+
+.primaryLink,
+.primaryButton {
+  background: var(--accent);
+  color: var(--accent-label);
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+}
+
+.secondaryLink,
+.secondaryButton {
+  background: color-mix(in srgb, var(--surface-alt) 78%, transparent);
+  color: var(--label);
+  cursor: pointer;
+}
+
+.primaryLink:hover,
+.secondaryLink:hover,
+.primaryButton:hover,
+.secondaryButton:hover {
+  transform: translateY(-1px);
+}
+
+.activityPill {
+  margin-top: 0.8rem;
+  width: fit-content;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-alt) 72%, transparent);
+  color: var(--secondary-label);
+  padding: 0.36rem 0.72rem;
+  font-size: 0.71rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.primaryWorkflow {
+  border-radius: 2rem;
+  box-shadow: var(--shadow-card);
+  padding: 1rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.workflowIdle {
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+}
+
+.workflowActive {
+  background: color-mix(in srgb, var(--surface) 86%, var(--accent) 14%);
+}
+
+.workflowOverloaded {
+  background: color-mix(in srgb, var(--surface) 82%, var(--accent) 18%);
+}
+
+.workflowHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.panelEyebrow {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.workflowTitle {
+  margin: 0.26rem 0 0;
+  color: var(--label);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.workflowDetail {
+  margin: 0.26rem 0 0;
+  color: var(--secondary-label);
+  font-size: 0.83rem;
+  line-height: 1.35;
+}
+
+.workflowBadge,
+.stageCount {
+  min-height: 1.65rem;
+  border-radius: 999px;
+  padding: 0 0.62rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--surface-alt) 72%, transparent);
+  color: var(--secondary-label);
+  font-size: 0.61rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+  white-space: nowrap;
+}
+
+.workflowActionGrid {
+  display: grid;
+  gap: 0.52rem;
+}
+
+.workflowAction {
+  min-height: 3rem;
+  border-radius: 1.1rem;
+  background: color-mix(in srgb, var(--surface-alt) 76%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  text-decoration: none;
+  padding: 0.72rem 0.8rem;
+  transition: background-color var(--duration-base) var(--ease-premium);
+}
+
+.workflowAction:hover {
+  background: color-mix(in srgb, var(--surface-alt) 88%, transparent);
+}
+
+.workflowActionMain {
+  min-width: 0;
+}
+
+.workflowActionLabel {
+  margin: 0;
+  color: var(--label);
+  font-size: 0.79rem;
+  font-weight: 600;
+}
+
+.workflowActionDetail {
+  margin: 0.12rem 0 0;
+  color: var(--secondary-label);
+  font-size: 0.67rem;
+  line-height: 1.3;
+}
+
+.workflowActionSide {
+  display: grid;
+  justify-items: end;
+  gap: 0.1rem;
+}
+
+.workflowActionValue {
+  color: var(--label);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.workflowActionMeta {
+  color: var(--secondary-label);
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.boardGrid {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.stageGrid {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.sideGrid {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.stageCard,
+.rosterCard,
+.liveSurfaceShell {
+  border-radius: 2rem;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  box-shadow: var(--shadow-card);
+  padding: 1rem;
+  display: grid;
+  gap: 0.62rem;
+}
+
+.liveSurfaceShell :global(section) {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.stageHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.72rem;
+}
+
+.stageTitle {
+  margin: 0;
+  color: var(--label);
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.emptyStage {
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, var(--surface-alt) 74%, transparent);
+  color: var(--secondary-label);
+  font-size: 0.78rem;
+  line-height: 1.36;
+  padding: 0.75rem;
+}
+
+.orderStack,
+.riderStack {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.orderCard {
+  border-radius: 1.3rem;
+  background: color-mix(in srgb, var(--surface-alt) 74%, transparent);
+  padding: 0.72rem;
+  display: grid;
+  gap: 0.48rem;
+}
+
+.orderHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.55rem;
+}
+
+.orderMain {
+  min-width: 0;
+}
+
+.orderEyebrow {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.56rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.orderCustomer {
+  margin: 0.12rem 0 0;
+  color: var(--label);
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.orderChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.28rem;
+}
+
+.stageChip {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-alt) 72%, transparent);
+  color: var(--secondary-label);
+  padding: 0.2rem 0.42rem;
+  font-size: 0.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.orderAddressBlock {
+  display: grid;
+  gap: 0.16rem;
+  color: var(--secondary-label);
+  font-size: 0.74rem;
+  line-height: 1.34;
+}
+
+.orderAddressBlock p {
+  margin: 0;
+}
+
+.orderRider {
+  color: var(--label);
+  font-weight: 500;
+}
+
+.orderMetaGrid {
+  display: grid;
+  gap: 0.42rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.metaStat {
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface-alt) 80%, transparent);
+  padding: 0.48rem 0.56rem;
+}
+
+.metaValue {
+  margin: 0;
+  color: var(--label);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.metaLabel {
+  margin: 0.16rem 0 0;
+  color: var(--secondary-label);
+  font-size: 0.58rem;
+  line-height: 1.3;
+}
+
+.metaLinkStack {
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface-alt) 80%, transparent);
+  padding: 0.48rem 0.56rem;
+  display: grid;
+  gap: 0.24rem;
+  align-content: start;
+}
+
+.metaLink {
+  color: var(--secondary-label);
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+  text-decoration: none;
+}
+
+.metaLink:hover {
+  color: var(--label);
+}
+
+.eventLabel {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.56rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.controlsWrap {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.controlStack {
+  display: grid;
+  gap: 0.36rem;
+}
+
+.controlFormWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.36rem;
+}
+
+.controlForm {
+  display: flex;
+}
+
+.selectInput,
+.riderInput {
+  min-height: 2.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-alt) 78%, transparent);
+  color: var(--label);
+  padding: 0 0.78rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+  outline: none;
+}
+
+.riderForm {
+  display: grid;
+  gap: 0.38rem;
+}
+
+.riderCard {
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, var(--surface-alt) 74%, transparent);
+  padding: 0.72rem;
+}
+
+.riderHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.riderName {
+  margin: 0;
+  color: var(--label);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.riderDetail {
+  margin: 0.16rem 0 0;
+  color: var(--secondary-label);
+  font-size: 0.7rem;
+  line-height: 1.3;
+}
+
+.riderStatusCol {
+  display: grid;
+  justify-items: end;
+  gap: 0.25rem;
+}
+
+.riderOrder {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.54rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.primaryLink:focus-visible,
+.secondaryLink:focus-visible,
+.workflowAction:focus-visible,
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.selectInput:focus-visible,
+.riderInput:focus-visible,
+.metaLink:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--shadow-soft),
+    0 0 0 6px color-mix(in srgb, var(--ring) 22%, transparent);
+}
+
+@media (min-width: 768px) {
+  .page {
+    gap: 1.15rem;
+  }
+
+  .hero,
+  .primaryWorkflow,
+  .stageCard,
+  .rosterCard,
+  .liveSurfaceShell {
+    padding: 1.2rem 1.25rem;
+  }
+
+  .heroTitle {
+    font-size: 1.7rem;
+  }
+
+  .workflowActionGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1120px) {
+  .boardGrid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+    align-items: start;
+  }
+
+  .stageGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stageGrid > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryLink,
+  .secondaryLink,
+  .primaryButton,
+  .secondaryButton,
+  .workflowAction,
+  .metaLink {
+    transition: none;
+  }
+}

@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { CheckCircle2, MessageCircleMore, Sparkles } from "lucide-react";
-import { MetricRail } from "@/components/admin/MetricRail";
+import { AdminReviewModerationCard } from "@/components/reviews/AdminReviewModerationCard";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { listReviewsForAdmin } from "@/lib/db/repositories/review-repository";
-import { AdminReviewModerationCard } from "@/components/reviews/AdminReviewModerationCard";
+import styles from "./reviews-page.module.css";
+
+type ReviewsTone = "idle" | "active" | "overloaded";
+type AdminReviewEntry = Awaited<ReturnType<typeof listReviewsForAdmin>>[number];
 
 function formatTimestamp(value?: string | null) {
   if (!value) {
@@ -20,122 +22,341 @@ function formatStatusLabel(value: string) {
   return value.replace(/_/g, " ");
 }
 
+function resolveTone(pendingCount: number): ReviewsTone {
+  if (pendingCount >= 6) {
+    return "overloaded";
+  }
+
+  if (pendingCount > 0) {
+    return "active";
+  }
+
+  return "idle";
+}
+
+function getHeroState(input: {
+  tone: ReviewsTone;
+  pendingCount: number;
+  approvedCount: number;
+  featuredCount: number;
+}) {
+  const { tone, pendingCount, approvedCount, featuredCount } = input;
+
+  if (tone === "overloaded") {
+    return {
+      title: "Moderation queue pressure is high.",
+      detail: `${pendingCount} reviews are waiting. Approve or hide submissions before queue freshness drops.`,
+      primaryActionHref: "#moderation-queue",
+      primaryActionLabel: "Moderate now",
+      pill: "Escalated review queue",
+    };
+  }
+
+  if (tone === "active") {
+    return {
+      title: `${pendingCount} review${pendingCount === 1 ? "" : "s"} need moderation.`,
+      detail: "Process pending reviews first, then tune featured picks.",
+      primaryActionHref: "#moderation-queue",
+      primaryActionLabel: "Open moderation queue",
+      pill: "Moderation queue active",
+    };
+  }
+
+  if (approvedCount > 0 || featuredCount > 0) {
+    return {
+      title: "Moderation queue is clear.",
+      detail: "Published reviews are stable. Keep featured picks aligned with storefront priorities.",
+      primaryActionHref: "#review-archive",
+      primaryActionLabel: "Open published reviews",
+      pill: "No pending moderation",
+    };
+  }
+
+  return {
+    title: "No reviews yet.",
+    detail: "Published customer feedback will appear here after delivered orders are rated.",
+    primaryActionHref: "/admin/orders",
+    primaryActionLabel: "Open order board",
+    pill: "Awaiting first reviews",
+  };
+}
+
+function getWorkflowState(input: {
+  tone: ReviewsTone;
+  pendingCount: number;
+}) {
+  const { tone, pendingCount } = input;
+
+  if (tone === "overloaded") {
+    return {
+      title: "Triage moderation queue.",
+      detail: "Work through pending feedback first, then return to featured curation.",
+      badge: "Overload",
+      emptyDetail: "No pending reviews right now. Continue with featured and visibility checks.",
+    };
+  }
+
+  if (tone === "active") {
+    return {
+      title: "Process pending reviews.",
+      detail: "Approve high-quality feedback and hide anything that should stay off storefront surfaces.",
+      badge: "Active",
+      emptyDetail: "No pending reviews right now. Continue with featured and visibility checks.",
+    };
+  }
+
+  return {
+    title: "No moderation queue.",
+    detail:
+      pendingCount === 0
+        ? "You can focus on featured selection and catalog quality."
+        : "Queue activity is low.",
+    badge: "Clear",
+    emptyDetail: "No pending reviews right now. Continue with featured and visibility checks.",
+  };
+}
+
+function getStatusTone(status: string) {
+  if (status === "pending") {
+    return "priority" as const;
+  }
+
+  if (status === "approved") {
+    return "success" as const;
+  }
+
+  return "default" as const;
+}
+
 export default async function AdminReviewsPage() {
   const session = await requireAdminSession("/admin/reviews");
   const reviews = await listReviewsForAdmin(session.email);
-  const pendingCount = reviews.filter((review) => review.status === "pending").length;
+
+  const moderationQueue = reviews.filter((review) => review.status === "pending");
+  const archiveReviews = reviews.filter((review) => review.status !== "pending");
+
+  const pendingCount = moderationQueue.length;
   const approvedCount = reviews.filter((review) => review.status === "approved").length;
   const featuredCount = reviews.filter((review) => review.isFeatured).length;
+  const hiddenCount = reviews.filter((review) => review.status === "hidden").length;
+
+  const tone = resolveTone(pendingCount);
+  const heroState = getHeroState({ tone, pendingCount, approvedCount, featuredCount });
+  const workflowState = getWorkflowState({ tone, pendingCount });
+  const queueSummary = `${pendingCount} pending - ${approvedCount} approved - ${featuredCount} featured`;
 
   return (
-    <div className="space-y-8 pb-20 md:space-y-10">
-      <MetricRail
-        items={[
-          {
-            label: "Pending",
-            value: `${pendingCount}`,
-            detail: "Need moderation",
-            icon: MessageCircleMore,
-          },
-          {
-            label: "Approved",
-            value: `${approvedCount}`,
-            detail: "Visible",
-            icon: CheckCircle2,
-            tone: "success",
-          },
-          {
-            label: "Featured",
-            value: `${featuredCount}`,
-            detail: "Promoted",
-            icon: Sparkles,
-          },
-        ]}
-        columns={3}
-      />
+    <div className={styles.page}>
+      <section
+        className={`${styles.hero} ${tone === "overloaded" ? styles.heroOverloaded : tone === "active" ? styles.heroActive : styles.heroIdle}`}
+      >
+        <p className={styles.heroEyebrow}>Reviews overview</p>
+        <h1 className={styles.heroTitle}>{heroState.title}</h1>
+        <p className={styles.heroDetail}>{heroState.detail}</p>
 
-      <section className="space-y-4">
-        {reviews.length === 0 ? (
-          <div className="glass-morphism rounded-[32px] bg-[color:var(--surface)]/88 p-6 text-sm text-secondary-label shadow-soft">
-            No reviews yet.
+        <div className={styles.heroActions}>
+          <Link href={heroState.primaryActionHref} className={styles.primaryAction}>
+            {heroState.primaryActionLabel}
+          </Link>
+          <Link href="/admin/orders" className={styles.secondaryAction}>
+            Open orders
+          </Link>
+        </div>
+
+        <div className={styles.activityPill}>
+          {tone === "idle" ? heroState.pill : queueSummary}
+        </div>
+      </section>
+
+      <section
+        className={`${styles.primaryWorkflow} ${tone === "overloaded" ? styles.workflowOverloaded : tone === "active" ? styles.workflowActive : styles.workflowIdle}`}
+      >
+        <div className={styles.workflowHead}>
+          <div>
+            <p className={styles.panelEyebrow}>Primary workflow</p>
+            <h2 className={styles.workflowTitle}>{workflowState.title}</h2>
+            <p className={styles.workflowDetail}>{workflowState.detail}</p>
+          </div>
+          <span className={styles.workflowBadge}>{workflowState.badge}</span>
+        </div>
+
+        <div className={styles.workflowActionGrid}>
+          <QueueAction
+            href="#moderation-queue"
+            label="Pending"
+            detail="Waiting moderation"
+            value={`${pendingCount}`}
+            actionLabel="Open"
+          />
+          <QueueAction
+            href="#review-archive"
+            label="Approved"
+            detail="Published feedback"
+            value={`${approvedCount}`}
+            actionLabel="Review"
+          />
+          <QueueAction
+            href="#review-archive"
+            label="Featured"
+            detail="Promoted picks"
+            value={`${featuredCount}`}
+            actionLabel="Tune"
+          />
+        </div>
+      </section>
+
+      <section id="moderation-queue" className={styles.queueSection}>
+        <header className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Moderation queue</h2>
+          <span className={styles.sectionCount}>{pendingCount}</span>
+        </header>
+
+        {pendingCount === 0 ? (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyText}>{workflowState.emptyDetail}</p>
+            <div className={styles.emptyActions}>
+              <Link href="#review-archive" className={styles.emptyAction}>
+                Open published reviews
+              </Link>
+              <Link href="/admin/orders" className={styles.emptyAction}>
+                Open order board
+              </Link>
+            </div>
           </div>
         ) : (
-          reviews.map((review) => (
-            <article
-              key={review.reviewId}
-              className="glass-morphism rounded-[32px] bg-[color:var(--surface)]/88 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
-            >
-              <div className="flex flex-col gap-4 min-[980px]:flex-row min-[980px]:items-start min-[980px]:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-lg font-semibold tracking-tight text-label">
-                      #{review.orderNumber}
-                    </div>
-                    <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-                      {formatStatusLabel(review.status)}
-                    </span>
-                    {review.isFeatured ? (
-                      <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-                        Featured
-                      </span>
-                    ) : null}
-                  </div>
+          <div className={styles.cardGrid}>
+            {moderationQueue.map((review) => (
+              <ReviewCard key={review.reviewId} review={review} priority />
+            ))}
+          </div>
+        )}
+      </section>
 
-                  <div className="mt-2 text-2xl font-semibold text-label">{review.rating}/5</div>
+      <section id="review-archive" className={styles.archiveSection}>
+        {archiveReviews.length === 0 ? (
+          <div className={styles.emptyArchive}>No published or hidden reviews yet.</div>
+        ) : (
+          <details className={styles.archiveDisclosure} open={pendingCount === 0}>
+            <summary className={styles.archiveSummary}>
+              <span className={styles.archiveTitle}>Published and hidden</span>
+              <span className={styles.archiveBadge}>{archiveReviews.length}</span>
+            </summary>
 
-                  <div className="mt-3 grid gap-3 text-sm text-secondary-label sm:grid-cols-2 xl:grid-cols-4">
-                    <MetaItem label="Customer" value={review.customerName} />
-                    <MetaItem label="Email" value={review.customerEmail ?? "No email"} />
-                    <MetaItem label="Created" value={formatTimestamp(review.createdAt)} />
-                    <MetaItem
-                      label="Moderated"
-                      value={review.moderatedAt ? formatTimestamp(review.moderatedAt) : "-"}
-                    />
-                  </div>
+            <div className={styles.archiveMetaRow}>
+              <ArchiveMetaItem label="Approved" value={`${approvedCount}`} />
+              <ArchiveMetaItem label="Hidden" value={`${hiddenCount}`} />
+              <ArchiveMetaItem label="Featured" value={`${featuredCount}`} />
+            </div>
 
-                  {review.title ? (
-                    <div className="mt-4 text-base font-semibold text-label">{review.title}</div>
-                  ) : null}
-                  {review.body ? (
-                    <div className="mt-2 text-sm leading-relaxed text-secondary-label">
-                      {review.body}
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="min-w-[160px] shrink-0">
-                  <div className="flex justify-end">
-                    <Link
-                      href={`/admin/orders/${review.orderId}`}
-                      className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
-                    >
-                      Open
-                    </Link>
-                  </div>
-                  <div className="mt-4">
-                    <AdminReviewModerationCard
-                      reviewId={review.reviewId}
-                      status={review.status}
-                      isFeatured={review.isFeatured}
-                    />
-                  </div>
-                </div>
-              </div>
-            </article>
-          ))
+            <div className={styles.cardGrid}>
+              {archiveReviews.map((review) => (
+                <ReviewCard key={review.reviewId} review={review} />
+              ))}
+            </div>
+          </details>
         )}
       </section>
     </div>
   );
 }
 
+function QueueAction({
+  href,
+  label,
+  detail,
+  value,
+  actionLabel,
+}: {
+  href: string;
+  label: string;
+  detail: string;
+  value: string;
+  actionLabel: string;
+}) {
+  return (
+    <Link href={href} className={styles.workflowAction}>
+      <div className={styles.workflowActionMain}>
+        <p className={styles.workflowActionLabel}>{label}</p>
+        <p className={styles.workflowActionDetail}>{detail}</p>
+      </div>
+      <div className={styles.workflowActionSide}>
+        <span className={styles.workflowActionValue}>{value}</span>
+        <span className={styles.workflowActionMeta}>{actionLabel}</span>
+      </div>
+    </Link>
+  );
+}
+
+function ReviewCard({
+  review,
+  priority = false,
+}: {
+  review: AdminReviewEntry;
+  priority?: boolean;
+}) {
+  const statusTone = getStatusTone(review.status);
+
+  return (
+    <article className={`${styles.reviewCard} ${priority ? styles.reviewCardPriority : ""}`}>
+      <div className={styles.reviewHead}>
+        <div>
+          <p className={styles.reviewOrder}>#{review.orderNumber}</p>
+          <p className={styles.reviewRating}>{review.rating}/5</p>
+        </div>
+
+        <div className={styles.reviewTags}>
+          <span
+            className={`${styles.reviewTag} ${statusTone === "priority" ? styles.reviewTagPriority : statusTone === "success" ? styles.reviewTagSuccess : styles.reviewTagDefault}`}
+          >
+            {formatStatusLabel(review.status)}
+          </span>
+          {review.isFeatured ? <span className={styles.reviewTag}>Featured</span> : null}
+        </div>
+      </div>
+
+      <div className={styles.metaGrid}>
+        <MetaItem label="Customer" value={review.customerName} />
+        <MetaItem label="Email" value={review.customerEmail ?? "No email"} />
+        <MetaItem label="Created" value={formatTimestamp(review.createdAt)} />
+        <MetaItem
+          label="Moderated"
+          value={review.moderatedAt ? formatTimestamp(review.moderatedAt) : "-"}
+        />
+      </div>
+
+      {review.title ? <p className={styles.reviewTitle}>{review.title}</p> : null}
+      {review.body ? <p className={styles.reviewBody}>{review.body}</p> : null}
+
+      <div className={styles.reviewFooter}>
+        <Link href={`/admin/orders/${review.orderId}`} className={styles.openOrderAction}>
+          Open order
+        </Link>
+        <div className={styles.moderationWrap}>
+          <AdminReviewModerationCard
+            reviewId={review.reviewId}
+            status={review.status}
+            isFeatured={review.isFeatured}
+          />
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] bg-system-fill/42 px-4 py-3">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-        {label}
-      </div>
-      <div className="mt-1 truncate text-sm font-medium text-label">{value}</div>
+    <div className={styles.metaItem}>
+      <p className={styles.metaLabel}>{label}</p>
+      <p className={styles.metaValue}>{value}</p>
+    </div>
+  );
+}
+
+function ArchiveMetaItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className={styles.archiveMetaItem}>
+      <p className={styles.archiveMetaLabel}>{label}</p>
+      <p className={styles.archiveMetaValue}>{value}</p>
     </div>
   );
 }

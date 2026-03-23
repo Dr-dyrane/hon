@@ -1,0 +1,441 @@
+.page {
+  display: grid;
+  gap: 1rem;
+  padding-bottom: 5rem;
+}
+
+.hero {
+  border-radius: 2rem;
+  box-shadow: var(--shadow-soft);
+  padding: 1.1rem 1rem;
+}
+
+.heroIdle {
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+}
+
+.heroWatch {
+  background: color-mix(in srgb, var(--surface) 85%, var(--accent) 15%);
+}
+
+.heroActive {
+  background: color-mix(in srgb, var(--surface) 80%, var(--accent) 20%);
+}
+
+.heroEyebrow {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.heroIdentity {
+  margin: 0.32rem 0 0;
+  color: var(--secondary-label);
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.heroTitle {
+  margin: 0.2rem 0 0;
+  color: var(--label);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+.heroDetail {
+  margin: 0.42rem 0 0;
+  color: var(--secondary-label);
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.heroActions {
+  margin-top: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.52rem;
+}
+
+.primaryAction,
+.secondaryAction,
+.workflowAction,
+.orderCard {
+  text-decoration: none;
+}
+
+.primaryAction,
+.secondaryAction {
+  min-height: 2.5rem;
+  border-radius: 999px;
+  padding: 0 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+  transition:
+    transform var(--duration-fast) var(--ease-premium),
+    background-color var(--duration-base) var(--ease-premium),
+    color var(--duration-base) var(--ease-premium);
+}
+
+.primaryAction {
+  background: var(--accent);
+  color: var(--accent-label);
+  box-shadow: var(--shadow-soft);
+}
+
+.secondaryAction {
+  background: color-mix(in srgb, var(--surface-alt) 78%, transparent);
+  color: var(--label);
+}
+
+.primaryAction:hover,
+.secondaryAction:hover {
+  transform: translateY(-1px);
+}
+
+.activityPill {
+  margin-top: 0.8rem;
+  width: fit-content;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-alt) 72%, transparent);
+  color: var(--secondary-label);
+  padding: 0.36rem 0.72rem;
+  font-size: 0.71rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.primaryWorkflow {
+  border-radius: 2rem;
+  box-shadow: var(--shadow-card);
+  padding: 1rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.workflowIdle {
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+}
+
+.workflowWatch {
+  background: color-mix(in srgb, var(--surface) 86%, var(--accent) 14%);
+}
+
+.workflowActive {
+  background: color-mix(in srgb, var(--surface) 82%, var(--accent) 18%);
+}
+
+.workflowHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.panelEyebrow {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.workflowTitle {
+  margin: 0.26rem 0 0;
+  color: var(--label);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.workflowDetail {
+  margin: 0.26rem 0 0;
+  color: var(--secondary-label);
+  font-size: 0.83rem;
+  line-height: 1.35;
+}
+
+.workflowBadge {
+  min-height: 1.65rem;
+  border-radius: 999px;
+  padding: 0 0.62rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--surface-alt) 70%, transparent);
+  color: var(--secondary-label);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+  white-space: nowrap;
+}
+
+.workflowActionGrid {
+  display: grid;
+  gap: 0.52rem;
+}
+
+.workflowAction {
+  min-height: 2.9rem;
+  border-radius: 1.1rem;
+  background: color-mix(in srgb, var(--surface-alt) 76%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0.72rem 0.8rem;
+  transition: background-color var(--duration-base) var(--ease-premium);
+}
+
+.workflowAction:hover {
+  background: color-mix(in srgb, var(--surface-alt) 88%, transparent);
+}
+
+.workflowActionMain {
+  min-width: 0;
+}
+
+.workflowActionLabel {
+  margin: 0;
+  color: var(--label);
+  font-size: 0.79rem;
+  font-weight: 600;
+}
+
+.workflowActionDetail {
+  margin: 0.12rem 0 0;
+  color: var(--secondary-label);
+  font-size: 0.67rem;
+  line-height: 1.3;
+}
+
+.workflowActionMeta {
+  color: var(--secondary-label);
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.readinessStrip {
+  border-radius: 1.1rem;
+  background: color-mix(in srgb, var(--surface-alt) 76%, transparent);
+  padding: 0.7rem 0.8rem;
+  display: grid;
+  gap: 0.44rem;
+}
+
+.readinessLabel {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.readinessChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+}
+
+.readinessChip {
+  min-height: 1.7rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-alt) 84%, transparent);
+  color: var(--label);
+  padding: 0 0.54rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.56rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.contentGrid {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.ordersPanel,
+.crmPanel {
+  border-radius: 2rem;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  box-shadow: var(--shadow-card);
+  padding: 1rem;
+  display: grid;
+  gap: 0.72rem;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.panelTitle {
+  margin: 0;
+  color: var(--label);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.panelBadge {
+  min-height: 1.65rem;
+  border-radius: 999px;
+  padding: 0 0.62rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--surface-alt) 72%, transparent);
+  color: var(--secondary-label);
+  font-size: 0.61rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.orderList {
+  display: grid;
+  gap: 0.52rem;
+}
+
+.orderCard {
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, var(--surface-alt) 74%, transparent);
+  padding: 0.72rem 0.8rem;
+  display: grid;
+  gap: 0.44rem;
+  transition: background-color var(--duration-base) var(--ease-premium);
+}
+
+.orderCard:hover {
+  background: color-mix(in srgb, var(--surface-alt) 86%, transparent);
+}
+
+.orderCardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.orderLabel {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.orderNumber {
+  margin: 0.14rem 0 0;
+  color: var(--label);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.orderAmount {
+  margin: 0;
+  color: var(--label);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.orderMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.34rem;
+}
+
+.orderMeta {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-alt) 82%, transparent);
+  color: var(--secondary-label);
+  padding: 0.2rem 0.42rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.emptyOrders {
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, var(--surface-alt) 74%, transparent);
+  color: var(--secondary-label);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  padding: 0.8rem;
+}
+
+.crmDetail {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.8rem;
+  line-height: 1.38;
+}
+
+.primaryAction:focus-visible,
+.secondaryAction:focus-visible,
+.workflowAction:focus-visible,
+.orderCard:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--shadow-soft),
+    0 0 0 6px color-mix(in srgb, var(--ring) 22%, transparent);
+}
+
+@media (min-width: 768px) {
+  .page {
+    gap: 1.15rem;
+  }
+
+  .hero,
+  .primaryWorkflow,
+  .ordersPanel,
+  .crmPanel {
+    padding: 1.2rem 1.25rem;
+  }
+
+  .heroTitle {
+    font-size: 1.7rem;
+  }
+
+  .workflowActionGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1160px) {
+  .contentGrid {
+    grid-template-columns: minmax(0, 1fr) minmax(380px, 0.95fr);
+    align-items: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryAction,
+  .secondaryAction,
+  .workflowAction,
+  .orderCard {
+    transition: none;
+  }
+}

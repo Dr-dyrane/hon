@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import { MapPinHouse, Phone, UserRoundCheck } from "lucide-react";
 import type { AdminCustomerAddressRow, AdminCustomerDetail } from "@/lib/db/types";
@@ -10,7 +17,7 @@ import {
   updateAdminCustomerRecordAction,
   updateAdminCustomerProfileAction,
 } from "@/app/(admin)/admin/customers/[customerKey]/actions";
-import { cn } from "@/lib/utils";
+import styles from "./AdminCustomerCRM.module.css";
 
 type AddressDraft = {
   addressId: string | null;
@@ -28,6 +35,9 @@ type AddressDraft = {
   longitude: string;
   isDefault: boolean;
 };
+
+const FOCUSABLE_SELECTOR =
+  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 function createAddressDraft(address?: AdminCustomerAddressRow | null): AddressDraft {
   return {
@@ -54,78 +64,71 @@ export function AdminCustomerCRM({ customer }: { customer: AdminCustomerDetail }
   const [addressDraft, setAddressDraft] = useState<AddressDraft | null>(null);
 
   return (
-    <div className="space-y-4">
-      <section className="glass-morphism rounded-[32px] bg-[color:var(--surface)]/88 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
-        <div className="flex items-center justify-between gap-3">
+    <div className={styles.stack}>
+      <section className={styles.panel}>
+        <div className={styles.panelHead}>
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
-              CRM
-            </div>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-label">Support state</h2>
+            <p className={styles.panelEyebrow}>CRM</p>
+            <h2 className={styles.panelTitle}>Support state</h2>
           </div>
           <button
             type="button"
             onClick={() => setSupportOpen(true)}
-            className="min-h-[40px] rounded-full bg-system-fill/42 px-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-label"
+            className={styles.surfaceButton}
           >
             Edit
           </button>
         </div>
 
-        <div className="mt-5 space-y-3">
+        <div className={styles.panelContent}>
           <InfoTile label="State" value={formatSupportState(customer.supportState)} />
-          <div className="rounded-[24px] bg-system-fill/42 px-4 py-4">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
-              Tags
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2">
+
+          <div className={styles.tile}>
+            <p className={styles.tileLabel}>Tags</p>
+            <div className={styles.tagRow}>
               {customer.tags.length > 0 ? (
                 customer.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full bg-system-fill/56 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label"
-                  >
+                  <span key={tag} className={styles.tag}>
                     {tag}
                   </span>
                 ))
               ) : (
-                <span className="text-sm text-secondary-label">No tags</span>
+                <span className={styles.emptyLabel}>No tags</span>
               )}
             </div>
           </div>
+
           <InlineStatus message={customer.notes ?? "No support note yet."} />
         </div>
       </section>
 
-      <section className="glass-morphism rounded-[32px] bg-[color:var(--surface)]/88 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
-        <div className="flex items-center justify-between gap-3">
+      <section className={styles.panel}>
+        <div className={styles.panelHead}>
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
-              Contact
-            </div>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-label">Reachability</h2>
+            <p className={styles.panelEyebrow}>Contact</p>
+            <h2 className={styles.panelTitle}>Reachability</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className={styles.iconActionRow}>
             {customer.userId ? (
               <button
                 type="button"
                 onClick={() => setProfileOpen(true)}
-                className="min-h-[40px] rounded-full bg-system-fill/42 px-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-label"
+                className={styles.surfaceButton}
               >
                 Edit
               </button>
             ) : null}
-            <Phone className="h-5 w-5 text-secondary-label" strokeWidth={1.8} />
+            <Phone className={styles.panelIcon} strokeWidth={1.8} />
           </div>
         </div>
 
-        <div className="mt-5 space-y-3">
+        <div className={styles.panelContent}>
           <InfoTile label="Email" value={customer.email ?? "No email"} />
           <InfoTile label="Phone" value={customer.phone ?? "No phone"} />
           <InfoTile
             label="Account"
             value={customer.userId ? "Linked account" : "Guest order only"}
-            icon={customer.userId ? <UserRoundCheck className="h-4 w-4" strokeWidth={1.8} /> : undefined}
+            icon={customer.userId ? <UserRoundCheck className={styles.inlineIcon} strokeWidth={1.8} /> : undefined}
           />
           {!customer.userId ? (
             <InlineStatus message="Guest contact is read-only for now. Use order detail for operational handling." />
@@ -133,75 +136,66 @@ export function AdminCustomerCRM({ customer }: { customer: AdminCustomerDetail }
         </div>
       </section>
 
-      <section className="glass-morphism rounded-[32px] bg-[color:var(--surface)]/88 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
-        <div className="flex items-center justify-between gap-3">
+      <section className={styles.panel}>
+        <div className={styles.panelHead}>
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
-              Addresses
-            </div>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-label">Delivery places</h2>
+            <p className={styles.panelEyebrow}>Addresses</p>
+            <h2 className={styles.panelTitle}>Delivery places</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className={styles.iconActionRow}>
             {customer.userId ? (
               <button
                 type="button"
                 onClick={() => setAddressDraft(createAddressDraft())}
-                className="min-h-[40px] rounded-full bg-system-fill/42 px-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-label"
+                className={styles.surfaceButton}
               >
                 Add
               </button>
             ) : null}
-            <MapPinHouse className="h-5 w-5 text-secondary-label" strokeWidth={1.8} />
+            <MapPinHouse className={styles.panelIcon} strokeWidth={1.8} />
           </div>
         </div>
 
-        <div className="mt-5 space-y-3">
+        <div className={styles.panelContent}>
           {customer.addresses.map((address, index) => (
-            <div
-              key={`${address.addressId ?? "recent"}-${index}`}
-              className="rounded-[24px] bg-system-fill/42 px-4 py-4"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="text-sm font-semibold text-label">{address.label}</div>
-                  {address.isDefault ? (
-                    <span className="rounded-full bg-system-fill/56 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-                      Default
-                    </span>
-                  ) : null}
-                  <span className="rounded-full bg-system-fill/56 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+            <div key={`${address.addressId ?? "recent"}-${index}`} className={styles.addressCard}>
+              <div className={styles.addressHead}>
+                <div className={styles.addressTagRow}>
+                  <p className={styles.addressLabel}>{address.label}</p>
+                  {address.isDefault ? <span className={styles.addressTag}>Default</span> : null}
+                  <span className={styles.addressTag}>
                     {address.source === "saved" ? "Saved" : "Recent order"}
                   </span>
                 </div>
+
                 {customer.userId && address.source === "saved" && address.addressId ? (
                   <button
                     type="button"
                     onClick={() => setAddressDraft(createAddressDraft(address))}
-                    className="min-h-[36px] rounded-full bg-system-fill/56 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-label"
+                    className={styles.smallButton}
                   >
                     Edit
                   </button>
                 ) : null}
               </div>
-              <div className="mt-3 space-y-1 text-sm text-secondary-label">
-                <div className="font-medium text-label">{address.recipientName}</div>
-                <div>{address.phoneE164}</div>
-                <div>{address.line1}</div>
-                {address.line2 ? <div>{address.line2}</div> : null}
-                <div>
+
+              <div className={styles.addressBody}>
+                <p className={styles.addressRecipient}>{address.recipientName}</p>
+                <p>{address.phoneE164}</p>
+                <p>{address.line1}</p>
+                {address.line2 ? <p>{address.line2}</p> : null}
+                <p>
                   {address.city}, {address.state}
                   {address.postalCode ? ` ${address.postalCode}` : ""}
-                </div>
-                {address.landmark ? <div>{address.landmark}</div> : null}
-                {address.deliveryNotes ? <div>{address.deliveryNotes}</div> : null}
+                </p>
+                {address.landmark ? <p>{address.landmark}</p> : null}
+                {address.deliveryNotes ? <p>{address.deliveryNotes}</p> : null}
               </div>
             </div>
           ))}
 
           {customer.addresses.length === 0 ? (
-            <div className="rounded-[24px] bg-system-fill/42 px-4 py-4 text-sm text-secondary-label">
-              No saved address history yet.
-            </div>
+            <div className={styles.emptyAddress}>No saved address history yet.</div>
           ) : null}
         </div>
       </section>
@@ -264,21 +258,19 @@ function CustomerSupportForm({
           onClose();
         });
       }}
-      className="space-y-5"
+      className={styles.formStack}
     >
       <input type="hidden" name="userId" value={customer.userId ?? ""} />
       <input type="hidden" name="email" value={customer.email ?? ""} />
       <input type="hidden" name="phone" value={customer.phone ?? ""} />
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <label className="ml-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
-            Support state
-          </label>
+      <div className={styles.formGridTwo}>
+        <div className={styles.fieldGroup}>
+          <label className={styles.fieldLabel}>Support state</label>
           <select
             name="supportState"
             defaultValue={customer.supportState}
-            className="flex min-h-[48px] w-full appearance-none rounded-[20px] bg-system-fill/42 px-4 text-sm text-label outline-none transition-all focus:bg-system-fill/58"
+            className={styles.fieldSelect}
           >
             <option value="standard">Standard</option>
             <option value="priority">Priority</option>
@@ -294,15 +286,13 @@ function CustomerSupportForm({
         />
       </div>
 
-      <div className="space-y-2">
-        <label className="ml-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
-          Notes
-        </label>
+      <div className={styles.fieldGroup}>
+        <label className={styles.fieldLabel}>Notes</label>
         <textarea
           name="notes"
           defaultValue={customer.notes ?? ""}
           rows={5}
-          className="flex w-full rounded-[20px] bg-system-fill/42 px-4 py-3 text-sm text-label outline-none transition-all placeholder:text-tertiary-label focus:bg-system-fill/58"
+          className={styles.fieldTextarea}
         />
       </div>
 
@@ -348,28 +338,16 @@ function CustomerProfileForm({
           onClose();
         });
       }}
-      className="space-y-5"
+      className={styles.formStack}
     >
       <input type="hidden" name="userId" value={customer.userId ?? ""} />
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field
-          label="Full name"
-          name="fullName"
-          defaultValue={customer.fullName ?? ""}
-          required
-        />
-        <Field
-          label="Phone"
-          name="preferredPhone"
-          defaultValue={customer.phone ?? ""}
-          required
-        />
+      <div className={styles.formGridTwo}>
+        <Field label="Full name" name="fullName" defaultValue={customer.fullName ?? ""} required />
+        <Field label="Phone" name="preferredPhone" defaultValue={customer.phone ?? ""} required />
       </div>
 
-      <InlineStatus
-        message={message ?? "This updates the linked account profile and preferred phone."}
-      />
+      <InlineStatus message={message ?? "This updates the linked account profile and preferred phone."} />
 
       <SheetActionRow pending={isPending} onClose={onClose} submitLabel="Save" />
     </form>
@@ -408,25 +386,24 @@ function CustomerAddressForm({
           onClose();
         });
       }}
-      className="space-y-5"
+      className={styles.formStack}
     >
       <input type="hidden" name="userId" value={customer.userId ?? ""} />
       <input type="hidden" name="addressId" value={draft.addressId ?? ""} />
       <input type="hidden" name="latitude" value={draft.latitude} />
       <input type="hidden" name="longitude" value={draft.longitude} />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={styles.formGridTwo}>
         <Field label="Label" name="label" defaultValue={draft.label} required />
         <Field label="Recipient" name="recipientName" defaultValue={draft.recipientName} required />
         <Field label="Phone" name="phone" defaultValue={draft.phone} required />
-        <div className="space-y-2">
-          <label className="ml-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
-            Default
-          </label>
+
+        <div className={styles.fieldGroup}>
+          <label className={styles.fieldLabel}>Default</label>
           <select
             name="isDefault"
             defaultValue={draft.isDefault ? "true" : "false"}
-            className="flex min-h-[48px] w-full appearance-none rounded-[20px] bg-system-fill/42 px-4 text-sm text-label outline-none transition-all focus:bg-system-fill/58"
+            className={styles.fieldSelect}
           >
             <option value="false">No</option>
             <option value="true">Yes</option>
@@ -434,27 +411,25 @@ function CustomerAddressForm({
         </div>
       </div>
 
-      <div className="grid gap-4">
+      <div className={styles.formGridSingle}>
         <Field label="Line 1" name="line1" defaultValue={draft.line1} required />
         <Field label="Line 2" name="line2" defaultValue={draft.line2} />
         <Field label="Landmark" name="landmark" defaultValue={draft.landmark} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className={styles.formGridThree}>
         <Field label="City" name="city" defaultValue={draft.city} required />
         <Field label="State" name="state" defaultValue={draft.state} required />
         <Field label="Postal" name="postalCode" defaultValue={draft.postalCode} />
       </div>
 
-      <div className="space-y-2">
-        <label className="ml-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
-          Notes
-        </label>
+      <div className={styles.fieldGroup}>
+        <label className={styles.fieldLabel}>Notes</label>
         <textarea
           name="deliveryNotes"
           defaultValue={draft.deliveryNotes}
           rows={3}
-          className="flex w-full rounded-[20px] bg-system-fill/42 px-4 py-3 text-sm text-label outline-none transition-all placeholder:text-tertiary-label focus:bg-system-fill/58"
+          className={styles.fieldTextarea}
         />
       </div>
 
@@ -465,7 +440,7 @@ function CustomerAddressForm({
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={styles.addressActionRow}>
         {draft.addressId ? (
           <DeleteAddressButton
             customerKey={customer.customerKey}
@@ -510,10 +485,7 @@ function DeleteAddressButton({
         })
       }
       disabled={isPending}
-      className={cn(
-        "min-h-[42px] rounded-full bg-system-fill/56 px-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-red-500 transition-colors duration-200 hover:bg-system-fill/76",
-        isPending && "pointer-events-none opacity-50"
-      )}
+      className={`${styles.deleteButton} ${isPending ? styles.buttonDisabled : ""}`}
     >
       Delete
     </button>
@@ -529,37 +501,116 @@ function CustomerSheet({
   children: ReactNode;
   onClose: () => void;
 }) {
+  const headingId = useId();
+  const dialogRef = useRef<HTMLElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    returnFocusRef.current = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const frame = window.requestAnimationFrame(() => {
+      closeButtonRef.current?.focus();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.body.style.overflow = previousOverflow;
+      returnFocusRef.current?.focus();
+    };
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const dialog = dialogRef.current;
+      if (!dialog) {
+        return;
+      }
+
+      const focusables = Array.from(
+        dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      ).filter(
+        (element) =>
+          !element.hasAttribute("disabled") &&
+          element.getAttribute("aria-hidden") !== "true" &&
+          (element.offsetParent !== null || element === document.activeElement)
+      );
+
+      if (focusables.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+
+      if (event.shiftKey) {
+        if (!active || active === first || !dialog.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+        return;
+      }
+
+      if (!active || active === last || !dialog.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [onClose]);
+
   return (
     <>
       <button
         type="button"
         aria-label="Close"
         onClick={onClose}
-        className="z-layer-modal-backdrop fixed inset-0 bg-black/40 backdrop-blur-md"
+        className={styles.sheetBackdrop}
       />
-      <div className="z-layer-modal fixed inset-0 flex items-end justify-center px-3 py-3 sm:items-center sm:px-4 sm:py-6">
+      <div className={styles.sheetWrap}>
         <section
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
-          aria-label={title}
-          className="glass-morphism flex max-h-[calc(100svh-1.5rem)] w-full max-w-[42rem] flex-col overflow-hidden rounded-[32px] bg-[color:var(--surface)]/92 shadow-[0_28px_80px_rgba(15,23,42,0.22)]"
+          aria-labelledby={headingId}
+          className={styles.sheetDialog}
         >
-          <div className="flex items-center justify-between gap-3 px-5 py-4 sm:px-6">
+          <div className={styles.sheetHeader}>
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
-                Customers
-              </div>
-              <h2 className="mt-1 text-xl font-semibold tracking-tight text-label">{title}</h2>
+              <p className={styles.sheetEyebrow}>Customers</p>
+              <h2 id={headingId} className={styles.sheetTitle}>
+                {title}
+              </h2>
             </div>
             <button
+              ref={closeButtonRef}
               type="button"
               onClick={onClose}
-              className="min-h-[40px] rounded-full bg-system-fill/42 px-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label"
+              className={styles.sheetCloseButton}
             >
               Close
             </button>
           </div>
-          <div className="overflow-y-auto px-5 pb-5 sm:px-6 sm:pb-6">{children}</div>
+
+          <div className={styles.sheetBody}>{children}</div>
         </section>
       </div>
     </>
@@ -576,21 +627,14 @@ function SheetActionRow({
   submitLabel: string;
 }) {
   return (
-    <div className="flex w-full items-center justify-end gap-2">
-      <button
-        type="button"
-        onClick={onClose}
-        className="min-h-[42px] rounded-full bg-system-fill/42 px-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label"
-      >
+    <div className={styles.sheetActionRow}>
+      <button type="button" onClick={onClose} className={styles.cancelButton}>
         Cancel
       </button>
       <button
         type="submit"
         disabled={pending}
-        className={cn(
-          "button-primary min-h-[42px] rounded-full px-5 text-[11px] font-semibold uppercase tracking-[0.16em]",
-          pending && "pointer-events-none opacity-50"
-        )}
+        className={`${styles.submitButton} ${pending ? styles.buttonDisabled : ""}`}
       >
         {pending ? "Saving" : submitLabel}
       </button>
@@ -608,24 +652,18 @@ function InfoTile({
   icon?: ReactNode;
 }) {
   return (
-    <div className="rounded-[24px] bg-system-fill/42 px-4 py-4">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
-        {label}
-      </div>
-      <div className="mt-2 flex items-center gap-2 text-sm font-medium text-label">
+    <div className={styles.tile}>
+      <p className={styles.tileLabel}>{label}</p>
+      <p className={styles.tileValue}>
         {icon}
         <span>{value}</span>
-      </div>
+      </p>
     </div>
   );
 }
 
 function InlineStatus({ message }: { message: string }) {
-  return (
-    <p className="rounded-[20px] bg-system-fill/42 px-4 py-3 text-sm text-secondary-label">
-      {message}
-    </p>
-  );
+  return <p className={styles.inlineStatus}>{message}</p>;
 }
 
 function formatSupportState(value: AdminCustomerDetail["supportState"]) {
@@ -640,16 +678,11 @@ function Field({
   label,
   className,
   ...props
-}: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+}: { label: string; className?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <div className={cn("space-y-2", className)}>
-      <label className="ml-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
-        {label}
-      </label>
-      <input
-        {...props}
-        className="flex min-h-[48px] w-full rounded-[20px] bg-system-fill/42 px-4 text-sm text-label outline-none transition-all placeholder:text-tertiary-label focus:bg-system-fill/58"
-      />
+    <div className={`${styles.fieldGroup} ${className ?? ""}`.trim()}>
+      <label className={styles.fieldLabel}>{label}</label>
+      <input {...props} className={styles.fieldInput} />
     </div>
   );
 }

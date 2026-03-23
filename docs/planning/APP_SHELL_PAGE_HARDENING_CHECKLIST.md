@@ -502,3 +502,76 @@ Applied a second alignment pass with `/account/orders/[orderId]` as the north-po
 - `profile` (`/account/profile`): added completion-aware workflow framing around identity + notification update path
 - `reviews` (`/account/reviews`): shifted to action-first pending review workflow, with sent reviews intentionally treated as archival context
 - review composer now uses local module styling and compact task-card behavior consistent with account order-detail surfaces
+
+## Admin Payments Hardening Checkpoint (March 23, 2026)
+
+Refactor completed for `/admin/payments` using the same state-aware hierarchy used across hardened account/admin order flows.
+
+- removed redundant orders/payments shortcut strip that duplicated shell navigation
+- rebuilt page as:
+  - state-led hero with explicit queue pressure messaging
+  - primary workflow panel with action-first queue routing
+  - review queue section as dominant surface for submitted/under-review payments
+  - awaiting-transfer payments moved to a disclosure archive section
+- localized styling into `src/app/(admin)/admin/payments/payments-page.module.css` and removed utility-heavy page-level style composition
+- preserved payment review server action contracts while improving action hierarchy and responsiveness
+
+## Admin Reviews Hardening Checkpoint (March 23, 2026)
+
+Refactor completed for `/admin/reviews` so moderation now follows the same queue-first story structure as hardened order/payment surfaces.
+
+- replaced KPI-only + flat list layout with:
+  - state-led hero describing moderation pressure
+  - primary workflow panel routing to pending/published/featured states
+  - moderation queue as dominant action surface for pending reviews
+  - approved/hidden reviews moved into archive disclosure context
+- localized route styling into `src/app/(admin)/admin/reviews/reviews-page.module.css`
+- converted moderation controls from utility-class composition to local component module styling in:
+  - `src/components/reviews/AdminReviewModerationCard.tsx`
+  - `src/components/reviews/AdminReviewModerationCard.module.css`
+- preserved existing moderation action contracts (`approve`, `hide`, `feature`, `unfeature`) and refresh behavior
+
+## Admin Customers Hardening Checkpoint (March 23, 2026)
+
+Refactor completed for `/admin/customers` and `/admin/customers/[customerKey]` to align CRM discovery and per-customer operations with the same state-aware app-shell hierarchy.
+
+- `/admin/customers` now uses:
+  - state-led hero and primary workflow panel
+  - explicit priority customer queue (active/support-flagged/note-flagged)
+  - archived customer disclosure for lower-priority records
+- `/admin/customers/[customerKey]` now uses:
+  - state-led hero + workflow actions around live order context and CRM controls
+  - thread-signal strip (account/support/places/status) before deep controls
+  - local order-activity panel paired with CRM surface
+- localized route styling into:
+  - `src/app/(admin)/admin/customers/customers-page.module.css`
+  - `src/app/(admin)/admin/customers/[customerKey]/customer-detail-page.module.css`
+- preserved existing customer detail data contracts and CRM action flows while tightening state hierarchy and action routing
+
+## Admin Customer CRM Component Hardening (March 23, 2026)
+
+Follow-up component pass completed for `src/components/admin/customers/AdminCustomerCRM.tsx` to align internal CRM controls with hardened app-shell behavior.
+
+- moved CRM component styling from utility-class composition to local module styling:
+  - `src/components/admin/customers/AdminCustomerCRM.module.css`
+- added stronger modal interaction contract:
+  - escape-to-close keyboard support
+  - focus trap while sheet is open
+  - focus return to previously focused control on close
+  - body scroll lock during active sheet
+- preserved existing server action wiring for profile, CRM metadata, and address mutations
+
+## Admin Delivery Hardening Checkpoint (March 23, 2026)
+
+Refactor completed for `/admin/delivery` so dispatch now follows the same state-led shell pattern used on hardened order/payment/review/customer routes.
+
+- rebuilt route into:
+  - state-led hero with dispatch pressure messaging
+  - primary workflow panel with preparing/ready/out routing
+  - stage board + live map + rider roster context split
+- localized route styling into `src/app/(admin)/admin/delivery/delivery-page.module.css`
+- retained all delivery action contracts:
+  - mark ready
+  - rider assignment
+  - assignment status transitions
+  - rider create/update

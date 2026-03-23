@@ -1,0 +1,69 @@
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.44rem;
+}
+
+.button {
+  min-height: 2.3rem;
+  border-radius: 999px;
+  border: 0;
+  padding: 0 0.92rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+  transition:
+    transform var(--duration-fast) var(--ease-premium),
+    background-color var(--duration-base) var(--ease-premium),
+    color var(--duration-base) var(--ease-premium),
+    opacity var(--duration-fast) var(--ease-premium);
+}
+
+.primaryButton {
+  background: var(--accent);
+  color: var(--accent-label);
+  box-shadow: var(--shadow-soft);
+}
+
+.secondaryButton {
+  background: color-mix(in srgb, var(--surface-alt) 78%, transparent);
+  color: var(--label);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button:disabled {
+  cursor: default;
+  opacity: 0.55;
+  transform: none;
+}
+
+.button:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--shadow-soft),
+    0 0 0 6px color-mix(in srgb, var(--ring) 22%, transparent);
+}
+
+.message {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.56rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+}

@@ -1,0 +1,438 @@
+.stack {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.panel {
+  border-radius: 2rem;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  box-shadow: var(--shadow-card);
+  padding: 1rem;
+  display: grid;
+  gap: 0.72rem;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.72rem;
+}
+
+.panelEyebrow {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.panelTitle {
+  margin: 0.16rem 0 0;
+  color: var(--label);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.iconActionRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.panelIcon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--secondary-label);
+}
+
+.inlineIcon {
+  width: 0.9rem;
+  height: 0.9rem;
+  color: var(--secondary-label);
+}
+
+.panelContent {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.surfaceButton,
+.smallButton,
+.sheetCloseButton,
+.cancelButton,
+.submitButton,
+.deleteButton {
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.56rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+  cursor: pointer;
+  transition:
+    transform var(--duration-fast) var(--ease-premium),
+    background-color var(--duration-base) var(--ease-premium),
+    color var(--duration-base) var(--ease-premium),
+    opacity var(--duration-fast) var(--ease-premium);
+}
+
+.surfaceButton,
+.smallButton,
+.sheetCloseButton,
+.cancelButton {
+  min-height: 2.3rem;
+  background: color-mix(in srgb, var(--surface-alt) 78%, transparent);
+  color: var(--label);
+  padding: 0 0.88rem;
+}
+
+.smallButton {
+  min-height: 2rem;
+  padding: 0 0.72rem;
+}
+
+.submitButton {
+  min-height: 2.3rem;
+  background: var(--accent);
+  color: var(--accent-label);
+  box-shadow: var(--shadow-soft);
+  padding: 0 1rem;
+}
+
+.deleteButton {
+  min-height: 2.3rem;
+  background: color-mix(in srgb, var(--surface-alt) 78%, transparent);
+  color: #dc2626;
+  padding: 0 0.92rem;
+}
+
+.surfaceButton:hover,
+.smallButton:hover,
+.sheetCloseButton:hover,
+.cancelButton:hover,
+.submitButton:hover,
+.deleteButton:hover {
+  transform: translateY(-1px);
+}
+
+.buttonDisabled {
+  opacity: 0.56;
+  pointer-events: none;
+  transform: none;
+}
+
+.tile {
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, var(--surface-alt) 74%, transparent);
+  padding: 0.62rem 0.72rem;
+}
+
+.tileLabel {
+  margin: 0;
+  color: var(--tertiary-label);
+  font-size: 0.56rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.tileValue {
+  margin: 0.2rem 0 0;
+  display: flex;
+  align-items: center;
+  gap: 0.34rem;
+  color: var(--label);
+  font-size: 0.76rem;
+  font-weight: 500;
+  line-height: 1.34;
+}
+
+.tagRow {
+  margin-top: 0.3rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.tag,
+.addressTag {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-alt) 72%, transparent);
+  color: var(--secondary-label);
+  padding: 0.2rem 0.44rem;
+  font-size: 0.52rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.emptyLabel {
+  color: var(--secondary-label);
+  font-size: 0.74rem;
+}
+
+.inlineStatus {
+  margin: 0;
+  border-radius: 1.1rem;
+  background: color-mix(in srgb, var(--surface-alt) 74%, transparent);
+  padding: 0.62rem 0.72rem;
+  color: var(--secondary-label);
+  font-size: 0.75rem;
+  line-height: 1.36;
+}
+
+.addressCard {
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, var(--surface-alt) 74%, transparent);
+  padding: 0.72rem;
+  display: grid;
+  gap: 0.48rem;
+}
+
+.addressHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.addressTagRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.addressLabel {
+  margin: 0;
+  color: var(--label);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.addressBody {
+  display: grid;
+  gap: 0.18rem;
+  color: var(--secondary-label);
+  font-size: 0.74rem;
+  line-height: 1.34;
+}
+
+.addressBody p {
+  margin: 0;
+}
+
+.addressRecipient {
+  color: var(--label);
+  font-weight: 500;
+}
+
+.emptyAddress {
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, var(--surface-alt) 74%, transparent);
+  padding: 0.72rem;
+  color: var(--secondary-label);
+  font-size: 0.74rem;
+}
+
+.formStack {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.formGridTwo,
+.formGridThree {
+  display: grid;
+  gap: 0.62rem;
+}
+
+.formGridSingle {
+  display: grid;
+  gap: 0.62rem;
+}
+
+.fieldGroup {
+  display: grid;
+  gap: 0.32rem;
+}
+
+.fieldLabel {
+  margin-left: 0.12rem;
+  color: var(--secondary-label);
+  font-size: 0.56rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.fieldInput,
+.fieldSelect,
+.fieldTextarea {
+  width: 100%;
+  border: 0;
+  border-radius: 1.1rem;
+  background: color-mix(in srgb, var(--surface-alt) 74%, transparent);
+  color: var(--label);
+  font-size: 0.76rem;
+  outline: none;
+  transition: background-color var(--duration-base) var(--ease-premium);
+}
+
+.fieldInput,
+.fieldSelect {
+  min-height: 2.65rem;
+  padding: 0 0.78rem;
+}
+
+.fieldTextarea {
+  padding: 0.68rem 0.78rem;
+  resize: vertical;
+  min-height: 5.5rem;
+}
+
+.fieldInput::placeholder,
+.fieldTextarea::placeholder {
+  color: var(--tertiary-label);
+}
+
+.fieldInput:focus,
+.fieldSelect:focus,
+.fieldTextarea:focus {
+  background: color-mix(in srgb, var(--surface-alt) 84%, transparent);
+}
+
+.addressActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sheetBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-layer-modal-backdrop, 45);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.sheetWrap {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-layer-modal, 50);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+.sheetDialog {
+  width: 100%;
+  max-width: 42rem;
+  max-height: calc(100svh - 1.5rem);
+  border-radius: 2rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.22);
+  display: flex;
+  flex-direction: column;
+}
+
+.sheetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.72rem;
+  padding: 0.9rem 1rem;
+}
+
+.sheetEyebrow {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.56rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.sheetTitle {
+  margin: 0.18rem 0 0;
+  color: var(--label);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.sheetBody {
+  overflow-y: auto;
+  padding: 0 1rem 1rem;
+}
+
+.sheetActionRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.46rem;
+}
+
+.surfaceButton:focus-visible,
+.smallButton:focus-visible,
+.sheetCloseButton:focus-visible,
+.cancelButton:focus-visible,
+.submitButton:focus-visible,
+.deleteButton:focus-visible,
+.fieldInput:focus-visible,
+.fieldSelect:focus-visible,
+.fieldTextarea:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--shadow-soft),
+    0 0 0 6px color-mix(in srgb, var(--ring) 22%, transparent);
+}
+
+@media (min-width: 640px) {
+  .panel {
+    padding: 1.05rem;
+  }
+
+  .formGridTwo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .formGridThree {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .sheetWrap {
+    align-items: center;
+    padding: 1rem;
+  }
+
+  .sheetHeader {
+    padding: 0.95rem 1.1rem;
+  }
+
+  .sheetBody {
+    padding: 0 1.1rem 1.1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .surfaceButton,
+  .smallButton,
+  .sheetCloseButton,
+  .cancelButton,
+  .submitButton,
+  .deleteButton,
+  .fieldInput,
+  .fieldSelect,
+  .fieldTextarea {
+    transition: none;
+  }
+}

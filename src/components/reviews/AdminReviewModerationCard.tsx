@@ -4,6 +4,7 @@ import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { moderateReviewAction } from "@/app/(admin)/admin/reviews/actions";
 import { INITIAL_REVIEW_ACTION_STATE } from "@/lib/reviews/action-state";
+import styles from "./AdminReviewModerationCard.module.css";
 
 export function AdminReviewModerationCard({
   reviewId,
@@ -27,7 +28,7 @@ export function AdminReviewModerationCard({
   }, [router, state.status]);
 
   return (
-    <form action={formAction} className="mt-4 flex flex-wrap items-center gap-2">
+    <form action={formAction} className={styles.form}>
       <input type="hidden" name="reviewId" value={reviewId} />
 
       {status !== "approved" ? (
@@ -36,7 +37,7 @@ export function AdminReviewModerationCard({
           name="action"
           value="approve"
           disabled={pending}
-          className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:shadow-none"
+          className={`${styles.button} ${styles.primaryButton}`}
         >
           Approve
         </button>
@@ -48,7 +49,7 @@ export function AdminReviewModerationCard({
           name="action"
           value="hide"
           disabled={pending}
-          className="rounded-full bg-system-background px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label disabled:text-secondary-label"
+          className={`${styles.button} ${styles.secondaryButton}`}
         >
           Hide
         </button>
@@ -60,17 +61,13 @@ export function AdminReviewModerationCard({
           name="action"
           value={isFeatured ? "unfeature" : "feature"}
           disabled={pending}
-          className="rounded-full bg-system-background px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label disabled:text-secondary-label"
+          className={`${styles.button} ${styles.secondaryButton}`}
         >
           {isFeatured ? "Unfeature" : "Feature"}
         </button>
       ) : null}
 
-      {state.message ? (
-        <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-          {state.message}
-        </div>
-      ) : null}
+      {state.message ? <p className={styles.message}>{state.message}</p> : null}
     </form>
   );
 }

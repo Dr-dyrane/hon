@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Package } from "lucide-react";
 import { AdminCustomerCRM } from "@/components/admin/customers/AdminCustomerCRM";
-import { WorkspaceContextPanel } from "@/components/shell/WorkspaceContextPanel";
-import { QuietValueStrip } from "@/components/ui/QuietValueStrip";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { getAdminCustomerDetail } from "@/lib/db/repositories/admin-repository";
 import { formatFlowStatusLabel } from "@/lib/orders/presentation";
+import styles from "./customer-detail-page.module.css";
+
+type CustomerTone = "idle" | "watch" | "active";
 
 function formatTimestamp(value?: string | null) {
   if (!value) {
@@ -27,6 +27,64 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
+function formatSupportState(value: "standard" | "priority" | "follow_up" | "hold") {
+  if (value === "follow_up") {
+    return "Follow up";
+  }
+
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function resolveTone(input: {
+  activeOrders: number;
+  supportState: "standard" | "priority" | "follow_up" | "hold";
+}) {
+  const { activeOrders, supportState } = input;
+
+  if (activeOrders >= 3 || supportState === "priority") {
+    return "active" satisfies CustomerTone;
+  }
+
+  if (activeOrders > 0 || supportState !== "standard") {
+    return "watch" satisfies CustomerTone;
+  }
+
+  return "idle" satisfies CustomerTone;
+}
+
+function getHeroState(input: {
+  tone: CustomerTone;
+  activeOrders: number;
+  supportState: "standard" | "priority" | "follow_up" | "hold";
+}) {
+  const { tone, activeOrders, supportState } = input;
+
+  if (tone === "active") {
+    return {
+      title: `${activeOrders} live order${activeOrders === 1 ? "" : "s"} need attention.`,
+      detail: "Keep payment, fulfillment, and CRM notes aligned for this customer thread.",
+      pill: "Active customer thread",
+    };
+  }
+
+  if (tone === "watch") {
+    return {
+      title: "Customer thread is in motion.",
+      detail:
+        supportState !== "standard"
+          ? `Support state is ${formatSupportState(supportState).toLowerCase()}. Keep follow-up actions explicit.`
+          : "Monitor recent order activity and keep contact details current.",
+      pill: "Watch list",
+    };
+  }
+
+  return {
+    title: "Customer profile is steady.",
+    detail: "No active queue pressure right now. Use this view for profile and CRM upkeep.",
+    pill: "Stable thread",
+  };
+}
+
 export default async function AdminCustomerDetailPage({
   params,
 }: {
@@ -43,114 +101,170 @@ export default async function AdminCustomerDetailPage({
     notFound();
   }
 
+  const tone = resolveTone({
+    activeOrders: customer.activeOrders,
+    supportState: customer.supportState,
+  });
+  const heroState = getHeroState({
+    tone,
+    activeOrders: customer.activeOrders,
+    supportState: customer.supportState,
+  });
+
+  const displayName = customer.fullName ?? customer.email ?? customer.phone ?? "Customer";
+  const latestOrder = customer.recentOrders[0] ?? null;
+  const latestStatus = customer.latestOrderStatus
+    ? formatFlowStatusLabel(customer.latestOrderStatus)
+    : null;
+
   return (
-    <div className="space-y-8 pb-20 md:space-y-10">
-      <WorkspaceContextPanel
-        title={customer.fullName ?? customer.email ?? customer.phone ?? "Customer"}
-        detail={customer.email ?? customer.phone ?? "Order-linked customer"}
-        tags={[
-          {
-            label: customer.userId ? "Account" : "Guest",
-            tone: customer.userId ? "success" : "muted",
-          },
-          ...(customer.supportState !== "standard"
-            ? [{ label: formatSupportState(customer.supportState), tone: "default" as const }]
-            : []),
-          ...(customer.latestOrderStatus
-            ? [{ label: formatFlowStatusLabel(customer.latestOrderStatus), tone: "default" as const }]
-            : []),
-        ]}
-        meta={[
-          { label: "Orders", value: `${customer.totalOrders}` },
-          { label: "Active", value: `${customer.activeOrders}` },
-          { label: "Saved places", value: `${customer.addressCount}` },
-        ]}
-      />
+    <div className={styles.page}>
+      <section
+        className={`${styles.hero} ${tone === "active" ? styles.heroActive : tone === "watch" ? styles.heroWatch : styles.heroIdle}`}
+      >
+        <p className={styles.heroEyebrow}>Customer detail</p>
+        <p className={styles.heroIdentity}>{displayName}</p>
+        <h1 className={styles.heroTitle}>{heroState.title}</h1>
+        <p className={styles.heroDetail}>{heroState.detail}</p>
 
-      <QuietValueStrip
-        items={[
-          {
-            label: "Email",
-            value: customer.email ?? "No email",
-            detail: customer.userId ? "Linked account" : "Guest checkout",
-          },
-          {
-            label: "Phone",
-            value: customer.phone ?? "No phone",
-            detail: "Latest contact",
-          },
-          {
-            label: "Latest",
-            value: customer.latestOrderNumber ?? "-",
-            detail: formatTimestamp(customer.latestOrderAt),
-          },
-        ]}
-        columns={3}
-      />
+        <div className={styles.heroActions}>
+          {latestOrder ? (
+            <Link href={`/admin/orders/${latestOrder.orderId}`} className={styles.primaryAction}>
+              Open latest order
+            </Link>
+          ) : (
+            <Link href="/admin/orders" className={styles.primaryAction}>
+              Open order board
+            </Link>
+          )}
+          <Link href="#crm-panel" className={styles.secondaryAction}>
+            Open CRM
+          </Link>
+        </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.8fr)]">
-        <section className="glass-morphism rounded-[32px] bg-[color:var(--surface)]/88 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
-                Orders
-              </div>
-              <h2 className="mt-2 text-xl font-semibold tracking-tight text-label">
-                Recent activity
-              </h2>
-            </div>
-            <Package className="h-5 w-5 text-secondary-label" strokeWidth={1.8} />
+        <div className={styles.activityPill}>{heroState.pill}</div>
+      </section>
+
+      <section
+        className={`${styles.primaryWorkflow} ${tone === "active" ? styles.workflowActive : tone === "watch" ? styles.workflowWatch : styles.workflowIdle}`}
+      >
+        <div className={styles.workflowHead}>
+          <div>
+            <p className={styles.panelEyebrow}>Primary workflow</p>
+            <h2 className={styles.workflowTitle}>
+              {customer.activeOrders > 0 ? "Handle live order + CRM context." : "Maintain customer readiness."}
+            </h2>
+            <p className={styles.workflowDetail}>
+              {customer.activeOrders > 0
+                ? "Review latest order status, then update support notes and delivery places in one pass."
+                : "Keep profile, contact details, and support state current for upcoming orders."}
+            </p>
+          </div>
+          <span className={styles.workflowBadge}>{tone === "active" ? "Active" : tone === "watch" ? "Watch" : "Clear"}</span>
+        </div>
+
+        <div className={styles.workflowActionGrid}>
+          <WorkflowAction
+            href={latestOrder ? `/admin/orders/${latestOrder.orderId}` : "/admin/orders"}
+            label="Latest order"
+            detail={latestOrder ? latestOrder.orderNumber : "No orders yet"}
+            meta="Open"
+          />
+          <WorkflowAction
+            href="/admin/customers"
+            label="Customer board"
+            detail="Return to queue"
+            meta="Board"
+          />
+          <WorkflowAction
+            href="#crm-panel"
+            label="CRM controls"
+            detail="Support, profile, addresses"
+            meta="Edit"
+          />
+        </div>
+
+        <div className={styles.readinessStrip}>
+          <p className={styles.readinessLabel}>Thread signals</p>
+          <div className={styles.readinessChipRow}>
+            <span className={styles.readinessChip}>{customer.userId ? "Account" : "Guest"}</span>
+            <span className={styles.readinessChip}>{formatSupportState(customer.supportState)}</span>
+            <span className={styles.readinessChip}>{customer.addressCount} places</span>
+            {latestStatus ? <span className={styles.readinessChip}>{latestStatus}</span> : null}
+          </div>
+        </div>
+      </section>
+
+      <div className={styles.contentGrid}>
+        <section className={styles.ordersPanel}>
+          <div className={styles.panelHead}>
+            <h2 className={styles.panelTitle}>Recent orders</h2>
+            <span className={styles.panelBadge}>{customer.recentOrders.length}</span>
           </div>
 
-          <div className="mt-5 space-y-3">
-            {customer.recentOrders.map((order) => (
-              <Link
-                key={order.orderId}
-                href={`/admin/orders/${order.orderId}`}
-                className="block rounded-[24px] bg-system-fill/42 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/56"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-                      Order
-                    </div>
-                    <div className="mt-1 text-lg font-semibold tracking-tight text-label">
-                      {order.orderNumber}
-                    </div>
-                    <div className="mt-1 text-sm text-secondary-label">
-                      {formatFlowStatusLabel(order.status)} - {order.itemCount} items
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-base font-semibold text-label">
-                      {formatCurrency(order.totalNgn)}
-                    </div>
-                    <div className="mt-1 text-xs text-secondary-label">
-                      {formatTimestamp(order.placedAt)}
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-
+          <div className={styles.orderList}>
             {customer.recentOrders.length === 0 ? (
-              <div className="rounded-[24px] bg-system-fill/42 px-4 py-4 text-sm text-secondary-label">
-                No orders yet.
-              </div>
-            ) : null}
+              <div className={styles.emptyOrders}>No orders yet.</div>
+            ) : (
+              customer.recentOrders.map((order) => (
+                <Link
+                  key={order.orderId}
+                  href={`/admin/orders/${order.orderId}`}
+                  className={styles.orderCard}
+                >
+                  <div className={styles.orderCardHead}>
+                    <div>
+                      <p className={styles.orderLabel}>Order</p>
+                      <p className={styles.orderNumber}>{order.orderNumber}</p>
+                    </div>
+                    <p className={styles.orderAmount}>{formatCurrency(order.totalNgn)}</p>
+                  </div>
+
+                  <div className={styles.orderMetaRow}>
+                    <span className={styles.orderMeta}>{formatFlowStatusLabel(order.status)}</span>
+                    <span className={styles.orderMeta}>{order.itemCount} items</span>
+                    <span className={styles.orderMeta}>{formatTimestamp(order.placedAt)}</span>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
         </section>
 
-        <AdminCustomerCRM customer={customer} />
+        <section id="crm-panel" className={styles.crmPanel}>
+          <div className={styles.panelHead}>
+            <h2 className={styles.panelTitle}>CRM panel</h2>
+            <span className={styles.panelBadge}>Live</span>
+          </div>
+          <p className={styles.crmDetail}>
+            Manage support state, contact profile, and delivery places for this customer thread.
+          </p>
+
+          <AdminCustomerCRM customer={customer} />
+        </section>
       </div>
     </div>
   );
 }
 
-function formatSupportState(value: "standard" | "priority" | "follow_up" | "hold") {
-  if (value === "follow_up") {
-    return "Follow up";
-  }
-
-  return value.charAt(0).toUpperCase() + value.slice(1);
+function WorkflowAction({
+  href,
+  label,
+  detail,
+  meta,
+}: {
+  href: string;
+  label: string;
+  detail: string;
+  meta: string;
+}) {
+  return (
+    <Link href={href} className={styles.workflowAction}>
+      <div className={styles.workflowActionMain}>
+        <p className={styles.workflowActionLabel}>{label}</p>
+        <p className={styles.workflowActionDetail}>{detail}</p>
+      </div>
+      <span className={styles.workflowActionMeta}>{meta}</span>
+    </Link>
+  );
 }
