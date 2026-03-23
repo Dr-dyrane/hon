@@ -2,6 +2,8 @@
   display: grid;
   gap: 1rem;
   padding-bottom: 5rem;
+  width: min(100%, 76rem);
+  margin-inline: auto;
 }
 
 .hero {
@@ -88,6 +90,7 @@
 .activityPill {
   margin-top: 0.8rem;
   width: fit-content;
+  max-width: 100%;
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface-alt) 72%, transparent);
   color: var(--secondary-label);
@@ -95,6 +98,8 @@
   font-size: 0.71rem;
   font-weight: 500;
   letter-spacing: -0.01em;
+  line-height: 1.32;
+  overflow-wrap: anywhere;
 }
 
 .workflow {

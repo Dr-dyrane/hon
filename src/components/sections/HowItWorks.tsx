@@ -45,10 +45,10 @@ export function HowItWorks() {
         
         <h2 className="mt-12 text-6xl md:text-[140px] font-headline font-bold text-label tracking-tighter leading-[0.75]">
           Simple Daily <br />
-          <span className="italic opacity-20">Fuel.</span>
+          <span className="italic opacity-70">Fuel.</span>
         </h2>
 
-        <p className="mt-12 text-xl md:text-2xl text-secondary-label/40 max-w-2xl font-light italic leading-relaxed">
+        <p className="mt-12 text-xl md:text-2xl text-secondary-label/65 max-w-2xl font-light italic leading-relaxed">
           A minimalist ritual designed for the maximalist life. <br />
           Pure performance in under 30 seconds.
         </p>
@@ -95,7 +95,7 @@ export function HowItWorks() {
                     <span className="text-[9px] font-bold tracking-[0.2em]">0{i + 1}</span>
                   </div>
                   <h3 className="text-xl font-headline font-bold text-label tracking-tight">{step.label}</h3>
-                  <p className="text-[10px] text-accent font-bold uppercase tracking-[0.2em] mt-3 opacity-40">{step.sub}</p>
+                  <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-accent/85">{step.sub}</p>
                 </LiquidGlassCard>
               </motion.div>
 
@@ -133,7 +133,7 @@ export function HowItWorks() {
             />
           </div>
           <div className="text-left">
-            <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-label/40">Efficiency Metric</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-label/70">Efficiency Metric</div>
             <div className="text-sm font-headline font-bold text-label">
               Activation in <span className="text-accent underline decoration-accent/30 underline-offset-4">Under 30 Seconds</span>
             </div>

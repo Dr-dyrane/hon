@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { BadgeList } from "@/components/ui/Badge";
@@ -13,17 +12,14 @@ import { ProductFallback } from "@/components/3d/ProductFallback";
 import { useHydrated } from "@/hooks/useHydrated";
 import type { ProductId } from "@/lib/marketing/types";
 
-const Product3DCarousel = dynamic(
-  () =>
-    import("@/components/3d/Product3DCarousel").then((mod) => mod.Product3DCarousel),
-  { ssr: false }
-);
-
 export function HeroSection() {
   const { homeSectionsByKey, productIds, productsById } = useMarketingContent();
   const { resolvedTheme } = useTheme();
   const hydrated = useHydrated();
   const [enableHero3D, setEnableHero3D] = useState(false);
+  const [Product3DCarouselComponent, setProduct3DCarouselComponent] = useState<
+    (typeof import("@/components/3d/Product3DCarousel"))["Product3DCarousel"] | null
+  >(null);
   const heroSettings = homeSectionsByKey.hero?.settings as
     | { badgeItems?: string[]; featuredProductId?: ProductId }
     | undefined;
@@ -34,28 +30,30 @@ export function HeroSection() {
   const [currentProduct, setCurrentProduct] = useState<ProductId | null>(defaultProductId);
 
   useEffect(() => {
-    if (!hydrated) return;
-
-    const enable = () => setEnableHero3D(true);
-    const idleCallback =
-      typeof globalThis.requestIdleCallback === "function"
-        ? globalThis.requestIdleCallback.bind(globalThis)
-        : null;
-    const cancelIdleCallback =
-      typeof globalThis.cancelIdleCallback === "function"
-        ? globalThis.cancelIdleCallback.bind(globalThis)
-        : null;
-
-    if (idleCallback && cancelIdleCallback) {
-      const idleId = idleCallback(enable, { timeout: 1500 });
-      return () => cancelIdleCallback(idleId);
+    if (!enableHero3D || Product3DCarouselComponent) {
+      return;
     }
 
-    const timer = globalThis.setTimeout(enable, 900);
-    return () => globalThis.clearTimeout(timer);
-  }, [hydrated]);
+    let active = true;
+    void import("@/components/3d/Product3DCarousel").then((mod) => {
+      if (!active) {
+        return;
+      }
+      setProduct3DCarouselComponent(() => mod.Product3DCarousel);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [Product3DCarouselComponent, enableHero3D]);
 
   const isDark = hydrated && resolvedTheme === "dark";
+  const requestHero3D = () => {
+    if (!hydrated) {
+      return;
+    }
+    setEnableHero3D(true);
+  };
 
   if (!currentProduct || !productsById[currentProduct]) {
     return null;
@@ -124,20 +122,24 @@ export function HeroSection() {
             </span>
           </motion.div>
 
-          <motion.h1
-            custom={1}
-            initial="hidden"
-            animate="visible"
-            variants={revealVariants}
-            className="font-headline text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[0.85] tracking-tight text-foreground"
+          <h1
+            className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[0.85] tracking-tight text-foreground"
+            style={{
+              fontFamily:
+                "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+            }}
           >
             Natural Energy
-          </motion.h1>
+          </h1>
         </div>
 
         {/* Middle: 3D Product Stage (Full-Width Seedance Style) */}
         <div className="relative w-screen flex items-center justify-center overflow-visible mb-12 lg:mb-16">
-          <div className="relative w-full aspect-[4/3] sm:aspect-video lg:aspect-[21/9] flex items-center justify-center overflow-visible">
+          <div
+            className="relative w-full aspect-[4/3] sm:aspect-video lg:aspect-[21/9] flex items-center justify-center overflow-visible"
+            onPointerEnter={requestHero3D}
+            onTouchStart={requestHero3D}
+          >
             <div className="product-shadow-wrap absolute bottom-[2%] w-full">
               <div
                 className={cn(
@@ -157,8 +159,8 @@ export function HeroSection() {
               </div>
             )}
 
-            {enableHero3D && (
-              <Product3DCarousel
+            {enableHero3D && Product3DCarouselComponent && (
+              <Product3DCarouselComponent
                 activeId={currentProduct}
                 onChange={setCurrentProduct}
                 isDark={isDark}

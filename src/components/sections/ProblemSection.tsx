@@ -70,7 +70,7 @@ export function ProblemSection() {
           
           <h2 className="mt-12 text-6xl md:text-9xl font-headline font-bold text-label tracking-tighter leading-[0.8] text-center">
             Most Protein <br />
-            <span className="opacity-20 italic">Are Junk.</span>
+            <span className="opacity-70 italic">Are Junk.</span>
           </h2>
         </div>
 

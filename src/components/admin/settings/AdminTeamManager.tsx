@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Mail, Shield, UserRound } from "lucide-react";
 import type { AdminUserSummary } from "@/lib/db/types";
 import {
@@ -14,12 +14,23 @@ import { cn } from "@/lib/utils";
 
 type TeamScope = "all" | "admins" | "invited" | "suspended";
 
+function parseTeamScope(value: string | null): TeamScope | null {
+  if (value === "all" || value === "admins" || value === "invited" || value === "suspended") {
+    return value;
+  }
+
+  return null;
+}
+
 export function AdminTeamManager({ users }: { users: AdminUserSummary[] }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
-  const [scope, setScope] = useState<TeamScope>("all");
   const [sheetMode, setSheetMode] = useState<"create" | "edit" | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const normalizedQuery = query.trim().toLowerCase();
+  const scope = parseTeamScope(searchParams.get("scope")) ?? "all";
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -56,7 +67,20 @@ export function AdminTeamManager({ users }: { users: AdminUserSummary[] }) {
           query={query}
           onQueryChange={setQuery}
           scope={scope}
-          onScopeChange={setScope}
+          onScopeChange={(nextScope) => {
+            const nextParams = new URLSearchParams(searchParams.toString());
+
+            if (nextScope === "all") {
+              nextParams.delete("scope");
+            } else {
+              nextParams.set("scope", nextScope);
+            }
+
+            const queryString = nextParams.toString();
+            router.replace(queryString ? `${pathname}?${queryString}` : pathname, {
+              scroll: false,
+            });
+          }}
           total={filteredUsers.length}
           onCreate={() => setSheetMode("create")}
         />

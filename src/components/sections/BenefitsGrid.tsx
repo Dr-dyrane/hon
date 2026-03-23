@@ -46,10 +46,10 @@ export function BenefitsGrid() {
           
           <h2 className="mt-12 text-6xl md:text-[140px] font-headline font-bold text-label tracking-tighter leading-[0.75] text-balance">
             Built for <br /> 
-            <span className="italic opacity-20">Elite Output.</span>
+            <span className="italic opacity-70">Elite Output.</span>
           </h2>
 
-          <p className="mt-12 text-xl md:text-2xl text-secondary-label/40 max-w-3xl font-light italic leading-relaxed">
+          <p className="mt-12 text-xl md:text-2xl text-secondary-label/65 max-w-3xl font-light italic leading-relaxed">
             Meticulously engineered for those who refuse to compromise. 
             Pure science, encased in glass.
           </p>

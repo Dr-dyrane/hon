@@ -34,7 +34,7 @@ export function SocialProof() {
           
           <h2 className="mt-12 text-6xl md:text-[140px] font-headline font-bold text-label tracking-tighter leading-[0.75] text-balance">
             Trusted by <br /> 
-            <span className="italic opacity-20">the Driven.</span>
+            <span className="italic opacity-70">the Driven.</span>
           </h2>
         </div>
 
@@ -100,7 +100,7 @@ export function SocialProof() {
             transition={{ delay: 0.8 }}
             className="inline-flex items-center gap-6 px-8 py-4 rounded-full bg-white/[0.02] backdrop-blur-xl "
           >
-            <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-label/20">Validated By</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-label/70">Validated By</div>
             <div className="h-4 w-[1px] bg-white/10" />
             <div className="text-[11px] font-semibold text-label/60 italic tracking-wide">
               {socialProof.trustedBy}

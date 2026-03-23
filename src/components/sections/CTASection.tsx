@@ -64,7 +64,7 @@ export function CTASection() {
           
           <h2 className="mt-12 text-6xl md:text-[140px] font-headline font-bold text-label tracking-tighter leading-[0.75]">
             Upgrade Your <br />
-            <span className="italic opacity-20">Protein.</span>
+            <span className="italic opacity-70">Protein.</span>
           </h2>
         </div>
 
@@ -78,8 +78,8 @@ export function CTASection() {
                 <span className="h-[1px] w-12 bg-accent" />
                 <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-accent">The Protocol</span>
               </div>
-              <p className="text-2xl md:text-3xl text-label/50 italic leading-relaxed font-light max-w-xl">
-                Train hard. Stack smart. {SHOT_BUNDLE.shortLabel} for <span className="text-label font-bold not-italic">{formatNgn(4499)}</span>.
+              <p className="text-2xl md:text-3xl text-label/60 italic leading-relaxed font-light max-w-xl">
+                Train hard. Stack smart. {SHOT_BUNDLE.shortLabel} for <span className="text-label/85 font-bold not-italic">{formatNgn(4499)}</span>.
               </p>
             </div>
 
@@ -104,7 +104,7 @@ export function CTASection() {
 
               <Link
                 href="#shop"
-                className="h-[80px] px-12 rounded-[24px]  liquid-glass flex items-center justify-center text-[10px] font-bold uppercase tracking-[0.3em] text-label/40 hover:bg-label/[0.02] transition-all group"
+                className="h-[80px] px-12 rounded-[24px]  liquid-glass flex items-center justify-center text-[10px] font-bold uppercase tracking-[0.3em] text-label/75 hover:bg-label/[0.02] transition-all group"
               >
                 Browse All
                 <ArrowRight size={14} className="ml-3 group-hover:translate-x-1 transition-transform" />

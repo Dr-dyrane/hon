@@ -8,9 +8,20 @@
 
 .hero {
   border-radius: 2rem;
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
   box-shadow: var(--shadow-soft);
   padding: 1.1rem 1rem;
+}
+
+.heroIdle {
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+}
+
+.heroActive {
+  background: color-mix(in srgb, var(--surface) 84%, var(--accent) 16%);
+}
+
+.heroOverloaded {
+  background: color-mix(in srgb, var(--surface) 78%, var(--accent) 22%);
 }
 
 .heroEyebrow {
@@ -46,15 +57,17 @@
 }
 
 .primaryAction,
-.secondaryAction {
-  min-height: 2.55rem;
+.secondaryAction,
+.workflowAction,
+.contextAction {
+  min-height: 2.5rem;
   border-radius: 999px;
   padding: 0 1rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  font-size: 0.67rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: var(--tracking-headline);
@@ -70,13 +83,16 @@
   box-shadow: var(--shadow-soft);
 }
 
-.secondaryAction {
+.secondaryAction,
+.contextAction {
   background: color-mix(in srgb, var(--surface-alt) 78%, transparent);
   color: var(--label);
 }
 
 .primaryAction:hover,
-.secondaryAction:hover {
+.secondaryAction:hover,
+.workflowAction:hover,
+.contextAction:hover {
   transform: translateY(-1px);
 }
 
@@ -95,13 +111,24 @@
   overflow-wrap: anywhere;
 }
 
-.workflow {
+.primaryWorkflow {
   border-radius: 2rem;
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
   box-shadow: var(--shadow-card);
   padding: 1rem;
   display: grid;
   gap: 0.8rem;
+}
+
+.workflowIdle {
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+}
+
+.workflowActive {
+  background: color-mix(in srgb, var(--surface) 86%, var(--accent) 14%);
+}
+
+.workflowOverloaded {
+  background: color-mix(in srgb, var(--surface) 82%, var(--accent) 18%);
 }
 
 .workflowHead {
@@ -157,14 +184,13 @@
 }
 
 .workflowAction {
-  min-height: 2.9rem;
+  min-height: 3rem;
   border-radius: 1.1rem;
   background: color-mix(in srgb, var(--surface-alt) 76%, transparent);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.7rem;
-  text-decoration: none;
   padding: 0.72rem 0.8rem;
   transition: background-color var(--duration-base) var(--ease-premium);
 }
@@ -173,27 +199,101 @@
   background: color-mix(in srgb, var(--surface-alt) 88%, transparent);
 }
 
-.surfaceActionLabel {
+.workflowActionMain {
+  min-width: 0;
+}
+
+.workflowActionLabel {
+  margin: 0;
   color: var(--label);
   font-size: 0.79rem;
   font-weight: 600;
 }
 
-.surfaceActionMeta {
+.workflowActionDetail {
+  margin: 0.12rem 0 0;
   color: var(--secondary-label);
-  font-size: 0.6rem;
+  font-size: 0.67rem;
+  line-height: 1.3;
+}
+
+.workflowActionSide {
+  display: grid;
+  justify-items: end;
+  gap: 0.1rem;
+}
+
+.workflowActionValue {
+  color: var(--label);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.workflowActionMeta {
+  color: var(--secondary-label);
+  font-size: 0.58rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: var(--tracking-headline);
 }
 
-.bookSection {
+.surfaceSection {
   display: grid;
+  gap: 0.62rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding-inline: 0.12rem;
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--label);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: var(--tracking-title);
+}
+
+.sectionCount {
+  min-height: 1.7rem;
+  border-radius: 999px;
+  padding-inline: 0.62rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--surface-alt) 74%, transparent);
+  color: var(--secondary-label);
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.surfaceCard {
+  border-radius: 1.9rem;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  box-shadow: var(--shadow-card);
+  padding: 0.94rem;
+  display: grid;
+  gap: 0.72rem;
+}
+
+.contextActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
 }
 
 .primaryAction:focus-visible,
 .secondaryAction:focus-visible,
-.workflowAction:focus-visible {
+.workflowAction:focus-visible,
+.contextAction:focus-visible {
   outline: none;
   box-shadow:
     var(--shadow-soft),
@@ -206,7 +306,8 @@
   }
 
   .hero,
-  .workflow {
+  .primaryWorkflow,
+  .surfaceCard {
     padding: 1.2rem 1.25rem;
   }
 
@@ -219,10 +320,17 @@
   }
 }
 
+@media (min-width: 1120px) {
+  .workflowActionGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .primaryAction,
   .secondaryAction,
-  .workflowAction {
+  .workflowAction,
+  .contextAction {
     transition: none;
   }
 }

@@ -52,7 +52,7 @@ export function LifestyleGallery() {
 
   return (
     <SectionContainer 
-      id="gallery" 
+      id="lifestyle" 
       spacing="flow"
       className="bg-system-background relative overflow-hidden"
     >
@@ -86,7 +86,7 @@ export function LifestyleGallery() {
             The Living System
           </HeroEyebrow>
           <h2 className="mt-8 text-6xl sm:text-8xl md:text-9xl font-headline font-bold text-label tracking-tighter leading-[0.8] mb-8">
-            Live the <span className="italic opacity-30">Ritual.</span>
+            Live the <span className="italic opacity-55">Ritual.</span>
           </h2>
           <BadgeList 
             items={["Daily Energy", "Muscle Growth", "Quick Recovery", "Clean Fuel"]}
@@ -120,7 +120,6 @@ export function LifestyleGallery() {
                     alt={IMAGES[index]?.alt ?? ""}
                     fill
                     sizes="(max-width: 768px) 92vw, 84vw"
-                    priority
                     className="object-cover"
                   />
                 </div>
@@ -178,7 +177,6 @@ export function LifestyleGallery() {
                           src={image.src}
                           alt={image.alt}
                           fill
-                          priority
                           className="object-cover transition-transform duration-1000 group-hover:scale-110"
                         />
 
@@ -229,27 +227,41 @@ export function LifestyleGallery() {
         {/* Minimal Navigation Control */}
         <div className="mt-16 flex items-center justify-between px-6">
           <div className="flex gap-4">
-            <button onClick={prev} className="p-4 rounded-full bg-label/5 hover:bg-label/10 text-label transition-colors">
+            <button
+              onClick={prev}
+              className="p-4 rounded-full bg-label/5 hover:bg-label/10 text-label transition-colors"
+              aria-label="Previous lifestyle slide"
+            >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <button onClick={next} className="p-4 rounded-full bg-label/5 hover:bg-label/10 text-label transition-colors">
+            <button
+              onClick={next}
+              className="p-4 rounded-full bg-label/5 hover:bg-label/10 text-label transition-colors"
+              aria-label="Next lifestyle slide"
+            >
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
           
           <div className="flex items-center gap-6">
-            <span className="text-[10px] font-bold tracking-widest text-label/20 uppercase">Gallery View</span>
+            <span className="text-[10px] font-bold tracking-widest text-label/70 uppercase">Gallery View</span>
             <div className="flex gap-2">
-              {IMAGES.map((_, i) => (
-                <motion.div
+              {IMAGES.map((image, i) => (
+                <button
                   key={i}
-                  animate={{ 
-                    width: i === index ? 40 : 8,
-                    backgroundColor: i === index ? "var(--label)" : "var(--quaternary-label)" 
-                  }}
-                  className="h-1 rounded-full transition-all cursor-pointer"
+                  type="button"
+                  aria-label={`View ${image.title}`}
+                  className="flex h-6 items-center justify-center rounded-full px-1"
                   onClick={() => setIndex(i)}
-                />
+                >
+                  <motion.span
+                    animate={{ 
+                      width: i === index ? 40 : 8,
+                      backgroundColor: i === index ? "var(--label)" : "var(--quaternary-label)" 
+                    }}
+                    className="h-1 rounded-full transition-all"
+                  />
+                </button>
               ))}
             </div>
           </div>

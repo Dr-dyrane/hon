@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
-import dynamic from "next/dynamic";
+import React, { useEffect, useRef, useState } from "react";
 import {
   motion,
   useReducedMotion,
@@ -18,11 +17,6 @@ import { Lightbulb } from "lucide-react";
 import { LiquidGlassCard } from "@/components/ui/LiquidGlassCard";
 import { useMobile } from "@/hooks/useMobile";
 import type { ProductId } from "@/lib/marketing/types";
-
-const Product3DViewer = dynamic(
-  () => import("@/components/3d/Product3DViewer").then((mod) => mod.Product3DViewer),
-  { ssr: false }
-);
 
 type IndicatorIcon = React.ComponentType<{ size?: number; className?: string }>;
 type TrustIndicator = { label: string; icon: IndicatorIcon; delay: number };
@@ -44,6 +38,9 @@ export function SolutionSection({
   const isMobile = useMobile();
   const enableAmbientMotion = !prefersReducedMotion && !isMobile;
   const containerRef = useRef<HTMLDivElement>(null);
+  const [Product3DViewerComponent, setProduct3DViewerComponent] = useState<
+    (typeof import("@/components/3d/Product3DViewer"))["Product3DViewer"] | null
+  >(null);
   
   const solutionSettings = homeSectionsByKey.solution?.settings as { featuredProductId?: ProductId } | undefined;
   const currentProduct = solutionSettings?.featuredProductId && productsById[solutionSettings.featuredProductId]
@@ -51,6 +48,24 @@ export function SolutionSection({
       : productIds[0] ?? null;
   
   const scrollActive = isScrollingIntoSection("solution");
+
+  useEffect(() => {
+    if (!scrollActive || !currentProduct || !productsById[currentProduct]?.model || Product3DViewerComponent) {
+      return;
+    }
+
+    let active = true;
+    void import("@/components/3d/Product3DViewer").then((mod) => {
+      if (!active) {
+        return;
+      }
+      setProduct3DViewerComponent(() => mod.Product3DViewer);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [Product3DViewerComponent, currentProduct, productsById, scrollActive]);
 
   // Parallax & Scroll Effects
   const { scrollYProgress } = useScroll({
@@ -82,7 +97,7 @@ export function SolutionSection({
             The Living Formula
           </HeroEyebrow>
           <h2 className="mt-12 text-6xl md:text-[140px] font-headline font-bold text-label tracking-tighter leading-[0.75]">
-            Meet <span className="italic opacity-20">{brand.name}.</span>
+            Meet <span className="italic opacity-70">{brand.name}.</span>
           </h2>
           <p className="mt-12 text-xl md:text-2xl text-secondary-label/60 max-w-3xl font-light italic leading-relaxed">
             Redesigned for the athlete. Refined for the everyday. 
@@ -127,8 +142,8 @@ export function SolutionSection({
               <div className="absolute w-[70%] aspect-square bg-accent/[0.03] rounded-full blur-3xl" />
             </div>
 
-            {scrollActive ? (
-              <Product3DViewer
+            {scrollActive && Product3DViewerComponent ? (
+              <Product3DViewerComponent
                 modelPath={productsById[currentProduct]?.model ?? ""}
                 theme="light"
                 className="relative z-10 w-72 md:w-[400px] h-[500px] md:h-[600px]"

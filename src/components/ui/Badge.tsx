@@ -24,7 +24,7 @@ export function Badge({
   const variants = {
     default: "text-label",
     accent: "text-accent", 
-    muted: "text-secondary-label opacity-60"
+    muted: "text-secondary-label"
   };
 
   const sizes = {
@@ -92,7 +92,7 @@ export function BadgeList({
         : {
             container: "bg-system-fill",
             dot: "bg-accent",
-            text: "text-secondary-label",
+            text: "text-label",
           };
 
   return (
@@ -124,7 +124,7 @@ export function BadgeList({
           )}
         >
           <div className={cn("w-1 h-1 rounded-full", tone.dot)} />
-          <span className={cn("text-[10px] tracking-[0.25em] uppercase opacity-60", tone.text)}>
+          <span className={cn("text-[10px] tracking-[0.25em] uppercase", tone.text)}>
             {item}
           </span>
         </div>

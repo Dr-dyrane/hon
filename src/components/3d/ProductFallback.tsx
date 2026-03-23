@@ -28,6 +28,9 @@ export function ProductFallback({
         <img
           src={imagePath}
           alt="Product"
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
+          decoding="async"
           className="h-auto w-full drop-shadow-2xl mask-radial"
         />
       ) : (
@@ -37,6 +40,7 @@ export function ProductFallback({
           width={800}
           height={1000}
           priority={priority}
+          fetchPriority={priority ? "high" : "auto"}
           className="w-full h-auto drop-shadow-2xl mask-radial"
         />
       )}

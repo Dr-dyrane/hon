@@ -41,6 +41,8 @@ export const SectionContainer = forwardRef<HTMLElement, SectionContainerProps>((
         ["--section-pb-mobile" as string]: spacingTokens.mobileBottom,
         ["--section-pt-desktop" as string]: spacingTokens.desktopTop,
         ["--section-pb-desktop" as string]: spacingTokens.desktopBottom,
+        contentVisibility: "auto",
+        containIntrinsicSize: "1px 1000px",
       }}
       className={cn(
         "section-shell relative flex flex-col items-center min-h-screen justify-center overflow-hidden [padding-top:var(--section-pt-mobile)] [padding-bottom:var(--section-pb-mobile)] lg:[padding-top:var(--section-pt-desktop)] lg:[padding-bottom:var(--section-pb-desktop)]",

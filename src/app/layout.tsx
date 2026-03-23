@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
-import "aos/dist/aos.css";
 import { DeploymentRefreshGuard } from "@/components/system/DeploymentRefreshGuard";
 import { getRuntimeVersion } from "@/lib/runtime/version";
 
@@ -30,6 +29,7 @@ const sfPro = localFont({
     },
   ],
   variable: "--font-sf-pro",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -112,7 +112,11 @@ export default function RootLayout({
             </FeedbackProvider>
           </UIProvider>
         </ThemeProvider>
-        {process.env.NODE_ENV === "production" ? <Analytics /> : null}
+        {process.env.NODE_ENV === "production" &&
+        process.env.VERCEL === "1" &&
+        Boolean(process.env.VERCEL_URL) ? (
+          <Analytics />
+        ) : null}
       </body>
     </html>
   );

@@ -575,3 +575,39 @@ Refactor completed for `/admin/delivery` so dispatch now follows the same state-
   - rider assignment
   - assignment status transitions
   - rider create/update
+
+## Admin Settings Hardening Checkpoint (March 23, 2026)
+
+Refactor completed for `/admin/settings` and `/admin/settings/team` so operator configuration follows the same state-aware shell hierarchy used on hardened admin workflow pages.
+
+- replaced metric-rail-first route layout with:
+  - state-led hero
+  - primary workflow action panel
+  - focused settings/team surface section
+- introduced shared route styling module:
+  - `src/app/(admin)/admin/settings/settings-page.module.css`
+- wired workflow actions to live settings anchors by adding stable panel ids in:
+  - `src/components/admin/settings/AdminSettingsEditor.tsx`
+- made team queue routing stateful with URL scope sync (`?scope=all|admins|invited|suspended`) in:
+  - `src/components/admin/settings/AdminTeamManager.tsx`
+- preserved existing settings and team action contracts while improving flow hierarchy and md/desktop behavior
+
+## Admin Catalog Shell Hardening Checkpoint (March 23, 2026)
+
+Follow-up shell refactor completed for:
+
+- `/admin/catalog/products`
+- `/admin/catalog/taxonomy`
+
+Key outcomes:
+
+- replaced metric-rail-first route shells with:
+  - state-led hero
+  - primary workflow panel
+  - focused board surface section
+- introduced shared catalog route shell module:
+  - `src/app/(admin)/admin/catalog/catalog-page.module.css`
+- aligned both routes to the hardened app-shell storytelling rhythm while preserving existing board/action contracts:
+  - `CatalogProductBoard`
+  - `TaxonomyBoard`
+- ensured board-level actions remain live (create/new, taxonomy/products cross-navigation, layout handoff) without redundant top-strip shortcuts

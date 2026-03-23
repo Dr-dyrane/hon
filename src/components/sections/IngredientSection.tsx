@@ -91,7 +91,7 @@ export function IngredientSection() {
           </HeroEyebrow>
           <h2 className="mt-8 text-balance text-4xl font-headline font-bold tracking-tight text-label sm:text-6xl md:text-7xl lg:text-[112px] lg:leading-[0.78]">
             Meet House
-            <span className="block italic opacity-25">of Prax.</span>
+            <span className="block italic opacity-45">of Prax.</span>
           </h2>
         </div>
 
@@ -146,7 +146,6 @@ export function IngredientSection() {
                       src={activeIngredient.image}
                       alt={activeIngredient.name}
                       fill
-                      priority={activeIndex === 0}
                       sizes="(max-width: 640px) 92vw, (max-width: 1024px) 72vw, 52vw"
                       className="object-cover"
                     />
@@ -170,17 +169,24 @@ export function IngredientSection() {
                     type="button"
                     onClick={() => setActiveIndex(index)}
                     className={cn(
-                      "h-1.5 rounded-full transition-all",
-                      index === activeIndex ? "w-9 bg-label" : "w-2.5 bg-label/20 hover:bg-label/45"
+                      "relative flex h-6 min-w-6 items-center justify-center rounded-full transition-colors",
+                      index === activeIndex ? "bg-label/10" : "hover:bg-label/10"
                     )}
                     aria-label={`Select ${ingredient.name}`}
                     aria-current={index === activeIndex ? "true" : undefined}
-                  />
+                  >
+                    <span
+                      className={cn(
+                        "block h-1.5 rounded-full transition-all",
+                        index === activeIndex ? "w-9 bg-label" : "w-2.5 bg-label/35"
+                      )}
+                    />
+                  </button>
                 ))}
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-semibold tracking-[0.12em] text-label/40">
+                <span className="text-[10px] font-semibold tracking-[0.12em] text-label/70">
                   {activeLabel} / {ingredientCount.toString().padStart(2, "0")}
                 </span>
                 <Button

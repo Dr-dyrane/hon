@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import dynamic from "next/dynamic";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { Sparkles } from "lucide-react";
@@ -15,11 +14,6 @@ import { LiquidGlassCard } from "@/components/ui/LiquidGlassCard";
 import { cn } from "@/lib/utils";
 import type { ProductId } from "@/lib/marketing/types";
 
-const Product3DViewer = dynamic(
-  () => import("@/components/3d/Product3DViewer").then((mod) => mod.Product3DViewer),
-  { ssr: false }
-);
-
 export function ProductSelector({
   isScrollingIntoSection,
 }: {
@@ -28,6 +22,9 @@ export function ProductSelector({
   const { categories, productIds, productsById } = useMarketingContent();
   const { resolvedTheme } = useTheme();
   const { addItem } = useCommerce();
+  const [Product3DViewerComponent, setProduct3DViewerComponent] = useState<
+    (typeof import("@/components/3d/Product3DViewer"))["Product3DViewer"] | null
+  >(null);
 
   // Filter Categories that actually have products
   const visibleCategories = categories.filter((cat) => 
@@ -44,6 +41,24 @@ export function ProductSelector({
   const safeSelectedProduct = filteredProducts.includes(selectedProduct) ? selectedProduct : filteredProducts[0];
   const activeProduct = productsById[safeSelectedProduct];
   const pricing = getProductPriceSnapshot(productsById, safeSelectedProduct);
+
+  useEffect(() => {
+    if (!scrollActive || !activeProduct?.model || Product3DViewerComponent) {
+      return;
+    }
+
+    let active = true;
+    void import("@/components/3d/Product3DViewer").then((mod) => {
+      if (!active) {
+        return;
+      }
+      setProduct3DViewerComponent(() => mod.Product3DViewer);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [Product3DViewerComponent, activeProduct?.model, scrollActive]);
 
   if (!activeProduct) return null;
 
@@ -64,7 +79,7 @@ export function ProductSelector({
 
           <h2 className="text-6xl md:text-[140px] font-headline font-bold text-label tracking-tighter leading-[0.75]">
             Choose Your <br />
-            <span className="italic opacity-20">Fuel.</span>
+            <span className="italic opacity-70">Fuel.</span>
           </h2>
         </div>
 
@@ -115,8 +130,8 @@ export function ProductSelector({
                   transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   className="relative z-10 w-full h-full"
                 >
-                  {activeProduct?.model ? (
-                    <Product3DViewer
+                  {activeProduct?.model && scrollActive && Product3DViewerComponent ? (
+                    <Product3DViewerComponent
                       modelPath={activeProduct.model}
                       theme={isDark ? "dark" : "light"}
                       className="h-full w-full"
@@ -159,7 +174,7 @@ export function ProductSelector({
           <div className="lg:col-span-3 order-3 space-y-10">
             {/* Category Toggle */}
             <div className="flex flex-col gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-label/30 ml-2">Category</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-label/70 ml-2">Category</span>
               <div className="flex flex-col gap-1 p-1 bg-label/[0.03] rounded-[24px] -white/5">
                 {visibleCategories.map((cat) => (
                   <button
@@ -171,7 +186,7 @@ export function ProductSelector({
                     }}
                     className={cn(
                       "px-6 py-3 rounded-[20px] text-[10px] font-bold uppercase tracking-widest transition-all",
-                      activeCategory === cat.id ? "bg-label text-system-background shadow-xl" : "text-label/40 hover:text-label"
+                      activeCategory === cat.id ? "bg-label text-system-background shadow-xl" : "text-label/75 hover:text-label"
                     )}
                   >
                     {cat.name}
@@ -181,12 +196,13 @@ export function ProductSelector({
             </div>
             {/* Flavor/Variant Grid */}
             <div className="flex flex-col gap-4">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-label/30 ml-2">Variants</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-label/70 ml-2">Variants</span>
               <div className="grid grid-cols-2 gap-3">
                 {filteredProducts.map((id) => (
                   <button
                     key={id}
                     onClick={() => setSelectedProduct(id)}
+                    aria-label={`Select ${productsById[id].name}`}
                     className={cn(
                       "group relative aspect-square rounded-3xl transition-all duration-500 overflow-hidden",
                       selectedProduct === id ? "border-accent bg-accent/5 shadow-[0_0_20px_rgba(var(--accent-rgb),0.1)]" : "border-white/5 bg-label/[0.02] hover:border-white/20"
@@ -194,7 +210,7 @@ export function ProductSelector({
                   >
                     <Image 
                       src={productsById[id].image || ""} 
-                      alt="" 
+                      alt={productsById[id].name}
                       width={120} height={120} 
                       className="object-contain p-4 group-hover:scale-110 transition-transform duration-500" 
                     />

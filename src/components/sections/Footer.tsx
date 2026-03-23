@@ -32,8 +32,8 @@ export function Footer() {
           <div className="lg:col-span-5 space-y-12">
             <Logo />
             <div className="space-y-6 max-w-sm">
-              <p className="text-xl text-label/30 italic font-light leading-relaxed">
-                Elevating human performance through <span className="text-label/60">borderless design</span> and precision nutrition.
+              <p className="text-xl text-label/65 italic font-light leading-relaxed">
+                Elevating human performance through <span className="text-label/85">borderless design</span> and precision nutrition.
               </p>
               <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.3em] text-accent">
                 <Globe size={14} className="animate-spin-slow" />
@@ -50,13 +50,13 @@ export function Footer() {
               className="p-8 squircle flex flex-col gap-8 group"
             >
               <div className="flex justify-between items-start">
-                <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-label/20">The Portal</div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-label/70">The Portal</div>
                 <div className="w-10 h-10 rounded-full bg-label/5 flex items-center justify-center text-label/40 group-hover:text-accent group-hover:bg-accent/10 transition-colors">
                   <ArrowUpRight size={16} />
                 </div>
               </div>
               <div className="space-y-4 flex flex-col gap-4">
-                <h4 className="text-2xl font-headline font-bold text-label">Create Your Profile.</h4>
+                <h3 className="text-2xl font-headline font-bold text-label">Create Your Profile.</h3>
                 <Link
                   href="/account"
                   className="inline-flex h-12 items-center justify-center px-8 rounded-xl button-primary text-system-background text-[10px] font-bold uppercase tracking-[0.2em] shadow-xl hover:scale-[1.05] transition-transform"
@@ -74,7 +74,7 @@ export function Footer() {
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="text-[10px] font-bold uppercase tracking-[0.3em] text-label/30 hover:text-accent transition-colors py-2"
+                  className="text-[10px] font-bold uppercase tracking-[0.3em] text-label/75 hover:text-accent transition-colors py-2"
                 >
                   {link.name}
                 </Link>
@@ -85,16 +85,16 @@ export function Footer() {
 
         {/* Legal & Meta Info */}
         <div className="mt-20 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-4 text-[9px] font-bold uppercase tracking-[0.5em] text-label/20 italic">
+          <div className="flex items-center gap-4 text-[9px] font-bold uppercase tracking-[0.5em] text-label/70 italic">
             <Shield size={12} className="opacity-50" />
             Designed for Performance
           </div>
           
           <div className="flex flex-col items-center md:items-end gap-1">
-            <div className="text-[9px] font-bold uppercase tracking-[0.3em] text-label/40">
+            <div className="text-[9px] font-bold uppercase tracking-[0.3em] text-label/70">
               &copy; {currentYear} {brand.name}
             </div>
-            <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-accent/40">
+            <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-accent/85">
               Premium Plant-Based Protocol
             </div>
           </div>

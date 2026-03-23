@@ -2,6 +2,8 @@
   display: grid;
   gap: 1rem;
   padding-bottom: 5rem;
+  width: min(100%, 76rem);
+  margin-inline: auto;
 }
 
 .hero {
@@ -102,6 +104,7 @@
 .activityPill {
   margin-top: 0.8rem;
   width: fit-content;
+  max-width: 100%;
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface-alt) 72%, transparent);
   color: var(--secondary-label);
@@ -109,6 +112,8 @@
   font-size: 0.71rem;
   font-weight: 500;
   letter-spacing: -0.01em;
+  line-height: 1.32;
+  overflow-wrap: anywhere;
 }
 
 .primaryWorkflow {
@@ -230,6 +235,7 @@
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
 }
 
 .workflowActionMeta {
@@ -363,6 +369,7 @@
   color: var(--secondary-label);
   font-size: 0.74rem;
   line-height: 1.34;
+  overflow-wrap: anywhere;
 }
 
 .orderAddressBlock p {
@@ -377,7 +384,7 @@
 .orderMetaGrid {
   display: grid;
   gap: 0.42rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .metaStat {
@@ -418,6 +425,7 @@
   text-transform: uppercase;
   letter-spacing: var(--tracking-headline);
   text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
 .metaLink:hover {
@@ -491,6 +499,7 @@
   color: var(--label);
   font-size: 0.76rem;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .riderDetail {
@@ -498,6 +507,7 @@
   color: var(--secondary-label);
   font-size: 0.7rem;
   line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .riderStatusCol {
@@ -547,22 +557,28 @@
   }
 
   .workflowActionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .orderMetaGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1120px) {
-  .boardGrid {
-    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
-    align-items: start;
-  }
-
+@media (min-width: 900px) {
   .stageGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
 
-  .stageGrid > :first-child {
-    grid-column: 1 / -1;
+@media (min-width: 1120px) {
+  .workflowActionGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .boardGrid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+    align-items: start;
   }
 }
 
