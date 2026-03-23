@@ -7,6 +7,7 @@ import {
   getOrderStagePresentation,
   type PortalOrderEntryAction,
   getPortalOrderEntryAction,
+  getPortalOrderBucketFootnote,
   getPortalOrderLifecycleBucket,
   type PortalOrderLifecycleBucket,
 } from "@/lib/orders/presentation";
@@ -65,12 +66,6 @@ function getBannerState(input: {
     detail: "Track progress or open details.",
     tone: "active" as BannerTone,
   };
-}
-
-function getBucketFootnote(bucket: PortalOrderLifecycleBucket) {
-  if (bucket === "action_required") return "Needs action";
-  if (bucket === "in_progress") return "In progress";
-  return "Completed";
 }
 
 export default async function OrdersPage() {
@@ -239,7 +234,7 @@ function OrderEntryBody({ entry }: { entry: OrderEntry }) {
 
       <div className={styles.cardFooter}>
         <span className={styles.footerState}>
-          {getBucketFootnote(entry.bucket)} - {formatDate(entry.order.placedAt)}
+          {getPortalOrderBucketFootnote(entry.bucket)} - {formatDate(entry.order.placedAt)}
         </span>
         <Link
           href={entry.href}

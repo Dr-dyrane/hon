@@ -244,6 +244,16 @@ export type PortalOrderLifecycleBucket =
   | "in_progress"
   | "history";
 
+export type AdminOrderEntryAction = {
+  label: "Review request" | "Review payment" | "Await transfer" | "Open";
+  emphasis: "primary" | "secondary";
+};
+
+export type AdminOrderLifecycleBucket =
+  | "needs_attention"
+  | "in_progress"
+  | "history";
+
 export function getPortalOrderEntryAction(input: {
   status?: string | null;
   paymentStatus?: string | null;
@@ -298,4 +308,63 @@ export function getPortalOrderLifecycleBucket(input: {
   }
 
   return "in_progress";
+}
+
+export function getPortalOrderBucketFootnote(bucket: PortalOrderLifecycleBucket) {
+  if (bucket === "action_required") return "Needs action";
+  if (bucket === "in_progress") return "In progress";
+  return "Completed";
+}
+
+export function getAdminOrderEntryAction(input: {
+  status?: string | null;
+  paymentStatus?: string | null;
+  fulfillmentStatus?: string | null;
+}): AdminOrderEntryAction {
+  const ledger = resolveOrderLedgerState(input);
+
+  if (ledger.key === "request_received") {
+    return { label: "Review request", emphasis: "primary" };
+  }
+
+  if (ledger.key === "payment_submitted" || ledger.key === "payment_under_review") {
+    return { label: "Review payment", emphasis: "primary" };
+  }
+
+  if (ledger.key === "awaiting_transfer") {
+    return { label: "Await transfer", emphasis: "secondary" };
+  }
+
+  return { label: "Open", emphasis: "secondary" };
+}
+
+export function getAdminOrderLifecycleBucket(input: {
+  status?: string | null;
+  paymentStatus?: string | null;
+  fulfillmentStatus?: string | null;
+}): AdminOrderLifecycleBucket {
+  const ledger = resolveOrderLedgerState(input);
+
+  if (
+    [
+      "request_received",
+      "awaiting_transfer",
+      "payment_submitted",
+      "payment_under_review",
+    ].includes(ledger.key)
+  ) {
+    return "needs_attention";
+  }
+
+  if (ledger.key === "delivered" || ledger.key === "closed") {
+    return "history";
+  }
+
+  return "in_progress";
+}
+
+export function getAdminOrderBucketFootnote(bucket: AdminOrderLifecycleBucket) {
+  if (bucket === "needs_attention") return "Needs attention";
+  if (bucket === "in_progress") return "In progress";
+  return "History";
 }

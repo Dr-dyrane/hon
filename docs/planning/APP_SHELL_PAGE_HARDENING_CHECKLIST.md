@@ -451,3 +451,12 @@ This audit covers:
 - [x] Localize `/account` and `/account/reorder` surface styling into page modules to reduce global class coupling.
 - [x] Revisit portal shelf 3D activation policy to avoid unnecessary always-on WebGL work.
 - [x] Add panel-query -> state sync effect in `OrderDetailView` for navigation consistency.
+
+## Admin Orders Parity Checkpoint (March 23, 2026)
+
+Follow-up alignment completed for `/admin/orders` so it now tracks the same policy-first order handling model used on `/account/orders`.
+
+- moved admin order list lifecycle/action/footnote decisions into shared policy helpers in `src/lib/orders/presentation.ts`
+- switched `/admin/orders` to consume the shared helpers instead of page-local duplicated logic
+- switched `/account/orders` to use shared lifecycle footnote helper for the same source of truth
+- result: admin/account list behavior stays aligned as status policy evolves, with lower drift risk

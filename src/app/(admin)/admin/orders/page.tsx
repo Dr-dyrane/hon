@@ -5,22 +5,21 @@ import { requireAdminSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
 import { listOpenOrderReturnCasesForAdmin } from "@/lib/db/repositories/order-returns-repository";
 import { listOrdersForAdmin } from "@/lib/db/repositories/orders-repository";
-import { resolveOrderLedgerState } from "@/lib/orders/ledger-policy";
-import { getOrderStagePresentation } from "@/lib/orders/presentation";
+import {
+  type AdminOrderEntryAction,
+  type AdminOrderLifecycleBucket,
+  getAdminOrderBucketFootnote,
+  getAdminOrderEntryAction,
+  getAdminOrderLifecycleBucket,
+  getOrderStagePresentation,
+} from "@/lib/orders/presentation";
 import { cn } from "@/lib/utils";
 import styles from "./orders-page.module.css";
-
-type AdminLifecycleBucket = "needs_attention" | "in_progress" | "history";
-
-type AdminOrderEntryAction = {
-  label: string;
-  emphasis: "primary" | "secondary";
-};
 
 type OrderEntry = {
   order: Awaited<ReturnType<typeof listOrdersForAdmin>>[number];
   stage: ReturnType<typeof getOrderStagePresentation>;
-  bucket: AdminLifecycleBucket;
+  bucket: AdminOrderLifecycleBucket;
   action: AdminOrderEntryAction;
   href: string;
 };
@@ -45,53 +44,6 @@ function formatDate(value?: string | null) {
 
 function formatStatusLabel(value: string) {
   return value.replace(/_/g, " ");
-}
-
-function getAdminOrderBucket(input: {
-  status?: string | null;
-  paymentStatus?: string | null;
-  fulfillmentStatus?: string | null;
-}): AdminLifecycleBucket {
-  const ledger = resolveOrderLedgerState(input);
-
-  if (
-    [
-      "request_received",
-      "awaiting_transfer",
-      "payment_submitted",
-      "payment_under_review",
-    ].includes(ledger.key)
-  ) {
-    return "needs_attention";
-  }
-
-  if (ledger.key === "delivered" || ledger.key === "closed") {
-    return "history";
-  }
-
-  return "in_progress";
-}
-
-function getAdminOrderAction(input: {
-  status?: string | null;
-  paymentStatus?: string | null;
-  fulfillmentStatus?: string | null;
-}): AdminOrderEntryAction {
-  const ledger = resolveOrderLedgerState(input);
-
-  if (ledger.key === "request_received") {
-    return { label: "Review request", emphasis: "primary" };
-  }
-
-  if (["payment_submitted", "payment_under_review"].includes(ledger.key)) {
-    return { label: "Review payment", emphasis: "primary" };
-  }
-
-  if (ledger.key === "awaiting_transfer") {
-    return { label: "Await transfer", emphasis: "secondary" };
-  }
-
-  return { label: "Open", emphasis: "secondary" };
 }
 
 function getBannerState(input: {
@@ -122,12 +74,6 @@ function getBannerState(input: {
   };
 }
 
-function getBucketFootnote(bucket: AdminLifecycleBucket) {
-  if (bucket === "needs_attention") return "Needs attention";
-  if (bucket === "in_progress") return "In progress";
-  return "History";
-}
-
 export default async function AdminOrdersPage() {
   const session = await requireAdminSession("/admin/orders");
   const [orders, openReturns] = await Promise.all([
@@ -150,8 +96,8 @@ export default async function AdminOrdersPage() {
 
   const entries: OrderEntry[] = orders.map((order) => {
     const stage = getOrderStagePresentation(order);
-    const bucket = getAdminOrderBucket(order);
-    const action = getAdminOrderAction(order);
+    const bucket = getAdminOrderLifecycleBucket(order);
+    const action = getAdminOrderEntryAction(order);
 
     return {
       order,
@@ -162,7 +108,7 @@ export default async function AdminOrdersPage() {
     };
   });
 
-  const lifecycleRank: Record<AdminLifecycleBucket, number> = {
+  const lifecycleRank: Record<AdminOrderLifecycleBucket, number> = {
     needs_attention: 0,
     in_progress: 1,
     history: 2,
@@ -409,7 +355,7 @@ function OrderEntryBody({ entry }: { entry: OrderEntry }) {
 
       <div className={styles.cardFooter}>
         <span className={styles.footerState}>
-          {getBucketFootnote(entry.bucket)} - {formatDate(entry.order.placedAt)}
+          {getAdminOrderBucketFootnote(entry.bucket)} - {formatDate(entry.order.placedAt)}
         </span>
         <Link
           href={entry.href}
