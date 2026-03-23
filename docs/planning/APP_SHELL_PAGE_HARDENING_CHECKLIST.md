@@ -460,3 +460,26 @@ Follow-up alignment completed for `/admin/orders` so it now tracks the same poli
 - switched `/admin/orders` to consume the shared helpers instead of page-local duplicated logic
 - switched `/account/orders` to use shared lifecycle footnote helper for the same source of truth
 - result: admin/account list behavior stays aligned as status policy evolves, with lower drift risk
+
+## Shared Order List Scene Checkpoint (March 23, 2026)
+
+Follow-up extraction completed for order list rendering parity.
+
+- introduced `src/components/orders/OrderListScene.tsx` + local module styles as the shared list UI surface
+- moved duplicate banner/section/mobile-blade/desktop-card rendering out of both route pages
+- wired `/account/orders` and `/admin/orders` to feed normalized scene entries into the shared component
+- kept admin-only metrics and open-returns section in the admin route while reusing the same order list scene
+- removed dead account-local order-list stylesheet after extraction
+
+## Admin Overview Storytelling Checkpoint (March 23, 2026)
+
+Follow-up alignment completed for `/admin` so overview now follows the same state-first storytelling rhythm applied on `/account`.
+
+- removed redundant top shortcut strip that duplicated shell navigation
+- rebuilt overview into:
+  - hero context
+  - primary workflow queue
+  - metrics rail
+  - archival control/cash context
+- moved styling to local module (`src/app/(admin)/admin/overview-page.module.css`) and dropped global utility/squircle dependence
+- added contextual stack-page actions (`/admin/catalog/taxonomy`, `/admin/settings/team`) where shell nav does not expose direct top-level entry points

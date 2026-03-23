@@ -1,13 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import {
-  CircleAlert,
-  Clock3,
-  Landmark,
-  PackageCheck,
-  Truck,
-} from "lucide-react";
-import { MetricRail } from "@/components/admin/MetricRail";
+import { Landmark } from "lucide-react";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
 import {
@@ -17,6 +10,114 @@ import {
 import { listAllAdminCatalogProducts } from "@/lib/db/repositories/catalog-admin-repository";
 import { listOrdersForAdmin } from "@/lib/db/repositories/orders-repository";
 import { getOrderStagePresentation } from "@/lib/orders/presentation";
+import { cn } from "@/lib/utils";
+import styles from "./overview-page.module.css";
+
+type OverviewTone = "idle" | "active" | "overloaded";
+
+const PRIORITY_STATUSES = new Set([
+  "checkout_draft",
+  "payment_submitted",
+  "payment_under_review",
+]);
+
+function resolvePrimaryAction(input: {
+  requestQueue: number;
+  paymentReviewQueue: number;
+  dispatchQueue: number;
+}) {
+  if (input.requestQueue > 0) {
+    return {
+      href: "/admin/orders",
+      label: "Review requests",
+    };
+  }
+
+  if (input.paymentReviewQueue > 0) {
+    return {
+      href: "/admin/payments",
+      label: "Review payments",
+    };
+  }
+
+  if (input.dispatchQueue > 0) {
+    return {
+      href: "/admin/delivery",
+      label: "Open dispatch",
+    };
+  }
+
+  return {
+    href: "/admin/orders",
+    label: "Open order board",
+  };
+}
+
+function resolveOverviewTone(needsActionCount: number): OverviewTone {
+  if (needsActionCount >= 8) {
+    return "overloaded";
+  }
+
+  if (needsActionCount > 0) {
+    return "active";
+  }
+
+  return "idle";
+}
+
+function getHeroState(tone: OverviewTone, needsActionCount: number) {
+  if (tone === "overloaded") {
+    return {
+      title: "Queue pressure is high.",
+      detail: `${needsActionCount} items are blocking flow. Triage requests and payment checks before dispatch.`,
+      pill: "Escalated queue",
+    };
+  }
+
+  if (tone === "active") {
+    return {
+      title: `${needsActionCount} queue item${needsActionCount === 1 ? "" : "s"} need action.`,
+      detail: "Clear requests and payment checks first, then move through dispatch.",
+      pill: "Queue active",
+    };
+  }
+
+  return {
+    title: "All systems clear.",
+    detail: "No pending requests, payments, or dispatch activity.",
+    pill: "No pending queue",
+  };
+}
+
+function getWorkflowState(tone: OverviewTone) {
+  if (tone === "overloaded") {
+    return {
+      title: "Triage queue pressure now.",
+      detail: "Work requests, payment review, and dispatch in sequence until pressure drops.",
+      badge: "Overload",
+      emptyDetail:
+        "No urgent orders are pinned right now. Keep catalog and layout updates ready while monitoring queue changes.",
+    };
+  }
+
+  if (tone === "active") {
+    return {
+      title: "Process the queue now.",
+      detail: "Prioritize request approvals and payment checks before dispatch actions.",
+      badge: "Active",
+      emptyDetail:
+        "No urgent orders are pinned right now. Continue with catalog and layout quality checks.",
+    };
+  }
+
+  return {
+    title: "Queue is clear.",
+    detail: "You can proceed with catalog updates or layout adjustments.",
+    badge: "Clear",
+    emptyDetail:
+      "No urgent orders right now. Continue with catalog and layout quality checks.",
+  };
+}
 
 export default async function AdminPage() {
   const session = await requireAdminSession("/admin");
@@ -27,13 +128,12 @@ export default async function AdminPage() {
     listOrdersForAdmin(20, session.email),
   ]);
 
-  const activeOrders = snapshot.openOrders;
-  const paymentReviewQueue = snapshot.paymentReviewQueue;
   const requestQueue = snapshot.requestQueue;
+  const paymentReviewQueue = snapshot.paymentReviewQueue;
   const preparingQueue = snapshot.preparingQueue;
   const outForDeliveryQueue = snapshot.outForDeliveryQueue;
-  const needsActionCount =
-    requestQueue + paymentReviewQueue + preparingQueue + outForDeliveryQueue;
+  const dispatchQueue = preparingQueue + outForDeliveryQueue;
+  const needsActionCount = requestQueue + paymentReviewQueue + dispatchQueue;
   const awaitingTransferAmountNgn = snapshot.awaitingTransferAmountNgn;
   const reviewAmountNgn = snapshot.reviewAmountNgn;
   const queueValueNgn = awaitingTransferAmountNgn + reviewAmountNgn;
@@ -41,153 +141,193 @@ export default async function AdminPage() {
   const featuredCount = products.filter(
     (product) => product.merchandisingState === "featured"
   ).length;
+  const primaryAction = resolvePrimaryAction({
+    requestQueue,
+    paymentReviewQueue,
+    dispatchQueue,
+  });
+  const priorityOrders = orders
+    .filter((order) => PRIORITY_STATUSES.has(order.status))
+    .slice(0, 3);
+  const overviewTone = resolveOverviewTone(needsActionCount);
+  const heroState = getHeroState(overviewTone, needsActionCount);
+  const workflowState = getWorkflowState(overviewTone);
+  const queueSummary = `${requestQueue} requests - ${paymentReviewQueue} payments - ${dispatchQueue} dispatch`;
 
   return (
-    <div className="space-y-8 pb-20 md:space-y-10">
-      <section className="space-y-5">
-        <div className="squircle bg-system-fill/42 p-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.04)] md:inline-flex">
-          <div className="grid grid-cols-3 gap-1.5">
-            <QuickLink href="/admin/orders" label="Orders" />
-            <QuickLink href="/admin/payments" label="Payments" />
-            <QuickLink href="/admin/delivery" label="Delivery" />
-          </div>
+    <div className={styles.page}>
+      <section
+        className={cn(
+          styles.hero,
+          overviewTone === "overloaded"
+            ? styles.heroOverloaded
+            : overviewTone === "active"
+              ? styles.heroActive
+              : styles.heroIdle
+        )}
+      >
+        <p className={styles.heroEyebrow}>Operations overview</p>
+        <h1 className={styles.heroTitle}>{heroState.title}</h1>
+        <p className={styles.heroDetail}>{heroState.detail}</p>
+
+        <div className={styles.heroActions}>
+          <Link href={primaryAction.href} className={styles.primaryAction}>
+            {primaryAction.label}
+          </Link>
+          <Link href="/admin/delivery" className={styles.secondaryAction}>
+            Delivery board
+          </Link>
         </div>
 
-        <MetricRail
-          items={[
-            {
-              label: "Needs action",
-              value: `${needsActionCount}`,
-              detail: "Priority queue",
-              icon: CircleAlert,
-            },
-            {
-              label: "Open orders",
-              value: `${activeOrders}`,
-              detail: "In motion",
-              icon: Clock3,
-            },
-            {
-              label: "Preparing",
-              value: `${preparingQueue}`,
-              detail: "Ready to send",
-              icon: PackageCheck,
-            },
-            {
-              label: "Out",
-              value: `${outForDeliveryQueue}`,
-              detail: "On delivery",
-              icon: Truck,
-            },
-          ]}
-          columns={4}
-        />
+        <div className={styles.activityPill}>
+          {overviewTone === "idle" ? heroState.pill : queueSummary}
+        </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[1.15fr_0.85fr_0.85fr]">
-        <OverviewPanel
-          title="Needs Action"
-          badge={needsActionCount.toString()}
-          emptyLabel="No active queue."
-        >
-          <QueueRow
+      <section
+        className={cn(
+          styles.primaryWorkflow,
+          overviewTone === "overloaded"
+            ? styles.workflowOverloaded
+            : overviewTone === "active"
+              ? styles.workflowActive
+              : styles.workflowIdle
+        )}
+      >
+        <div className={styles.workflowHead}>
+          <div>
+            <p className={styles.panelEyebrow}>Primary workflow</p>
+            <h2 className={styles.workflowTitle}>{workflowState.title}</h2>
+            <p className={styles.workflowDetail}>{workflowState.detail}</p>
+          </div>
+          <span className={styles.workflowBadge}>{workflowState.badge}</span>
+        </div>
+
+        <div className={styles.workflowActionGrid}>
+          <QueueAction
             href="/admin/orders"
             label="Requests"
             detail="Waiting approval"
             value={`${requestQueue}`}
+            actionLabel="View board"
           />
-          <QueueRow
+          <QueueAction
             href="/admin/payments"
             label="Payments"
             detail="Waiting review"
             value={`${paymentReviewQueue}`}
+            actionLabel="Open review"
           />
-          <QueueRow
+          <QueueAction
             href="/admin/delivery"
             label="Dispatch"
             detail="Preparing and out"
-            value={`${preparingQueue + outForDeliveryQueue}`}
+            value={`${dispatchQueue}`}
+            actionLabel="Open delivery"
           />
-          {needsActionCount > 0 ? (
-            orders
-              .filter((order) =>
-                ["checkout_draft", "payment_submitted", "payment_under_review"].includes(
-                  order.status
-                )
-              )
-              .slice(0, 2)
-              .map((order) => {
+        </div>
+
+        {priorityOrders.length > 0 ? (
+          <>
+            <p className={styles.prioritySectionTitle}>Priority orders</p>
+            <div className={styles.priorityStack}>
+              {priorityOrders.map((order) => {
                 const stage = getOrderStagePresentation(order);
 
                 return (
                   <Link
                     key={order.orderId}
                     href={`/admin/orders/${order.orderId}`}
-                    className="motion-press-soft flex items-center justify-between gap-3 squircle bg-system-fill/34 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/48"
+                    className={styles.priorityOrder}
                   >
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold text-label">#{order.orderNumber}</div>
-                      <div className="mt-1 truncate text-xs text-secondary-label">
-                        {stage.label}
-                      </div>
+                    <div className={styles.priorityOrderMain}>
+                      <p className={styles.priorityOrderLabel}>#{order.orderNumber}</p>
+                      <p className={styles.priorityOrderStage}>{stage.label}</p>
                     </div>
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-                      Open
-                    </span>
+                    <span className={styles.priorityOrderMeta}>Open</span>
                   </Link>
                 );
-              })
-          ) : null}
+              })}
+            </div>
+          </>
+        ) : (
+          <div className={styles.emptyWorkflow}>
+            <p className={styles.emptyWorkflowText}>{workflowState.emptyDetail}</p>
+            <div className={styles.emptyWorkflowActions}>
+              <Link href="/admin/catalog/products" className={styles.emptyWorkflowAction}>
+                Open catalog
+              </Link>
+              <Link href="/admin/layout" className={styles.emptyWorkflowAction}>
+                Open layout
+              </Link>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section className={styles.archiveGrid}>
+        <OverviewPanel title="Cash" badge="Snapshot">
+          <div className={styles.cashHeadline}>
+            <p className={styles.cashValue}>{formatNgn(snapshot.grossLast7dNgn)}</p>
+            <p className={styles.cashCaption}>Last 7 days gross</p>
+          </div>
+
+          <details className={styles.disclosure}>
+            <summary className={styles.disclosureSummary}>Details</summary>
+            <div className={styles.disclosureBody}>
+              <StatRow label="Last 24h gross" value={formatNgn(snapshot.grossLast24hNgn)} />
+              <StatRow label="Queue value" value={formatNgn(queueValueNgn)} />
+              <StatRow
+                label="Awaiting transfer"
+                value={formatNgn(awaitingTransferAmountNgn)}
+              />
+              <StatRow label="In review" value={formatNgn(reviewAmountNgn)} />
+            </div>
+          </details>
+
+          <Link href="/admin/payments" className={styles.archiveAction}>
+            <span className={styles.surfaceActionLabel}>Open payments</span>
+            <Landmark className={styles.surfaceActionIcon} />
+          </Link>
         </OverviewPanel>
 
-        <OverviewPanel
-          title="Cash"
-          badge="Live"
-          emptyLabel="No open queue value."
-        >
-          <StatRow label="Last 7d gross" value={formatNgn(snapshot.grossLast7dNgn)} />
-          <StatRow label="Last 24h gross" value={formatNgn(snapshot.grossLast24hNgn)} />
-          <StatRow label="Queue value" value={formatNgn(queueValueNgn)} />
-          <StatRow
-            label="Awaiting transfer"
-            value={formatNgn(awaitingTransferAmountNgn)}
-          />
-          <StatRow label="In review" value={formatNgn(reviewAmountNgn)} />
-          <Link
-            href="/admin/payments"
-            className="motion-press-soft flex items-center justify-between gap-3 squircle bg-system-fill/34 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/48"
-          >
-            <span className="text-sm font-semibold text-label">Open payments</span>
-            <Landmark className="h-4 w-4 text-secondary-label" />
-          </Link>
-        </OverviewPanel>
+        <OverviewPanel title="Control center" badge={`${needsActionCount}`}>
+          <div className={styles.controlMetricGrid}>
+            <ActionMetricRow
+              href="/admin/catalog/products"
+              label="Catalog"
+              value={`${liveCatalogCount} available`}
+              action="Manage"
+            />
+            <ActionMetricRow
+              href="/admin/catalog/products?merchandising=featured"
+              label="Featured"
+              value={`${featuredCount} picks`}
+              action="Edit"
+            />
+            <ActionMetricRow
+              href="/admin/layout"
+              label="Layout"
+              value={`${metrics.enabledHomeSections} sections live`}
+              action="Open"
+            />
 
-        <OverviewPanel
-          title="Control"
-          badge={`${activeOrders}`}
-          emptyLabel="No controls available."
-        >
-          <StatRow label="Catalog live" value={`${liveCatalogCount} available`} />
-          <StatRow label="Featured" value={`${featuredCount} picks`} />
-          <StatRow label="Home sections" value={`${metrics.enabledHomeSections} live`} />
-          <Link
-            href="/admin/catalog"
-            className="motion-press-soft flex items-center justify-between gap-3 squircle bg-system-fill/34 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/48"
-          >
-            <span className="text-sm font-semibold text-label">Open catalog</span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-              Manage
-            </span>
-          </Link>
-          <Link
-            href="/admin/layout"
-            className="motion-press-soft flex items-center justify-between gap-3 squircle bg-system-fill/34 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/48"
-          >
-            <span className="text-sm font-semibold text-label">Open layout</span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-              Edit
-            </span>
-          </Link>
+            <StatRow
+              label="Home version"
+              value={metrics.homeVersionLabel?.trim() || "Unlabeled"}
+            />
+          </div>
+
+          <div className={styles.archiveSubGrid}>
+            <Link href="/admin/catalog/taxonomy" className={styles.archiveSubAction}>
+              <span className={styles.surfaceActionLabel}>Taxonomy</span>
+              <span className={styles.surfaceActionMeta}>Stack page</span>
+            </Link>
+            <Link href="/admin/settings/team" className={styles.archiveSubAction}>
+              <span className={styles.surfaceActionLabel}>Team</span>
+              <span className={styles.surfaceActionMeta}>Stack page</span>
+            </Link>
+          </div>
         </OverviewPanel>
       </section>
     </div>
@@ -198,78 +338,76 @@ function OverviewPanel({
   title,
   badge,
   children,
-  emptyLabel,
 }: {
   title: string;
   badge: string;
   children: ReactNode;
-  emptyLabel: string;
 }) {
-  const hasChildren = Array.isArray(children) ? children.length > 0 : Boolean(children);
-
   return (
-    <section className="glass-morphism rounded-[32px] bg-[color:var(--surface)]/88 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-lg font-semibold tracking-tight text-label">{title}</h2>
-        <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-          {badge}
-        </span>
+    <section className={styles.archivePanel}>
+      <div className={styles.archivePanelHead}>
+        <h2 className={styles.archivePanelTitle}>{title}</h2>
+        <span className={styles.archivePanelBadge}>{badge}</span>
       </div>
-
-      <div className="mt-4 grid gap-3">
-        {hasChildren ? children : (
-          <div className="squircle bg-system-fill/32 px-4 py-4 text-sm text-secondary-label">
-            {emptyLabel}
-          </div>
-        )}
-      </div>
+      <div className={styles.archivePanelBody}>{children}</div>
     </section>
   );
 }
 
-function QuickLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="flex min-h-[40px] items-center justify-center rounded-[18px] px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label transition-colors duration-200 hover:bg-[color:var(--surface)] hover:shadow-soft"
-    >
-      {label}
-    </Link>
-  );
-}
-
-function QueueRow({
+function QueueAction({
   href,
   label,
   detail,
   value,
+  actionLabel,
 }: {
   href: string;
   label: string;
   detail: string;
   value: string;
+  actionLabel: string;
 }) {
   return (
-    <Link
-      href={href}
-      className="flex items-center justify-between gap-3 squircle bg-system-fill/42 px-4 py-4 transition-colors duration-200 hover:bg-system-fill/58"
-    >
-      <div className="min-w-0">
-        <div className="text-sm font-semibold text-label">{label}</div>
-        <div className="mt-1 truncate text-xs text-secondary-label">{detail}</div>
+    <Link href={href} className={styles.workflowAction}>
+      <div className={styles.workflowActionMain}>
+        <p className={styles.workflowActionLabel}>{label}</p>
+        <p className={styles.workflowActionDetail}>{detail}</p>
       </div>
-      <span className="text-sm font-semibold text-label">{value}</span>
+      <div className={styles.workflowActionSide}>
+        <span className={styles.workflowActionValue}>{value}</span>
+        <span className={styles.workflowActionMeta}>{actionLabel}</span>
+      </div>
     </Link>
   );
 }
 
 function StatRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="squircle bg-system-fill/42 px-4 py-4">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
-        {label}
-      </div>
-      <div className="mt-1 text-sm font-semibold text-label">{value}</div>
+    <div className={styles.statRow}>
+      <p className={styles.statLabel}>{label}</p>
+      <p className={styles.statValue}>{value}</p>
     </div>
+  );
+}
+
+function ActionMetricRow({
+  href,
+  label,
+  value,
+  action,
+}: {
+  href: string;
+  label: string;
+  value: string;
+  action: string;
+}) {
+  return (
+    <Link href={href} className={styles.actionMetricRow}>
+      <div className={styles.actionMetricMain}>
+        <p className={styles.actionMetricLabel}>{label}</p>
+        <p className={styles.actionMetricValue}>{value}</p>
+      </div>
+      <span className={styles.actionMetricMeta}>{action}</span>
+    </Link>
   );
 }

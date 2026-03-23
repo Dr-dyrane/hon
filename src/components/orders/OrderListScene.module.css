@@ -1,6 +1,9 @@
 .page {
   display: grid;
   gap: 0.95rem;
+}
+
+.withBottomPadding {
   padding-bottom: 4.5rem;
 }
 
@@ -372,6 +375,12 @@
   }
 }
 
+@media (min-width: 1280px) {
+  .metaRowWide {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bladeSummary::after,
   .card,
@@ -379,3 +388,4 @@
     transition: none;
   }
 }
+

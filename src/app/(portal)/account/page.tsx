@@ -98,18 +98,6 @@ export default async function AccountPage() {
         )}
       </section>
 
-      <section className={styles.secondarySection}>
-        <header className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Shortcuts</h2>
-        </header>
-        <div className={styles.quickGrid}>
-          <QuickLink href="/account#store" label="Store" />
-          <QuickLink href="/account/orders" label="Orders" />
-          <QuickLink href="/account/addresses" label="Places" />
-          <QuickLink href="/account/profile" label="Profile" />
-        </div>
-      </section>
-
       <section id="store" className={styles.storeSection}>
         <div className={styles.sectionHeader}>
           <div>
@@ -176,13 +164,5 @@ function PortalPanel({
       </div>
       <div className={styles.archivePanelBody}>{children}</div>
     </section>
-  );
-}
-
-function QuickLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link href={href} className={styles.quickLink}>
-      {label}
-    </Link>
   );
 }

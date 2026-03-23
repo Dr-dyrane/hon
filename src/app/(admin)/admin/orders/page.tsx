@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { CircleEllipsis, Clock3, Landmark, PackageCheck, RotateCcw } from "lucide-react";
 import { MetricRail } from "@/components/admin/MetricRail";
+import {
+  OrderListScene,
+  type OrderListBannerState,
+  type OrderListEntry,
+  type OrderListSection,
+} from "@/components/orders/OrderListScene";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
 import { listOpenOrderReturnCasesForAdmin } from "@/lib/db/repositories/order-returns-repository";
@@ -16,15 +22,15 @@ import {
 import { cn } from "@/lib/utils";
 import styles from "./orders-page.module.css";
 
+type AdminOrderRow = Awaited<ReturnType<typeof listOrdersForAdmin>>[number];
+
 type OrderEntry = {
-  order: Awaited<ReturnType<typeof listOrdersForAdmin>>[number];
+  order: AdminOrderRow;
   stage: ReturnType<typeof getOrderStagePresentation>;
   bucket: AdminOrderLifecycleBucket;
   action: AdminOrderEntryAction;
   href: string;
 };
-
-type BannerTone = "idle" | "active" | "action";
 
 function formatTimestamp(value?: string | null) {
   if (!value) {
@@ -49,13 +55,14 @@ function formatStatusLabel(value: string) {
 function getBannerState(input: {
   activeCount: number;
   needsAttentionCount: number;
-}) {
+}): OrderListBannerState {
   const { activeCount, needsAttentionCount } = input;
+
   if (activeCount === 0) {
     return {
       title: "No active orders",
       detail: "Queue is clear right now.",
-      tone: "idle" as BannerTone,
+      tone: "idle",
     };
   }
 
@@ -63,14 +70,49 @@ function getBannerState(input: {
     return {
       title: `${needsAttentionCount} order${needsAttentionCount === 1 ? "" : "s"} need attention`,
       detail: "Process requests and payment checks first.",
-      tone: "action" as BannerTone,
+      tone: "action",
     };
   }
 
   return {
     title: `${activeCount} order${activeCount === 1 ? "" : "s"} in progress`,
     detail: "Fulfillment is moving.",
-    tone: "active" as BannerTone,
+    tone: "active",
+  };
+}
+
+function mapAdminEntryToListSceneEntry(entry: OrderEntry): OrderListEntry {
+  return {
+    entryId: entry.order.orderId,
+    orderNumber: entry.order.orderNumber,
+    totalNgn: entry.order.totalNgn,
+    placedAt: entry.order.placedAt,
+    stageLabel: entry.stage.label,
+    stageDetail: entry.stage.detail,
+    stageTone: entry.stage.tone,
+    footnote: getAdminOrderBucketFootnote(entry.bucket),
+    priority: entry.bucket === "needs_attention",
+    href: entry.href,
+    actionLabel: entry.action.label,
+    actionEmphasis: entry.action.emphasis,
+    meta: [
+      {
+        label: "Customer",
+        value: entry.order.customerName,
+      },
+      {
+        label: "Phone",
+        value: entry.order.customerPhone,
+      },
+      {
+        label: "Items",
+        value: `${entry.order.itemCount} item${entry.order.itemCount === 1 ? "" : "s"}`,
+      },
+      {
+        label: "Placed",
+        value: formatTimestamp(entry.order.placedAt),
+      },
+    ],
   };
 }
 
@@ -136,6 +178,24 @@ export default async function AdminOrdersPage() {
     needsAttentionCount: needsAttentionEntries.length,
   });
 
+  const sections: OrderListSection[] = [
+    {
+      sectionKey: "needs_attention",
+      title: "Needs attention",
+      entries: needsAttentionEntries.map(mapAdminEntryToListSceneEntry),
+    },
+    {
+      sectionKey: "in_progress",
+      title: "In progress",
+      entries: inProgressEntries.map(mapAdminEntryToListSceneEntry),
+    },
+    {
+      sectionKey: "history",
+      title: activeEntries.length === 0 ? "Orders" : "History",
+      entries: historyEntries.map(mapAdminEntryToListSceneEntry),
+    },
+  ];
+
   return (
     <div className="space-y-6 pb-20 md:space-y-8">
       <section className="space-y-5">
@@ -184,42 +244,12 @@ export default async function AdminOrdersPage() {
         />
       </section>
 
-      <div className={styles.page}>
-        <section
-          className={cn(
-            styles.stateBanner,
-            bannerState.tone === "action"
-              ? styles.bannerAction
-              : bannerState.tone === "active"
-                ? styles.bannerActive
-                : styles.bannerIdle
-          )}
-        >
-          <h1 className={styles.bannerTitle}>{bannerState.title}</h1>
-          <p className={styles.bannerText}>{bannerState.detail}</p>
-        </section>
-
-        {orders.length === 0 ? (
-          <section className={styles.emptyState}>No orders available yet.</section>
-        ) : (
-          <div className={styles.sectionStack}>
-            {needsAttentionEntries.length > 0 ? (
-              <OrderSection title="Needs attention" entries={needsAttentionEntries} />
-            ) : null}
-
-            {inProgressEntries.length > 0 ? (
-              <OrderSection title="In progress" entries={inProgressEntries} />
-            ) : null}
-
-            {historyEntries.length > 0 ? (
-              <OrderSection
-                title={activeEntries.length === 0 ? "Orders" : "History"}
-                entries={historyEntries}
-              />
-            ) : null}
-          </div>
-        )}
-      </div>
+      <OrderListScene
+        banner={bannerState}
+        sections={sections}
+        emptyStateText="No orders available yet."
+        wideMetaGrid
+      />
 
       {openReturns.length > 0 ? (
         <section className={styles.section}>
@@ -271,108 +301,6 @@ export default async function AdminOrdersPage() {
   );
 }
 
-function OrderSection({
-  title,
-  entries,
-}: {
-  title: string;
-  entries: OrderEntry[];
-}) {
-  return (
-    <section className={styles.section}>
-      <header className={styles.sectionHeader}>
-        <h2 className={styles.sectionTitle}>{title}</h2>
-        <span className={styles.sectionCount}>{entries.length}</span>
-      </header>
-
-      <div className={styles.mobileBladeList}>
-        {entries.map((entry) => (
-          <details
-            key={entry.order.orderId}
-            className={cn(
-              styles.blade,
-              entry.bucket === "needs_attention" && styles.bladePriority
-            )}
-            open={entry.bucket === "needs_attention"}
-          >
-            <summary className={styles.bladeSummary}>
-              <div className={styles.bladeMain}>
-                <p className={styles.orderLabel}>Order #{entry.order.orderNumber}</p>
-                <p className={styles.bladeStatus}>{entry.stage.label}</p>
-              </div>
-              <div className={styles.bladeSide}>
-                <p className={styles.bladeTotal}>{formatNgn(entry.order.totalNgn)}</p>
-                <p className={styles.bladeDate}>{formatDate(entry.order.placedAt)}</p>
-              </div>
-            </summary>
-
-            <div className={styles.bladeContent}>
-              <OrderEntryBody entry={entry} />
-            </div>
-          </details>
-        ))}
-      </div>
-
-      <div className={styles.desktopGrid}>
-        {entries.map((entry) => (
-          <article
-            key={entry.order.orderId}
-            className={cn(
-              styles.card,
-              entry.bucket === "needs_attention" && styles.cardPriority
-            )}
-          >
-            <div className={styles.cardHeader}>
-              <div>
-                <p className={styles.orderLabel}>Order #{entry.order.orderNumber}</p>
-                <p className={styles.orderTotal}>{formatNgn(entry.order.totalNgn)}</p>
-              </div>
-              <OrderStatusBadge label={entry.stage.label} tone={entry.stage.tone} />
-            </div>
-
-            <OrderEntryBody entry={entry} />
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function OrderEntryBody({ entry }: { entry: OrderEntry }) {
-  return (
-    <div className={styles.entryBody}>
-      <p className={styles.stageDetail}>{entry.stage.detail}</p>
-
-      <div className={styles.metaRow}>
-        <CompactOrderStat label="Customer" value={entry.order.customerName} />
-        <CompactOrderStat label="Phone" value={entry.order.customerPhone} />
-        <CompactOrderStat
-          label="Items"
-          value={`${entry.order.itemCount} item${entry.order.itemCount === 1 ? "" : "s"}`}
-        />
-        <CompactOrderStat label="Placed" value={formatTimestamp(entry.order.placedAt)} />
-      </div>
-
-      <div className={styles.cardFooter}>
-        <span className={styles.footerState}>
-          {getAdminOrderBucketFootnote(entry.bucket)} - {formatDate(entry.order.placedAt)}
-        </span>
-        <Link
-          href={entry.href}
-          className={cn(
-            styles.actionButton,
-            entry.action.emphasis === "primary"
-              ? styles.actionButtonPrimary
-              : styles.actionButtonSecondary
-          )}
-        >
-          {entry.action.label}
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 function CompactOrderStat({
   label,
   value,
@@ -388,23 +316,6 @@ function CompactOrderStat({
   );
 }
 
-function OrderStatusBadge({
-  label,
-  tone,
-}: {
-  label: string;
-  tone: "default" | "success" | "muted";
-}) {
-  const toneClass =
-    tone === "success"
-      ? styles.statusSuccess
-      : tone === "muted"
-        ? styles.statusMuted
-        : styles.statusDefault;
-
-  return <span className={cn(styles.statusBadge, toneClass)}>{label}</span>;
-}
-
 function QuickLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
@@ -415,3 +326,4 @@ function QuickLink({ href, label }: { href: string; label: string }) {
     </Link>
   );
 }
+
