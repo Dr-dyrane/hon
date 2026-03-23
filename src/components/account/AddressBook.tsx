@@ -58,6 +58,8 @@ export function AddressBook({ addresses }: { addresses: PortalAddress[] }) {
       : emptyDraft
   );
   const [editingId, setEditingId] = useState<string | null>(null);
+  const hasAddressArchive = addresses.length > 0;
+  const openAddressArchiveByDefault = addresses.length <= 2;
 
   function applyResolvedAddress(suggestion: MapboxAddressSuggestion) {
     setDraft((current) => ({
@@ -406,79 +408,91 @@ export function AddressBook({ addresses }: { addresses: PortalAddress[] }) {
         </div>
       </form>
 
-      <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
-        {addresses.length === 0 ? (
-          <div className="rounded-[28px] bg-[color:var(--surface)]/88 px-5 py-6 text-sm text-secondary-label shadow-[0_18px_40px_rgba(15,23,42,0.06)] sm:col-span-2 2xl:col-span-3">
-            No addresses yet.
-          </div>
-        ) : (
-          addresses.map((address) => (
-            <article
-              key={address.addressId}
-              className="rounded-[28px] bg-[color:var(--surface)]/88 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]"
-            >
-              <div className="flex flex-col gap-3 min-[920px]:flex-row min-[920px]:items-start min-[920px]:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-semibold tracking-tight text-label">
-                      {address.label}
-                    </h2>
-                    {address.isDefault ? (
-                      <span className="rounded-full bg-accent/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
-                        default
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="mt-2 space-y-1 text-sm text-secondary-label">
-                    <p className="text-label">{address.recipientName}</p>
-                    <p>{address.phoneE164}</p>
-                    <p>{address.line1}</p>
-                    {address.line2 ? <p>{address.line2}</p> : null}
-                    <p>{[address.city, address.state].filter(Boolean).join(", ")}</p>
-                    {address.landmark ? <p>{address.landmark}</p> : null}
-                  </div>
-                </div>
+      {!hasAddressArchive ? (
+        <div className="rounded-[28px] bg-[color:var(--surface)]/88 px-5 py-6 text-sm text-secondary-label shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+          No addresses yet.
+        </div>
+      ) : (
+        <details
+          className="rounded-[30px] bg-[color:var(--surface)]/88 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)]"
+          open={openAddressArchiveByDefault}
+        >
+          <summary className="flex list-none cursor-pointer items-center justify-between gap-3 rounded-[20px] bg-system-fill/42 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-secondary-label">
+            Saved places
+            <span className="inline-flex min-w-[42px] justify-center rounded-full bg-system-fill/52 px-2 py-1 text-[10px] text-label">
+              {addresses.length}
+            </span>
+          </summary>
 
-                <div className="flex flex-wrap gap-2">
-                  {!address.isDefault ? (
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+            {addresses.map((address) => (
+              <article
+                key={address.addressId}
+                className="rounded-[28px] bg-[color:var(--surface)]/88 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]"
+              >
+                <div className="flex flex-col gap-3 min-[920px]:flex-row min-[920px]:items-start min-[920px]:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-lg font-semibold tracking-tight text-label">
+                        {address.label}
+                      </h2>
+                      {address.isDefault ? (
+                        <span className="rounded-full bg-accent/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+                          default
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="mt-2 space-y-1 text-sm text-secondary-label">
+                      <p className="text-label">{address.recipientName}</p>
+                      <p>{address.phoneE164}</p>
+                      <p>{address.line1}</p>
+                      {address.line2 ? <p>{address.line2}</p> : null}
+                      <p>{[address.city, address.state].filter(Boolean).join(", ")}</p>
+                      {address.landmark ? <p>{address.landmark}</p> : null}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {!address.isDefault ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          runMutation(
+                            () => setDefaultAddressAction(address.addressId),
+                            "Default updated."
+                          )
+                        }
+                        className="flex min-h-[40px] items-center rounded-[18px] bg-system-fill/42 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label"
+                      >
+                        Default
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => loadDraft(address)}
+                      className="flex min-h-[40px] items-center rounded-[18px] bg-system-fill/42 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label"
+                    >
+                      Edit
+                    </button>
                     <button
                       type="button"
                       onClick={() =>
                         runMutation(
-                          () => setDefaultAddressAction(address.addressId),
-                          "Default updated."
+                          () => deleteAddressAction(address.addressId),
+                          "Removed."
                         )
                       }
-                      className="flex min-h-[40px] items-center rounded-[18px] bg-system-fill/42 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label"
+                      className="flex min-h-[40px] items-center rounded-[18px] bg-system-fill/42 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-secondary-label"
                     >
-                      Default
+                      Delete
                     </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => loadDraft(address)}
-                    className="flex min-h-[40px] items-center rounded-[18px] bg-system-fill/42 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      runMutation(
-                        () => deleteAddressAction(address.addressId),
-                        "Removed."
-                      )
-                    }
-                    className="flex min-h-[40px] items-center rounded-[18px] bg-system-fill/42 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-secondary-label"
-                  >
-                    Delete
-                  </button>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))
-        )}
-      </div>
+              </article>
+            ))}
+          </div>
+        </details>
+      )}
 
       <div
         className={cn(

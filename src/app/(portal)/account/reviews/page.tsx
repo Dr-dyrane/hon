@@ -43,6 +43,7 @@ export default async function ReviewsPage() {
         ? "You can review new completed orders as they appear."
         : "Complete an order first, then submit your first review.";
   const activitySummary = `${pendingReviews.length} pending - ${reviews.length} sent - ${approvedCount} approved`;
+  const collapseSentReviews = pendingReviews.length > 0;
 
   return (
     <div className={styles.page}>
@@ -110,39 +111,40 @@ export default async function ReviewsPage() {
       </section>
 
       <section className={styles.archiveSection}>
-        <header className={styles.archiveHead}>
-          <h2 className={styles.archiveTitle}>Sent reviews</h2>
-          <span className={styles.archiveBadge}>{reviews.length}</span>
-        </header>
-
         {reviews.length === 0 ? (
           <div className={styles.emptyArchive}>No reviews submitted yet.</div>
         ) : (
-          <div className={styles.archiveGrid}>
-            {reviews.map((review) => (
-              <article key={review.reviewId} className={styles.reviewCard}>
-                <div className={styles.reviewCardHead}>
-                  <div>
-                    <p className={styles.reviewOrder}>#{review.orderNumber}</p>
-                    <p className={styles.reviewRating}>{review.rating}/5</p>
-                  </div>
-                  <div className={styles.reviewTags}>
-                    <span className={styles.reviewTag}>{formatStatusLabel(review.status)}</span>
-                    {review.isFeatured ? (
-                      <span className={styles.reviewTag}>Featured</span>
-                    ) : null}
-                  </div>
-                </div>
+          <details className={styles.archiveDisclosure} open={!collapseSentReviews}>
+            <summary className={styles.archiveSummary}>
+              <span className={styles.archiveTitle}>Sent reviews</span>
+              <span className={styles.archiveBadge}>{reviews.length}</span>
+            </summary>
 
-                {review.title ? <p className={styles.reviewTitle}>{review.title}</p> : null}
-                {review.body ? <p className={styles.reviewBody}>{review.body}</p> : null}
-                <p className={styles.reviewTime}>{formatTimestamp(review.createdAt)}</p>
-              </article>
-            ))}
-          </div>
+            <div className={styles.archiveGrid}>
+              {reviews.map((review) => (
+                <article key={review.reviewId} className={styles.reviewCard}>
+                  <div className={styles.reviewCardHead}>
+                    <div>
+                      <p className={styles.reviewOrder}>#{review.orderNumber}</p>
+                      <p className={styles.reviewRating}>{review.rating}/5</p>
+                    </div>
+                    <div className={styles.reviewTags}>
+                      <span className={styles.reviewTag}>{formatStatusLabel(review.status)}</span>
+                      {review.isFeatured ? (
+                        <span className={styles.reviewTag}>Featured</span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {review.title ? <p className={styles.reviewTitle}>{review.title}</p> : null}
+                  {review.body ? <p className={styles.reviewBody}>{review.body}</p> : null}
+                  <p className={styles.reviewTime}>{formatTimestamp(review.createdAt)}</p>
+                </article>
+              ))}
+            </div>
+          </details>
         )}
       </section>
     </div>
   );
 }
-

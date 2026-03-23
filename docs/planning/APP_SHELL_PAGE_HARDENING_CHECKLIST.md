@@ -493,3 +493,12 @@ Follow-up hardening completed for remaining account surfaces that were still on 
 - refactored `/account/reviews` to action-first review workflow + archive section with localized page module styling
 - converted `PortalReviewComposer` to local CSS-module styling to remove global utility dependency and align visual language
 - preserved existing data contracts and progressive form behavior while improving flow hierarchy and responsiveness
+
+## Account North-Pole Repass (March 23, 2026)
+
+Applied a second alignment pass with `/account/orders/[orderId]` as the north-pole interaction model.
+
+- `places` (`/account/addresses`): reinforced state-led hero + explicit primary workflow summary before editor surface
+- `profile` (`/account/profile`): added completion-aware workflow framing around identity + notification update path
+- `reviews` (`/account/reviews`): shifted to action-first pending review workflow, with sent reviews intentionally treated as archival context
+- review composer now uses local module styling and compact task-card behavior consistent with account order-detail surfaces

@@ -187,20 +187,50 @@
   gap: 0.62rem;
 }
 
-.archiveHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.72rem;
-  padding-inline: 0.08rem;
-}
-
 .archiveTitle {
-  margin: 0;
   color: var(--label);
   font-size: 0.96rem;
   font-weight: 600;
   letter-spacing: var(--tracking-title);
+}
+
+.archiveDisclosure {
+  border-radius: 1.8rem;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  box-shadow: var(--shadow-soft);
+  padding: 0.3rem;
+}
+
+.archiveSummary {
+  list-style: none;
+  min-height: 2.8rem;
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, var(--surface-alt) 74%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.72rem;
+  cursor: pointer;
+  user-select: none;
+  padding: 0 0.8rem;
+}
+
+.archiveSummary::marker,
+.archiveSummary::-webkit-details-marker {
+  display: none;
+}
+
+.archiveSummary::after {
+  content: "+";
+  color: var(--secondary-label);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: transform var(--duration-fast) var(--ease-premium);
+}
+
+.archiveDisclosure[open] .archiveSummary::after {
+  transform: rotate(45deg);
 }
 
 .archiveBadge {
@@ -219,6 +249,7 @@
 }
 
 .archiveGrid {
+  margin-top: 0.62rem;
   display: grid;
   gap: 0.62rem;
 }
@@ -344,8 +375,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .primaryAction,
-  .secondaryAction {
+  .secondaryAction,
+  .archiveSummary::after {
     transition: none;
   }
 }
-

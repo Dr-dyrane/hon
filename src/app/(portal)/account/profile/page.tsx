@@ -19,15 +19,37 @@ function countMissingProfileFields(input: {
   ].filter(Boolean).length;
 }
 
+function getMissingProfileFields(input: {
+  fullName: string;
+  preferredPhoneE164: string;
+  firstName: string;
+  lastName: string;
+}) {
+  const missing: string[] = [];
+
+  if (!input.fullName.trim()) missing.push("Name");
+  if (!input.preferredPhoneE164.trim()) missing.push("Phone");
+  if (!input.firstName.trim()) missing.push("First");
+  if (!input.lastName.trim()) missing.push("Last");
+
+  return missing;
+}
+
 export default async function ProfilePage() {
   const session = await requireAuthenticatedSession("/account/profile");
   const profile = await getPortalProfile(session.email);
   const missingFieldCount = countMissingProfileFields(profile);
+  const missingFields = getMissingProfileFields(profile);
   const enabledAlertChannels = [
     profile.workspaceEmailEnabled,
     profile.workspaceInAppEnabled,
     profile.workspacePushEnabled,
   ].filter(Boolean).length;
+  const activeAlertLabels = [
+    profile.workspaceEmailEnabled ? "Email" : null,
+    profile.workspaceInAppEnabled ? "In-app" : null,
+    profile.workspacePushEnabled ? "Push" : null,
+  ].filter((value): value is string => Boolean(value));
 
   return (
     <div className={styles.page}>
@@ -85,6 +107,26 @@ export default async function ProfilePage() {
             <span className={styles.surfaceActionMeta}>Open</span>
           </Link>
         </div>
+
+        {missingFieldCount > 0 ? (
+          <div className={styles.readinessStrip}>
+            <p className={styles.readinessLabel}>Missing now</p>
+            <div className={styles.readinessChipRow}>
+              {missingFields.map((field) => (
+                <span key={field} className={styles.readinessChip}>
+                  {field}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className={styles.readinessStrip}>
+            <p className={styles.readinessLabel}>Alerts on</p>
+            <p className={styles.readinessValue}>
+              {activeAlertLabels.length > 0 ? activeAlertLabels.join(" - ") : "None"}
+            </p>
+          </div>
+        )}
       </section>
 
       <section className={styles.formSection}>
@@ -93,4 +135,3 @@ export default async function ProfilePage() {
     </div>
   );
 }
-
