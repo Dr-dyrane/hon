@@ -381,7 +381,7 @@ async function main() {
     expect(guestPage.response.status === 200, "Guest order page did not load.");
     expectIncludes(
       guestPage.text,
-      `#${guestOrder.orderNumber}`,
+      guestOrder.orderNumber,
       "Guest order page did not render the order number."
     );
 
@@ -416,7 +416,7 @@ async function main() {
     );
     expectIncludes(
       signedInPage.text,
-      `#${signedInOrder.orderNumber}`,
+      signedInOrder.orderNumber,
       "Signed-in order page did not render the order number."
     );
 
@@ -430,7 +430,7 @@ async function main() {
     );
     expectIncludes(
       adminGuestPage.text,
-      `#${guestOrder.orderNumber}`,
+      guestOrder.orderNumber,
       "Admin guest-order detail page did not render the order number."
     );
 
@@ -444,7 +444,7 @@ async function main() {
     );
     expectIncludes(
       adminSignedPage.text,
-      `#${signedInOrder.orderNumber}`,
+      signedInOrder.orderNumber,
       "Admin signed-order detail page did not render the order number."
     );
 

@@ -135,6 +135,7 @@ Current state:
 - customers now open into a real customer detail view with contact context, recent orders, and delivery-place history instead of stopping at a read-only summary board
 - linked customer accounts can now be updated from admin customer detail for contact info and saved addresses, while guest checkout snapshots remain read-only
 - customer CRM metadata is now real through admin-only notes, tags, and support-state records keyed to the platform customer rollup identity
+- app-shell UX hardening execution now tracks against `docs/planning/APP_SHELL_PAGE_HARDENING_CHECKLIST.md` as the working reference baseline
 
 This means the system has crossed into operational platform work.
 
@@ -217,7 +218,7 @@ Deliverables:
 
 Status:
 
-- `in progress`
+- `complete`
 
 Deliverables:
 
@@ -232,7 +233,7 @@ Deliverables:
 
 Status:
 
-- `in progress`
+- `complete`
 
 Deliverables:
 
@@ -246,7 +247,7 @@ Deliverables:
 
 Status:
 
-- `in progress`
+- `complete`
 
 Deliverables:
 
@@ -366,7 +367,7 @@ Open:
 - [x] safe product archive action
 - [x] safe product delete action
 - [x] variant-level media management
-- [ ] tighter Apple-style visual and copy pass across all admin pages
+- [x] tighter Apple-style visual and copy pass across all admin pages
 - [ ] richer user-management lifecycle beyond invite/edit/suspend/delete, such as session history or customer claim support
 
 --- 
@@ -397,7 +398,7 @@ Completed:
 
 Open:
 
-- [ ] quieter Apple-style copy pass across portal screens
+- [x] quieter Apple-style copy pass across portal screens
 - [x] run one deployed end-to-end business-flow smoke test from sign-in through payment review
 
 --- 
@@ -417,16 +418,16 @@ Completed:
 
 Open:
 
-- [ ] reduce explanatory copy in admin and portal UI
-- [ ] finish the same quiet-copy pass on auth and checkout edge screens
-- [ ] align page chrome more closely with the marketing visual language
+- [x] reduce explanatory copy in admin and portal UI
+- [x] finish the same quiet-copy pass on auth and checkout edge screens
+- [x] align page chrome more closely with the marketing visual language
 - [ ] enforce viewport-native mobile, tablet, and desktop compositions across admin and portal
 - [x] move mobile cart and notification overlays away from side-drawer behavior
 - [x] reduce mobile context chrome ahead of profile and address task surfaces
 - [x] reduce mobile chrome on the customer order detail and simplify payment/rating actions
 - [x] ensure selected navigation states remain legible in every shell
-- [ ] finish no-border, Apple-HIG-consistent surface treatment review
-- [ ] tighten the checkout drawer and confirmation route further toward the marketing-page visual bar
+- [x] finish no-border, Apple-HIG-consistent surface treatment review
+- [x] tighten the checkout drawer and confirmation route further toward the marketing-page visual bar
 - [x] keep reducing desktop-style form density on customer return and refund flows
 - [x] keep compressing admin detail and editor flows until phone layouts feel native instead of desktop forms in a smaller frame
 - [x] tighten admin payments and portal order-history density so phone and wide desktop both use the available space truthfully
@@ -621,6 +622,10 @@ Important operational note:
 
 The active build block is Pass 8: hardening and polish, moving into Wave 4 messaging and sensory work.
 
+UI/UX execution reference:
+
+- `docs/planning/APP_SHELL_PAGE_HARDENING_CHECKLIST.md`
+
 Implement in this order:
 
 1. [x] Run one deployed business-flow smoke test from sign-in through payment review and delivery-state progression.
@@ -630,9 +635,9 @@ Implement in this order:
 
 After that:
 
-1. continue native-feel polish across admin and portal
+1. enforce viewport-native mobile, tablet, and desktop compositions across remaining admin and portal routes
 2. deepen delivery quality where ETA/live behavior still feels thin
-3. harden uploads, audit coverage, and quality
+3. harden uploads and decide the next audit/push expansion scope
 
 ---
 

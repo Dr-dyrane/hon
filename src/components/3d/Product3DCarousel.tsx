@@ -67,7 +67,7 @@ function StageModel({
     let tz = 0;
     let ry = 0;
     let rx = 0;
-    let rz = 0;
+    const rz = 0;
     let targetScale = 1;
     let targetOpacity = 1;
 
