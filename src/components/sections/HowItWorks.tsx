@@ -1,15 +1,20 @@
 "use client";
 
 import React, { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
 import { Cog, Plus, MoveRight, Timer } from "lucide-react";
 import Image from "next/image";
 import { LiquidGlassCard } from "@/components/ui/LiquidGlassCard";
+import { useMobile } from "@/hooks/useMobile";
 
 export function HowItWorks() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion();
+  const isMobile = useMobile();
+  const enableParallax = !prefersReducedMotion && !isMobile;
+  const enableLoopingMotion = !prefersReducedMotion && !isMobile;
   const steps = [
     { label: "1 Scoop", sub: "Clean Fuel" },
     { label: "Water", sub: "Or Milk" },
@@ -52,14 +57,15 @@ export function HowItWorks() {
       {/* Central Visual Showcase */}
       <div ref={containerRef} className="relative max-w-6xl mx-auto mb-24 perspective-2000">
         <motion.div
-          style={{ scale: imageScale, opacity: imageOpacity }}
-          className="relative aspect-[21/9] w-full squircle overflow-hidden -white/10 shadow-2xl"
+          style={enableParallax ? { scale: imageScale, opacity: imageOpacity } : undefined}
+          className="relative aspect-[4/3] w-full overflow-hidden rounded-[30px] shadow-2xl md:aspect-[21/9] md:rounded-[38px]"
         >
           <Image
             src="/images/how-it-works.png"
             alt="The Ritual"
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-[5s]"
+            sizes="(max-width: 768px) 92vw, 88vw"
+            className="object-cover"
           />
           {/* Liquid Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-system-background via-transparent to-transparent opacity-60" />
@@ -83,7 +89,7 @@ export function HowItWorks() {
                   variant="default"
                   intensity="subtle"
                   interactive
-                  className="p-8 flex flex-col items-center text-center squircle"
+                  className="rounded-3xl p-8 text-center"
                 >
                   <div className="w-16 h-16 bg-accent/5 rounded-2xl flex items-center justify-center mb-6 text-accent group-hover:scale-110 transition-all duration-700">
                     <span className="text-[9px] font-bold tracking-[0.2em]">0{i + 1}</span>
@@ -97,8 +103,8 @@ export function HowItWorks() {
               {i < steps.length - 1 && (
                 <div className="hidden md:flex items-center justify-center px-4 text-accent/20">
                   <motion.div
-                    animate={{ x: [0, 5, 0], opacity: [0.2, 0.5, 0.2] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    animate={enableLoopingMotion ? { x: [0, 5, 0], opacity: [0.2, 0.5, 0.2] } : undefined}
+                    transition={enableLoopingMotion ? { duration: 3, repeat: Infinity, ease: "easeInOut" } : undefined}
                   >
                     {i === steps.length - 2 ? <MoveRight size={24} strokeWidth={1} /> : <Plus size={20} />}
                   </motion.div>
@@ -112,11 +118,19 @@ export function HowItWorks() {
       {/* The Closing Cinematic Badge */}
       <div className="mt-32 text-center">
         <motion.div
-          whileHover={{ scale: 1.05 }}
+          whileHover={enableLoopingMotion ? { scale: 1.03 } : undefined}
           className="inline-flex items-center gap-4 bg-label/[0.03] backdrop-blur-md pl-6 pr-10 py-5 rounded-full shadow-2xl group"
         >
           <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent">
-            <Timer size={18} strokeWidth={1.5} className="group-hover:rotate-[360deg] transition-transform duration-1000" />
+            <Timer
+              size={18}
+              strokeWidth={1.5}
+              className={
+                enableLoopingMotion
+                  ? "group-hover:rotate-[360deg] transition-transform duration-1000"
+                  : undefined
+              }
+            />
           </div>
           <div className="text-left">
             <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-label/40">Efficiency Metric</div>

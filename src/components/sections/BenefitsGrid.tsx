@@ -1,25 +1,37 @@
 "use client";
 
 import React from "react";
-import { motion, useMotionValue, useTransform } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
 import { LiquidGlassCard } from "@/components/ui/LiquidGlassCard";
 import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
+import { useMobile } from "@/hooks/useMobile";
 import { Zap, Wind, Activity, Leaf, Sparkles } from "lucide-react";
 
 const ICON_MAP = { Zap, Wind, Activity, Leaf };
 
 export function BenefitsGrid() {
   const { benefits } = useMarketingContent();
+  const prefersReducedMotion = useReducedMotion();
+  const isMobile = useMobile();
+  const enableAmbientMotion = !prefersReducedMotion && !isMobile;
 
   return (
     <SectionContainer variant="alt" id="benefits" spacing="flow" className="relative overflow-hidden">
       {/* Cinematic Background: Large "Oil" Blobs */}
       <div className="absolute inset-0 pointer-events-none">
         <motion.div 
-          animate={{ scale: [1, 1.2, 1], opacity: [0.03, 0.07, 0.03] }}
-          transition={{ duration: 10, repeat: Infinity }}
+          animate={
+            enableAmbientMotion
+              ? { scale: [1, 1.12, 1], opacity: [0.03, 0.07, 0.03] }
+              : undefined
+          }
+          transition={
+            enableAmbientMotion
+              ? { duration: 11, repeat: Infinity, ease: "easeInOut" }
+              : undefined
+          }
           className="absolute -top-[20%] -left-[10%] w-[60%] aspect-square rounded-full bg-accent blur-[140px]" 
         />
         <div className="absolute bottom-0 right-0 w-[50%] aspect-square bg-white/[0.02] rounded-full blur-[120px]" />
@@ -50,6 +62,7 @@ export function BenefitsGrid() {
               key={benefit.title} 
               benefit={benefit} 
               index={i}
+              animateEntry={!prefersReducedMotion}
             />
           ))}
         </div>
@@ -64,29 +77,26 @@ type BenefitPaneData = {
   icon: string;
 };
 
-function BenefitPane({ benefit, index }: { benefit: BenefitPaneData; index: number }) {
+function BenefitPane({
+  benefit,
+  index,
+  animateEntry,
+}: {
+  benefit: BenefitPaneData;
+  index: number;
+  animateEntry: boolean;
+}) {
   const Icon = ICON_MAP[benefit.icon as keyof typeof ICON_MAP] || Activity;
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const { left, top } = e.currentTarget.getBoundingClientRect();
-    mouseX.set(e.clientX - left);
-    mouseY.set(e.clientY - top);
-  };
-
-  // Light beam that follows the mouse inside the glass
-  const background = useTransform(
-    [mouseX, mouseY],
-    ([x, y]) => `radial-gradient(400px circle at ${x}px ${y}px, rgba(var(--accent-rgb), 0.12), transparent 40%)`
-  );
 
   return (
     <motion.div
-      onMouseMove={handleMouseMove}
-      initial={{ opacity: 0, y: 40, rotateX: 10 }}
+      initial={animateEntry ? { opacity: 0, y: 40, rotateX: 10 } : undefined}
       whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
-      transition={{ delay: index * 0.1, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+      transition={
+        animateEntry
+          ? { delay: index * 0.08, duration: 0.9, ease: [0.16, 1, 0.3, 1] }
+          : undefined
+      }
       viewport={{ once: true }}
       className="group relative"
     >
@@ -97,9 +107,12 @@ function BenefitPane({ benefit, index }: { benefit: BenefitPaneData; index: numb
         className="h-full min-h-[340px] p-10 flex flex-col justify-between overflow-hidden squircle shadow-2xl"
       >
         {/* The Refractive Layer */}
-        <motion.div 
-          className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-          style={{ background }}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+          style={{
+            background:
+              "radial-gradient(70% 60% at 50% 40%, rgba(var(--accent-rgb),0.12), transparent 70%)",
+          }}
         />
 
         <div className="relative z-10">
@@ -120,9 +133,7 @@ function BenefitPane({ benefit, index }: { benefit: BenefitPaneData; index: numb
 
         {/* The "Result" Trigger */}
         <div className="relative z-10 flex items-center gap-4">
-          <motion.div 
-            className="h-[1px] bg-accent/40 w-0 group-hover:w-16 transition-all duration-1000 ease-out"
-          />
+          <div className="h-[1px] w-0 bg-accent/40 transition-all duration-1000 ease-out group-hover:w-16" />
           <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-accent/0 group-hover:text-accent/100 transition-all duration-700 translate-x-4 group-hover:translate-x-0">
             Validated
           </span>

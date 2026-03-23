@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useRef } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+  useTransform,
+} from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
 import { AlertTriangle } from "lucide-react";
@@ -17,7 +23,9 @@ const PROBLEMS = [
 
 export function ProblemSection() {
   const isMobile = useMobile();
+  const prefersReducedMotion = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
+  const enableTilt = !isMobile && !prefersReducedMotion;
 
   // Mouse tracking for the entire grid's perspective
   const x = useMotionValue(0);
@@ -27,10 +35,17 @@ export function ProblemSection() {
   const rotateY = useSpring(useTransform(x, [-400, 400], [-5, 5]), { stiffness: 100, damping: 30 });
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    if (!enableTilt) return;
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     x.set(e.clientX - (rect.left + rect.width / 2));
     y.set(e.clientY - (rect.top + rect.height / 2));
+  };
+
+  const handleMouseLeave = () => {
+    if (!enableTilt) return;
+    x.set(0);
+    y.set(0);
   };
 
   return (
@@ -43,7 +58,8 @@ export function ProblemSection() {
 
       <div 
         className="mx-auto w-full max-w-6xl relative z-10"
-        onMouseMove={!isMobile ? handleMouseMove : undefined}
+        onMouseMove={enableTilt ? handleMouseMove : undefined}
+        onMouseLeave={enableTilt ? handleMouseLeave : undefined}
         ref={containerRef}
       >
         <div className="flex flex-col items-center text-center mb-24">
@@ -60,13 +76,17 @@ export function ProblemSection() {
 
         {/* The 3D Floating Grid */}
         <motion.div 
-          style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+          style={
+            enableTilt
+              ? { rotateX, rotateY, transformStyle: "preserve-3d" }
+              : undefined
+          }
           className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full max-w-5xl mx-auto"
         >
           {PROBLEMS.map((problem, i) => (
             <motion.div
               key={problem}
-              whileHover={{ scale: 1.02, z: 50 }}
+              whileHover={enableTilt ? { scale: 1.02, z: 50 } : undefined}
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
             >
               <LiquidGlassCard
@@ -74,8 +94,6 @@ export function ProblemSection() {
                 intensity="subtle"
                 interactive={true}
                 className="relative min-h-[220px] p-12 flex flex-col items-start justify-between overflow-hidden squircle shadow"
-                data-aos="fade-up"
-                data-aos-delay={i * 100}
               >
                 {/* Internal Refraction Light */}
                 <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:bg-accent/10 transition-colors" />

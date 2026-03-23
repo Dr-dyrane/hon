@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { Box, ShoppingBag, X } from "lucide-react";
 import { useCommerce } from "@/components/providers/CommerceProvider";
@@ -27,6 +27,53 @@ function getProductSubtitle(product: PublishedCatalogProduct) {
   return product.productTagline || null;
 }
 
+const DIALOG_FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "textarea:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
+function getDialogFocusableElements(container: HTMLElement) {
+  return Array.from(container.querySelectorAll<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR)).filter(
+    (element) =>
+      element.getAttribute("aria-hidden") !== "true" &&
+      (element.offsetWidth > 0 ||
+        element.offsetHeight > 0 ||
+        element === document.activeElement)
+  );
+}
+
+function trapDialogFocus(container: HTMLElement, event: KeyboardEvent) {
+  const focusableElements = getDialogFocusableElements(container);
+
+  if (focusableElements.length === 0) {
+    event.preventDefault();
+    container.focus();
+    return;
+  }
+
+  const firstFocusable = focusableElements[0];
+  const lastFocusable = focusableElements[focusableElements.length - 1];
+  const activeElement = document.activeElement as HTMLElement | null;
+  const hasFocusInside = activeElement ? container.contains(activeElement) : false;
+
+  if (event.shiftKey) {
+    if (!hasFocusInside || activeElement === firstFocusable) {
+      event.preventDefault();
+      lastFocusable.focus();
+    }
+    return;
+  }
+
+  if (!hasFocusInside || activeElement === lastFocusable) {
+    event.preventDefault();
+    firstFocusable.focus();
+  }
+}
+
 export function PortalStoreShelf({
   products,
 }: {
@@ -34,34 +81,74 @@ export function PortalStoreShelf({
 }) {
   const { addItem } = useCommerce();
   const { resolvedTheme } = useTheme();
+  const dialogRef = useRef<HTMLElement | null>(null);
+  const focusRestoreRef = useRef<HTMLElement | null>(null);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
   const availableProducts = products.filter((product) =>
     isStorefrontVisibleProduct(product)
   );
   const activeProduct =
     availableProducts.find((product) => product.productId === activeProductId) ?? null;
-  useOverlayPresence("portal-store-preview", activeProduct !== null);
+  const isPreviewOpen = activeProduct !== null;
+  const dialogTitleId = activeProduct
+    ? `portal-store-preview-title-${activeProduct.productId}`
+    : undefined;
+
+  useOverlayPresence("portal-store-preview", isPreviewOpen);
 
   useEffect(() => {
-    if (!activeProduct) {
+    if (!isPreviewOpen) {
       return;
     }
 
     const previousOverflow = document.body.style.overflow;
+    const previousActiveElement = document.activeElement;
+
+    if (previousActiveElement instanceof HTMLElement) {
+      focusRestoreRef.current = previousActiveElement;
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        event.preventDefault();
         setActiveProductId(null);
+        return;
+      }
+
+      if (event.key === "Tab") {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        trapDialogFocus(dialog, event);
       }
     };
 
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handleKeyDown);
 
+    const focusTimer = window.setTimeout(() => {
+      const dialog = dialogRef.current;
+      if (!dialog) {
+        return;
+      }
+
+      const [firstFocusable] = getDialogFocusableElements(dialog);
+      (firstFocusable ?? dialog).focus();
+    }, 0);
+
     return () => {
+      window.clearTimeout(focusTimer);
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
+
+      const target = focusRestoreRef.current;
+      focusRestoreRef.current = null;
+      if (target && document.contains(target)) {
+        window.setTimeout(() => {
+          target.focus();
+        }, 0);
+      }
     };
-  }, [activeProduct]);
+  }, [isPreviewOpen]);
 
   if (availableProducts.length === 0) {
     return null;
@@ -83,6 +170,9 @@ export function PortalStoreShelf({
                 onClick={() => setActiveProductId(product.productId)}
                 className="absolute inset-0 z-10 block"
                 aria-label={`Open ${title}`}
+                aria-haspopup="dialog"
+                aria-expanded={isPreviewOpen && activeProductId === product.productId}
+                aria-controls={isPreviewOpen ? "portal-store-preview-dialog" : undefined}
               />
 
               <div className="relative aspect-[0.82] overflow-hidden sm:aspect-[0.9]">
@@ -143,6 +233,7 @@ export function PortalStoreShelf({
           type="button"
           aria-label="Close product preview"
           onClick={() => setActiveProductId(null)}
+          tabIndex={isPreviewOpen ? 0 : -1}
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         />
       </div>
@@ -154,9 +245,20 @@ export function PortalStoreShelf({
         )}
       >
         {activeProduct ? (
-          <section className="pointer-events-auto glass-morphism w-full max-w-[1120px] rounded-[38px] bg-[color:var(--surface)]/94 p-4 shadow-[0_30px_120px_rgba(0,0,0,0.22)] sm:p-6">
+          <section
+            id="portal-store-preview-dialog"
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={dialogTitleId}
+            tabIndex={-1}
+            className="pointer-events-auto glass-morphism w-full max-w-[1120px] rounded-[38px] bg-[color:var(--surface)]/94 p-4 shadow-[0_30px_120px_rgba(0,0,0,0.22)] sm:p-6"
+          >
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-2xl font-semibold tracking-tight text-label sm:text-3xl">
+              <h2
+                id={dialogTitleId}
+                className="text-2xl font-semibold tracking-tight text-label sm:text-3xl"
+              >
                 {getProductTitle(activeProduct)}
               </h2>
 

@@ -1180,7 +1180,3 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
   --ease-apple-in-out: cubic-bezier(0.42, 0, 0.58, 1);
 }
 
-/* Zero Ring Policy */
-:focus-visible {
-  outline: none;
-}

@@ -964,6 +964,7 @@ export async function createPaymentProof(
   publicUrl: string | null,
   mimeType: string,
   submittedByEmail: string | null,
+  customerNote?: string | null,
   options?: { guestOrderId?: string | null }
 ) {
   if (!isDatabaseConfigured()) {
@@ -1021,6 +1022,7 @@ export async function createPaymentProof(
       paymentStatus: payment.paymentStatus,
       orderStatus: payment.orderStatus,
       submittedByEmail,
+      customerNote: customerNote ?? null,
       source: "payment_proof_upload",
     });
   }, {
@@ -1042,12 +1044,15 @@ async function markPaymentSubmitted(
     paymentStatus: string;
     orderStatus: string;
     submittedByEmail: string | null;
+    customerNote?: string | null;
     source: "payment_proof_upload" | "payment_confirmation";
   }
 ) {
   const shouldTransitionToSubmitted = ["awaiting_transfer", "rejected"].includes(
     input.paymentStatus
   );
+  const shouldRecordSubmissionEvent =
+    shouldTransitionToSubmitted || Boolean(input.customerNote);
 
   if (!["submitted", "under_review"].includes(input.paymentStatus)) {
     await queryFn(
@@ -1077,7 +1082,7 @@ async function markPaymentSubmitted(
     );
   }
 
-  if (shouldTransitionToSubmitted) {
+  if (shouldRecordSubmissionEvent) {
     await queryFn(
       `
         insert into app.payment_review_events (
@@ -1087,11 +1092,13 @@ async function markPaymentSubmitted(
           action,
           note
         )
-        values ($1, null, $2, 'submitted', null)
+        values ($1, null, $2, 'submitted', $3)
       `,
-      [input.paymentId, input.submittedByEmail]
+      [input.paymentId, input.submittedByEmail, input.customerNote ?? null]
     );
+  }
 
+  if (shouldTransitionToSubmitted) {
     await queryFn(
       `
         update app.orders
@@ -1116,12 +1123,13 @@ async function markPaymentSubmitted(
           note,
           metadata
         )
-        values ($1, $2, 'payment_submitted', 'customer', null, $3, null, $4::jsonb)
+        values ($1, $2, 'payment_submitted', 'customer', null, $3, $4, $5::jsonb)
       `,
       [
         input.orderId,
         input.orderStatus,
         input.submittedByEmail,
+        input.customerNote ?? null,
         JSON.stringify({ source: input.source }),
       ]
     );
@@ -1131,6 +1139,7 @@ async function markPaymentSubmitted(
 export async function submitPaymentForReview(
   paymentId: string,
   submittedByEmail: string | null,
+  customerNote?: string | null,
   options?: { guestOrderId?: string | null }
 ) {
   if (!isDatabaseConfigured()) {
@@ -1174,6 +1183,7 @@ export async function submitPaymentForReview(
       paymentStatus: payment.paymentStatus,
       orderStatus: payment.orderStatus,
       submittedByEmail,
+      customerNote: customerNote ?? null,
       source: "payment_confirmation",
     });
   }, {

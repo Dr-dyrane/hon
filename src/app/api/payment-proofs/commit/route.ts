@@ -16,12 +16,14 @@ export async function POST(request: Request) {
       storageKey?: string;
       publicUrl?: string | null;
       mimeType?: string;
+      note?: string | null;
     };
 
     const orderId = body.orderId?.trim();
     const paymentId = body.paymentId?.trim();
     const storageKey = body.storageKey?.trim();
     const mimeType = body.mimeType?.trim() || "application/octet-stream";
+    const note = body.note?.trim() ? body.note.trim().slice(0, 500) : null;
 
     if (!orderId || !paymentId) {
       return NextResponse.json(
@@ -55,12 +57,14 @@ export async function POST(request: Request) {
         body.publicUrl?.trim() || null,
         mimeType,
         access.mode === "session" ? access.sessionEmail : access.order.customerEmail,
+        note,
         access.mode === "guest" ? { guestOrderId: orderId } : undefined
       );
     } else {
       await submitPaymentForReview(
         paymentId,
         access.mode === "session" ? access.sessionEmail : access.order.customerEmail,
+        note,
         access.mode === "guest" ? { guestOrderId: orderId } : undefined
       );
     }

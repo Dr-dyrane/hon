@@ -240,6 +240,7 @@ export function PaymentProofUploadCard({
             storageKey: storagePayload?.storageKey,
             publicUrl: storagePayload?.publicUrl,
             mimeType: storagePayload?.contentType,
+            note: note.trim() || null,
           }),
         });
 

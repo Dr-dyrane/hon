@@ -2,7 +2,13 @@
 
 import React, { useRef } from "react";
 import dynamic from "next/dynamic";
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+  useTransform,
+} from "framer-motion";
 import Image from "next/image";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
@@ -10,6 +16,7 @@ import { useMarketingContent } from "@/components/providers/MarketingContentProv
 import { CleanIcon, PlantIcon, DigestionIcon } from "@/components/ui/Icons";
 import { Lightbulb } from "lucide-react";
 import { LiquidGlassCard } from "@/components/ui/LiquidGlassCard";
+import { useMobile } from "@/hooks/useMobile";
 import type { ProductId } from "@/lib/marketing/types";
 
 const Product3DViewer = dynamic(
@@ -33,6 +40,9 @@ export function SolutionSection({
   isScrollingIntoSection: (sectionId: string) => boolean;
 }) {
   const { brand, homeSectionsByKey, productIds, productsById } = useMarketingContent();
+  const prefersReducedMotion = useReducedMotion();
+  const isMobile = useMobile();
+  const enableAmbientMotion = !prefersReducedMotion && !isMobile;
   const containerRef = useRef<HTMLDivElement>(null);
   
   const solutionSettings = homeSectionsByKey.solution?.settings as { featuredProductId?: ProductId } | undefined;
@@ -59,7 +69,7 @@ export function SolutionSection({
       {/* Background Cinematic Atmosphere */}
       <div className="absolute inset-0 pointer-events-none">
         <motion.div 
-          style={{ rotate }}
+          style={enableAmbientMotion ? { rotate } : undefined}
           className="absolute -top-[20%] -right-[10%] w-[60%] aspect-square rounded-full bg-accent/5 blur-[120px]" 
         />
         <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-system-background to-transparent" />
@@ -97,13 +107,21 @@ export function SolutionSection({
             {/* Orbital Glass Rings */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <motion.div 
-                animate={{ rotate: 360 }}
-                transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+                animate={enableAmbientMotion ? { rotate: 360 } : undefined}
+                transition={
+                  enableAmbientMotion
+                    ? { duration: 25, repeat: Infinity, ease: "linear" }
+                    : undefined
+                }
                 className="absolute w-[110%] aspect-square shadow rounded-full"
               />
               <motion.div 
-                animate={{ rotate: -360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                animate={enableAmbientMotion ? { rotate: -360 } : undefined}
+                transition={
+                  enableAmbientMotion
+                    ? { duration: 20, repeat: Infinity, ease: "linear" }
+                    : undefined
+                }
                 className="absolute w-[95%] aspect-square shadow rounded-full border-dashed"
               />
               <div className="absolute w-[70%] aspect-square bg-accent/[0.03] rounded-full blur-3xl" />
@@ -153,7 +171,7 @@ function IndicatorCard({ indicator }: { indicator: TrustIndicator }) {
         variant="default"
         intensity="subtle"
         interactive
-        className="group p-8 flex flex-col items-center lg:items-start text-center lg:text-left gap-4 squircle shadow"
+        className="group flex flex-col gap-4 rounded-3xl p-8 text-center shadow lg:items-start lg:text-left"
       >
         <div className="w-12 h-12 rounded-2xl bg-accent/5 flex items-center justify-center group-hover:bg-accent/10 transition-colors">
           <Icon size={24} className="text-accent group-hover:scale-110 transition-transform" />

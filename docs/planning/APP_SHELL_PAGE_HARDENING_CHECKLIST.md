@@ -385,3 +385,69 @@ This checkpoint records the hardening pass that turned order detail from a stati
 - preserves rationale for future refactors of account/admin order management pages
 - documents how to extend the ledger flow without reintroducing equal-weight card noise
 - serves as the baseline standard for future app-shell hardening passes
+
+## Account Store + Orders Audit (March 23, 2026)
+
+This audit covers:
+
+- `/account` store landing and shelf (`src/app/(portal)/account/page.tsx`, `src/components/account/PortalStoreShelf.tsx`)
+- `/account/orders` list (`src/app/(portal)/account/orders/page.tsx`, `src/app/(portal)/account/orders/orders-page.module.css`)
+- `/account/orders/[orderId]` detail and task modules (`src/components/orders/OrderDetailView.tsx`, `src/components/orders/order-detail/*`)
+- `/account/reorder` (`src/app/(portal)/account/reorder/page.tsx`, `src/components/account/ReorderBoard.tsx`)
+- `/account/tracking/[orderId]` (`src/components/delivery/PortalTrackingExperience.tsx`)
+- portal app shell integration (`src/app/(portal)/account/layout.tsx`, `src/components/shell/WorkspaceShell.tsx`, `src/lib/app-shell.ts`)
+
+### What is already hardened
+
+- Shared shell routing + context is centralized and consistent via `PORTAL_NAV_ITEMS` and `PORTAL_HEADER_ROUTES`.
+- Order detail is genuinely state-driven with policy gating (`resolveOrderLedgerState`) and panel clamping (`clampActivePanel`).
+- Tracking experience uses SSE with fallback polling and clear timeline/map/delivery segmentation.
+- Reduced-motion handling exists for order list and order-detail modules.
+
+### High-priority gaps
+
+1. Accessibility focus visibility is globally suppressed.
+   - `:focus-visible` is defined with visible outline and later disabled globally.
+   - References: `src/app/globals.css` lines `253` and `1184`.
+   - Impact: keyboard users can lose focus indication on controls without local focus styling.
+
+2. Store preview modal lacks dialog semantics/focus management.
+   - Modal container is a plain `<section>` without `role="dialog"`/`aria-modal`.
+   - Reference: `src/components/account/PortalStoreShelf.tsx` line `157`.
+   - Impact: screen reader and keyboard flow regressions in the most interactive store surface.
+
+3. Payment proof note field is dead UI state.
+   - `note` is captured and editable but never sent in request payloads.
+   - References: `src/components/orders/PaymentProofUploadCard.tsx` lines `102`, `182`, `236`, `377`.
+   - Impact: user-entered context is silently dropped.
+
+### Medium-priority gaps
+
+1. `/account` has flat emphasis across multiple sections (quick links, latest order, store, summary panels) rather than one dominant primary workflow.
+   - References: `src/app/(portal)/account/page.tsx` lines `34`, `48`, `101`, `115`, `135`.
+
+2. Store preview 3D viewer is always active and uses per-product section ids.
+   - Reference: `src/components/account/PortalStoreShelf.tsx` lines `186-187`.
+   - Risk: can reintroduce WebGL lock contention patterns seen in section-based 3D contexts.
+
+3. Query-panel sync in order detail is one-way from state to URL after mount.
+   - `panelChoice` initializes from `searchParams`, then local state drives URL updates.
+   - References: `src/components/orders/OrderDetailView.tsx` lines `93`, `124-126`, `354-359`.
+   - Risk: back/forward navigation with `?panel=` can drift from expected panel state.
+
+4. `/account` and `/account/reorder` rely heavily on inline utility compositions + global classes (`glass-morphism`) rather than local page surface modules.
+   - References: `src/app/(portal)/account/page.tsx` lines `48`, `90`, `185`; `src/app/(portal)/account/reorder/page.tsx` lines `52-57`.
+   - Impact: lower local styling safety and harder page-specific hardening.
+
+### Hardening backlog (recommended order)
+
+- [x] Restore global keyboard focus visibility policy and keep per-component premium focus states.
+- [x] Convert `PortalStoreShelf` preview into an accessible dialog contract (role, aria, focus trap, return focus).
+- [x] Wire payment proof `note` through API contract or remove the field.
+- [ ] Refactor `/account` landing into clearer hierarchy:
+  - primary: resume order or shop
+  - secondary: account shortcuts
+  - archival: counts/history
+- [ ] Localize `/account` and `/account/reorder` surface styling into page modules to reduce global class coupling.
+- [ ] Revisit portal shelf 3D activation policy to avoid unnecessary always-on WebGL work.
+- [ ] Add panel-query -> state sync effect in `OrderDetailView` for navigation consistency.
