@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 import { marketingBootstrap } from "@/lib/marketing/bootstrap";
 import { createMarketingSnapshot, type MarketingSnapshot } from "@/lib/marketing/snapshot";
+import type { IngredientProfile } from "@/lib/marketing/types";
 import {
   listMarketingCategories,
   listMarketingIngredients,
@@ -52,6 +53,24 @@ function createBootstrapIngredientImageLookup() {
   return lookup;
 }
 
+function createBootstrapIngredientProfileLookup() {
+  const lookup = new Map<string, IngredientProfile>();
+
+  for (const ingredient of marketingBootstrap.ingredients) {
+    const keys = [ingredient.id, ingredient.name, ...ingredient.aliases];
+
+    for (const rawKey of keys) {
+      const key = normalizeIngredientToken(rawKey);
+
+      if (key && !lookup.has(key)) {
+        lookup.set(key, ingredient);
+      }
+    }
+  }
+
+  return lookup;
+}
+
 function resolveIngredientImage(
   ingredient: {
     id: string;
@@ -65,6 +84,28 @@ function resolveIngredientImage(
     return ingredient.image;
   }
 
+  const candidates = [ingredient.id, ingredient.name, ...ingredient.aliases];
+
+  for (const candidate of candidates) {
+    const key = normalizeIngredientToken(candidate);
+    const match = key ? lookup.get(key) : null;
+
+    if (match) {
+      return match;
+    }
+  }
+
+  return null;
+}
+
+function resolveIngredientProfile(
+  ingredient: {
+    id: string;
+    name: string;
+    aliases: string[];
+  },
+  lookup: Map<string, IngredientProfile>
+) {
   const candidates = [ingredient.id, ingredient.name, ...ingredient.aliases];
 
   for (const candidate of candidates) {
@@ -124,6 +165,7 @@ export const getMarketingSnapshot = cache(async (mode: "published" | "draft" = "
     const settings = new Map(settingRows.map((entry) => [entry.key, entry.value]));
 
     const bootstrapIngredientImageLookup = createBootstrapIngredientImageLookup();
+    const bootstrapIngredientProfileLookup = createBootstrapIngredientProfileLookup();
 
     return createMarketingSnapshot(
       {
@@ -150,6 +192,10 @@ export const getMarketingSnapshot = cache(async (mode: "published" | "draft" = "
               ingredient,
               bootstrapIngredientImageLookup
             );
+            const profile = resolveIngredientProfile(
+              ingredient,
+              bootstrapIngredientProfileLookup
+            );
 
             if (!image) {
               return null;
@@ -157,6 +203,9 @@ export const getMarketingSnapshot = cache(async (mode: "published" | "draft" = "
 
             return {
               ...ingredient,
+              category: profile?.category ?? "Seeds",
+              role: profile?.role ?? "supporting",
+              benefit: profile?.benefit ?? "Functional support",
               image,
             };
           })

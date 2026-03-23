@@ -111,7 +111,7 @@ export function ProductSelector() {
                   transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   className="relative z-10 w-full h-full"
                 >
-                  {activeProduct.model ? (
+                  {activeProduct?.model ? (
                     <Product3DViewer
                       modelPath={activeProduct.model}
                       theme={isDark ? "dark" : "light"}
