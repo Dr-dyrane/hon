@@ -1,0 +1,231 @@
+.page {
+  display: grid;
+  gap: 1rem;
+  padding-bottom: 5rem;
+}
+
+.hero {
+  border-radius: 2rem;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  box-shadow: var(--shadow-soft);
+  padding: 1.1rem 1rem;
+}
+
+.heroTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.heroEyebrow {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.heroTitle {
+  margin: 0.32rem 0 0;
+  color: var(--label);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+.heroDetail {
+  margin: 0.42rem 0 0;
+  color: var(--secondary-label);
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.heroActions {
+  margin-top: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.52rem;
+}
+
+.primaryAction,
+.secondaryAction {
+  min-height: 2.55rem;
+  border-radius: 999px;
+  padding: 0 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+  transition:
+    transform var(--duration-fast) var(--ease-premium),
+    background-color var(--duration-base) var(--ease-premium),
+    color var(--duration-base) var(--ease-premium);
+}
+
+.primaryAction {
+  background: var(--accent);
+  color: var(--accent-label);
+  box-shadow: var(--shadow-soft);
+}
+
+.secondaryAction {
+  background: color-mix(in srgb, var(--surface-alt) 78%, transparent);
+  color: var(--label);
+}
+
+.primaryAction:hover,
+.secondaryAction:hover {
+  transform: translateY(-1px);
+}
+
+.activityPill {
+  margin-top: 0.8rem;
+  width: fit-content;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-alt) 72%, transparent);
+  color: var(--secondary-label);
+  padding: 0.36rem 0.72rem;
+  font-size: 0.71rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.workflow {
+  border-radius: 2rem;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  box-shadow: var(--shadow-card);
+  padding: 1rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.workflowHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.panelEyebrow {
+  margin: 0;
+  color: var(--secondary-label);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.workflowTitle {
+  margin: 0.26rem 0 0;
+  color: var(--label);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.workflowDetail {
+  margin: 0.26rem 0 0;
+  color: var(--secondary-label);
+  font-size: 0.83rem;
+  line-height: 1.35;
+}
+
+.workflowBadge {
+  min-height: 1.65rem;
+  border-radius: 999px;
+  padding: 0 0.62rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--surface-alt) 70%, transparent);
+  color: var(--secondary-label);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+  white-space: nowrap;
+}
+
+.workflowActionGrid {
+  display: grid;
+  gap: 0.52rem;
+}
+
+.workflowAction {
+  min-height: 2.9rem;
+  border-radius: 1.1rem;
+  background: color-mix(in srgb, var(--surface-alt) 76%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  text-decoration: none;
+  padding: 0.72rem 0.8rem;
+  transition: background-color var(--duration-base) var(--ease-premium);
+}
+
+.workflowAction:hover {
+  background: color-mix(in srgb, var(--surface-alt) 88%, transparent);
+}
+
+.surfaceActionLabel {
+  color: var(--label);
+  font-size: 0.79rem;
+  font-weight: 600;
+}
+
+.surfaceActionMeta {
+  color: var(--secondary-label);
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-headline);
+}
+
+.formSection {
+  display: grid;
+}
+
+.primaryAction:focus-visible,
+.secondaryAction:focus-visible,
+.workflowAction:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--shadow-soft),
+    0 0 0 6px color-mix(in srgb, var(--ring) 22%, transparent);
+}
+
+@media (min-width: 768px) {
+  .page {
+    gap: 1.15rem;
+  }
+
+  .hero,
+  .workflow {
+    padding: 1.2rem 1.25rem;
+  }
+
+  .heroTitle {
+    font-size: 1.7rem;
+  }
+
+  .workflowActionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryAction,
+  .secondaryAction,
+  .workflowAction {
+    transition: none;
+  }
+}
+

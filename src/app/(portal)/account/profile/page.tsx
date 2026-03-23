@@ -1,42 +1,96 @@
+import Link from "next/link";
+import { SignOutButton } from "@/components/auth/SignOutButton";
+import { PortalProfileForm } from "@/components/account/PortalProfileForm";
 import { requireAuthenticatedSession } from "@/lib/auth/guards";
 import { getPortalProfile } from "@/lib/db/repositories/account-repository";
-import { PortalProfileForm } from "@/components/account/PortalProfileForm";
-import { WorkspaceContextPanel } from "@/components/shell/WorkspaceContextPanel";
-import { SignOutButton } from "@/components/auth/SignOutButton";
+import styles from "./profile-page.module.css";
+
+function countMissingProfileFields(input: {
+  fullName: string;
+  preferredPhoneE164: string;
+  firstName: string;
+  lastName: string;
+}) {
+  return [
+    input.fullName.trim().length === 0,
+    input.preferredPhoneE164.trim().length === 0,
+    input.firstName.trim().length === 0,
+    input.lastName.trim().length === 0,
+  ].filter(Boolean).length;
+}
 
 export default async function ProfilePage() {
   const session = await requireAuthenticatedSession("/account/profile");
   const profile = await getPortalProfile(session.email);
+  const missingFieldCount = countMissingProfileFields(profile);
+  const enabledAlertChannels = [
+    profile.workspaceEmailEnabled,
+    profile.workspaceInAppEnabled,
+    profile.workspacePushEnabled,
+  ].filter(Boolean).length;
 
   return (
-    <div className="space-y-8 pb-20 md:space-y-10">
-      <div className="rounded-[24px] bg-[color:var(--surface)]/88 px-4 py-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)] md:hidden">
-        <div className="flex items-start justify-between gap-3">
-          <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-            Profile
+    <div className={styles.page}>
+      <section className={styles.hero}>
+        <div className={styles.heroTop}>
+          <p className={styles.heroEyebrow}>Profile</p>
+          <SignOutButton />
+        </div>
+        <h1 className={styles.heroTitle}>{profile.fullName || "Your profile"}</h1>
+        <p className={styles.heroDetail}>
+          {missingFieldCount > 0
+            ? `${missingFieldCount} field${missingFieldCount === 1 ? "" : "s"} still missing.`
+            : "Identity details are complete."}
+        </p>
+
+        <div className={styles.heroActions}>
+          <Link href="/account/profile#account-profile-form" className={styles.primaryAction}>
+            Complete profile
+          </Link>
+          <Link href="/account/addresses" className={styles.secondaryAction}>
+            Manage places
+          </Link>
+        </div>
+
+        <div className={styles.activityPill}>
+          {enabledAlertChannels} alert channel{enabledAlertChannels === 1 ? "" : "s"} on
+        </div>
+      </section>
+
+      <section className={styles.workflow}>
+        <div className={styles.workflowHead}>
+          <div>
+            <p className={styles.panelEyebrow}>Primary workflow</p>
+            <h2 className={styles.workflowTitle}>
+              {missingFieldCount > 0 ? "Finish identity setup." : "Profile is ready."}
+            </h2>
+            <p className={styles.workflowDetail}>
+              {missingFieldCount > 0
+                ? "Complete identity and phone details before your next checkout."
+                : "Review notification preferences to match how you want updates delivered."}
+            </p>
           </div>
-          <SignOutButton />
+          <span className={styles.workflowBadge}>
+            {missingFieldCount > 0 ? "Needs update" : "Complete"}
+          </span>
         </div>
-        <div className="mt-2 text-lg font-semibold tracking-tight text-label">
-          {profile.fullName || "You"}
-        </div>
-        <div className="mt-1 text-sm text-secondary-label">{profile.email}</div>
-      </div>
 
-      <div className="hidden md:block">
-        <WorkspaceContextPanel
-          title={profile.fullName || "You"}
-          detail={profile.email}
-          tags={[{ label: "Profile", tone: "muted" }]}
-        />
-        <div className="mt-4 flex justify-end">
-          <SignOutButton />
+        <div className={styles.workflowActionGrid}>
+          <Link href="/account/profile#account-profile-form" className={styles.workflowAction}>
+            <span className={styles.surfaceActionLabel}>Open editor</span>
+            <span className={styles.surfaceActionMeta}>Edit</span>
+          </Link>
+          <Link href="/account/orders" className={styles.workflowAction}>
+            <span className={styles.surfaceActionLabel}>View order flow</span>
+            <span className={styles.surfaceActionMeta}>Open</span>
+          </Link>
         </div>
-      </div>
+      </section>
 
-      <div className="max-w-5xl">
+      <section className={styles.formSection}>
         <PortalProfileForm profile={profile} />
-      </div>
+      </section>
     </div>
   );
 }
+

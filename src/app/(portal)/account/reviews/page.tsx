@@ -1,11 +1,11 @@
-import { CheckCircle2, PenSquare, Star } from "lucide-react";
-import { MetricRail } from "@/components/admin/MetricRail";
+import Link from "next/link";
+import { PortalReviewComposer } from "@/components/reviews/PortalReviewComposer";
 import { requireAuthenticatedSession } from "@/lib/auth/guards";
 import {
   listPendingReviewsForPortal,
   listReviewsForPortal,
 } from "@/lib/db/repositories/review-repository";
-import { PortalReviewComposer } from "@/components/reviews/PortalReviewComposer";
+import styles from "./reviews-page.module.css";
 
 function formatTimestamp(value?: string | null) {
   if (!value) {
@@ -30,43 +30,73 @@ export default async function ReviewsPage() {
   ]);
   const approvedCount = reviews.filter((review) => review.status === "approved").length;
 
-  return (
-    <div className="space-y-8 pb-20 md:space-y-10">
-      <MetricRail
-        items={[
-          {
-            label: "Pending",
-            value: `${pendingReviews.length}`,
-            detail: "Rate",
-            icon: PenSquare,
-          },
-          {
-            label: "Sent",
-            value: `${reviews.length}`,
-            detail: "Saved",
-            icon: Star,
-          },
-          {
-            label: "Approved",
-            value: `${approvedCount}`,
-            detail: "Live",
-            icon: CheckCircle2,
-            tone: "success",
-          },
-        ]}
-        columns={3}
-      />
+  const heroTitle =
+    pendingReviews.length > 0
+      ? `${pendingReviews.length} review${pendingReviews.length === 1 ? "" : "s"} ready to submit.`
+      : reviews.length > 0
+        ? "Reviews are up to date."
+        : "No reviews yet.";
+  const heroDetail =
+    pendingReviews.length > 0
+      ? "Share feedback for completed orders while details are fresh."
+      : reviews.length > 0
+        ? "You can review new completed orders as they appear."
+        : "Complete an order first, then submit your first review.";
+  const activitySummary = `${pendingReviews.length} pending - ${reviews.length} sent - ${approvedCount} approved`;
 
-      <section className="space-y-4">
-        <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-          Pending
+  return (
+    <div className={styles.page}>
+      <section className={styles.hero}>
+        <p className={styles.heroEyebrow}>Reviews</p>
+        <h1 className={styles.heroTitle}>{heroTitle}</h1>
+        <p className={styles.heroDetail}>{heroDetail}</p>
+
+        <div className={styles.heroActions}>
+          <Link
+            href={
+              pendingReviews.length > 0
+                ? "/account/reviews#pending-reviews"
+                : "/account/orders"
+            }
+            className={styles.primaryAction}
+          >
+            {pendingReviews.length > 0 ? "Review now" : "Open orders"}
+          </Link>
+          <Link href="/account/orders" className={styles.secondaryAction}>
+            Order flow
+          </Link>
         </div>
+
+        <div className={styles.activityPill}>{activitySummary}</div>
+      </section>
+
+      <section id="pending-reviews" className={styles.workflow}>
+        <div className={styles.workflowHead}>
+          <div>
+            <p className={styles.panelEyebrow}>Primary workflow</p>
+            <h2 className={styles.workflowTitle}>
+              {pendingReviews.length > 0 ? "Submit pending reviews." : "No pending reviews."}
+            </h2>
+            <p className={styles.workflowDetail}>
+              {pendingReviews.length > 0
+                ? "Rate completed orders and leave optional notes."
+                : "New review prompts will appear after delivered orders."}
+            </p>
+          </div>
+          <span className={styles.workflowBadge}>
+            {pendingReviews.length > 0 ? "Needs action" : "Clear"}
+          </span>
+        </div>
+
         {pendingReviews.length === 0 ? (
-          <div className="glass-morphism rounded-[32px] bg-[color:var(--surface)]/88 p-6 text-sm text-secondary-label shadow-soft">
-            Nothing to rate.
+          <div className={styles.emptyWorkflow}>
+            <p className={styles.emptyWorkflowText}>Nothing to rate right now.</p>
+            <Link href="/account/orders" className={styles.emptyWorkflowAction}>
+              View orders
+            </Link>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+          <div className={styles.pendingGrid}>
             {pendingReviews.map((request) => (
               <PortalReviewComposer
                 key={request.requestId}
@@ -79,56 +109,34 @@ export default async function ReviewsPage() {
         )}
       </section>
 
-      <section className="space-y-4">
-        <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-          Sent
-        </div>
+      <section className={styles.archiveSection}>
+        <header className={styles.archiveHead}>
+          <h2 className={styles.archiveTitle}>Sent reviews</h2>
+          <span className={styles.archiveBadge}>{reviews.length}</span>
+        </header>
+
         {reviews.length === 0 ? (
-          <div className="glass-morphism rounded-[32px] bg-[color:var(--surface)]/88 p-6 text-sm text-secondary-label shadow-soft">
-            No reviews yet.
-          </div>
+          <div className={styles.emptyArchive}>No reviews submitted yet.</div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+          <div className={styles.archiveGrid}>
             {reviews.map((review) => (
-              <article
-                key={review.reviewId}
-                className="glass-morphism rounded-[32px] bg-[color:var(--surface)]/88 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
-              >
-                <div className="flex items-start justify-between gap-3">
+              <article key={review.reviewId} className={styles.reviewCard}>
+                <div className={styles.reviewCardHead}>
                   <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-headline text-secondary-label">
-                      #{review.orderNumber}
-                    </div>
-                    <div className="mt-1 text-2xl font-semibold text-label">
-                      {review.rating}/5
-                    </div>
+                    <p className={styles.reviewOrder}>#{review.orderNumber}</p>
+                    <p className={styles.reviewRating}>{review.rating}/5</p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                      {formatStatusLabel(review.status)}
-                    </span>
+                  <div className={styles.reviewTags}>
+                    <span className={styles.reviewTag}>{formatStatusLabel(review.status)}</span>
                     {review.isFeatured ? (
-                      <span className="rounded-full bg-system-fill px-3 py-1 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                        Featured
-                      </span>
+                      <span className={styles.reviewTag}>Featured</span>
                     ) : null}
                   </div>
                 </div>
 
-                {review.title ? (
-                  <div className="mt-4 text-lg font-semibold tracking-tight text-label">
-                    {review.title}
-                  </div>
-                ) : null}
-                {review.body ? (
-                  <div className="mt-2 text-sm leading-relaxed text-secondary-label">
-                    {review.body}
-                  </div>
-                ) : null}
-
-                <div className="mt-4 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                  {formatTimestamp(review.createdAt)}
-                </div>
+                {review.title ? <p className={styles.reviewTitle}>{review.title}</p> : null}
+                {review.body ? <p className={styles.reviewBody}>{review.body}</p> : null}
+                <p className={styles.reviewTime}>{formatTimestamp(review.createdAt)}</p>
               </article>
             ))}
           </div>
@@ -137,3 +145,4 @@ export default async function ReviewsPage() {
     </div>
   );
 }
+

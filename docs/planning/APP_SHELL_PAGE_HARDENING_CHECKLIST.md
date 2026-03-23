@@ -483,3 +483,13 @@ Follow-up alignment completed for `/admin` so overview now follows the same stat
   - archival control/cash context
 - moved styling to local module (`src/app/(admin)/admin/overview-page.module.css`) and dropped global utility/squircle dependence
 - added contextual stack-page actions (`/admin/catalog/taxonomy`, `/admin/settings/team`) where shell nav does not expose direct top-level entry points
+
+## Account Remaining Pages Checkpoint (March 23, 2026)
+
+Follow-up hardening completed for remaining account surfaces that were still on older utility-first wrappers.
+
+- refactored `/account/addresses` to state-aware hero + primary workflow + localized page module styling
+- refactored `/account/profile` to completion-aware hero/workflow framing with localized page module styling
+- refactored `/account/reviews` to action-first review workflow + archive section with localized page module styling
+- converted `PortalReviewComposer` to local CSS-module styling to remove global utility dependency and align visual language
+- preserved existing data contracts and progressive form behavior while improving flow hierarchy and responsiveness

@@ -4,6 +4,7 @@ import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { submitReviewAction } from "@/app/(portal)/account/reviews/actions";
 import { INITIAL_REVIEW_ACTION_STATE } from "@/lib/reviews/action-state";
+import styles from "./PortalReviewComposer.module.css";
 
 export function PortalReviewComposer({
   orderId,
@@ -27,24 +28,15 @@ export function PortalReviewComposer({
   }, [router, state.status]);
 
   return (
-    <form
-      action={formAction}
-      className="glass-morphism rounded-[28px] bg-[color:var(--surface)]/88 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)]"
-    >
+    <form action={formAction} className={styles.card}>
       <input type="hidden" name="orderId" value={orderId} />
 
-      <div className="flex items-start justify-between gap-4">
+      <div className={styles.head}>
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-            #{orderNumber}
-          </div>
-          <div className="mt-1 text-sm text-secondary-label">{completedAt}</div>
+          <p className={styles.orderNumber}>#{orderNumber}</p>
+          <p className={styles.completedAt}>{completedAt}</p>
         </div>
-        <select
-          name="rating"
-          defaultValue="5"
-          className="rounded-full bg-system-fill/56 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-label"
-        >
+        <select name="rating" defaultValue="5" className={styles.ratingSelect}>
           <option value="5">5 stars</option>
           <option value="4">4 stars</option>
           <option value="3">3 stars</option>
@@ -53,39 +45,23 @@ export function PortalReviewComposer({
         </select>
       </div>
 
-      <div className="mt-4 grid gap-3">
-        <input
-          type="text"
-          name="title"
-          placeholder="Title"
-          className="w-full rounded-[22px] bg-system-fill/56 px-4 py-3 text-sm text-label placeholder:text-secondary-label"
-        />
+      <div className={styles.fieldGrid}>
+        <input type="text" name="title" placeholder="Title" className={styles.field} />
         <textarea
           name="body"
           rows={3}
           placeholder="Optional note"
-          className="w-full rounded-[22px] bg-system-fill/56 px-4 py-3 text-sm text-label placeholder:text-secondary-label"
+          className={styles.field}
         />
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
-        {state.message ? (
-          <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-            {state.message}
-          </div>
-        ) : (
-          <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-            Review
-          </div>
-        )}
-        <button
-          type="submit"
-          disabled={pending}
-          className="button-secondary min-h-[40px] px-4 text-[10px] font-semibold uppercase tracking-headline disabled:translate-y-0 disabled:shadow-none"
-        >
+      <div className={styles.footer}>
+        <p className={styles.statusText}>{state.message ?? "Review"}</p>
+        <button type="submit" disabled={pending} className={styles.submitButton}>
           {pending ? "Saving" : "Submit"}
         </button>
       </div>
     </form>
   );
 }
+
