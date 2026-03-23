@@ -53,16 +53,14 @@ function StageModel({
     if (!group) return;
 
     const isActive = relativeIndex === 0;
-    const isImmediateSide = Math.abs(relativeIndex) === 1;
+    const absRelative = Math.abs(relativeIndex);
     const aspect = size.width / Math.max(size.height, 1);
 
-    // Side products closer for small-width layouts
-    const sideX = THREE.MathUtils.clamp(1.05 + aspect * 0.18, 1.1, 1.45);
-    const sideZ = THREE.MathUtils.clamp(
-      -0.22 - (1.7 - Math.min(aspect, 1.7)) * 0.12,
-      -0.42,
-      -0.2
-    );
+    // Seedance spans for 5-model panoramic view
+    const sideX1 = THREE.MathUtils.clamp(1.3 + aspect * 0.1, 1.35, 1.7);
+    const sideX2 = sideX1 + 1.25;
+    const sideZ = -0.7;
+    const sideZFar = -1.6;
 
     let tx = 0;
     let ty = 0;
@@ -75,81 +73,61 @@ function StageModel({
 
     if (isActive) {
       activeMotionTimeRef.current += delta;
-
-      const idleYaw = hoverRef.current
-        ? 0
-        : Math.sin(activeMotionTimeRef.current * 0.9) * 0.06;
-
-      const idleLift = Math.sin(activeMotionTimeRef.current * 1.2) * 0.025;
-
+      const idleYaw = hoverRef.current ? 0 : Math.sin(activeMotionTimeRef.current * 0.9) * 0.05;
+      const idleLift = Math.sin(activeMotionTimeRef.current * 1.2) * 0.02;
       const idleTiltX = Math.sin(activeMotionTimeRef.current * 0.8) * 0.015;
-      const idleTiltZ = Math.cos(activeMotionTimeRef.current * 0.7) * 0.01;
 
       tx = 0;
-      ty = 0.02 + idleLift;
-      tz = 0;
+      ty = idleLift;
+      tz = 0.6; // Progressive reveal push
       ry = idleYaw;
       rx = idleTiltX;
-      rz = idleTiltZ;
-      targetScale = hoverRef.current ? 1.225 : 1.2;
+      targetScale = hoverRef.current ? 1.05 : 1.0;
       targetOpacity = 1;
-    } else if (relativeIndex === -1) {
-      tx = -sideX;
-      ty = 0;
+    } else if (absRelative === 1) {
+      const side = relativeIndex < 0 ? -1 : 1;
+      tx = sideX1 * side;
+      ty = -0.05;
       tz = sideZ;
-      ry = 0.12;
-      rx = 0;
-      rz = 0;
-      targetScale = hoverRef.current && isImmediateSide ? 0.41 : 0.4;
-      targetOpacity = 0.5;
-    } else if (relativeIndex === 1) {
-      tx = sideX;
-      ty = 0;
-      tz = sideZ;
-      ry = -0.12;
-      rx = 0;
-      rz = 0;
-      targetScale = hoverRef.current && isImmediateSide ? 0.41 : 0.4;
-      targetOpacity = 0.5;
+      ry = -0.35 * side; // High-end Seedance Tilt
+      targetScale = 0.52;
+      targetOpacity = 0.6;
+    } else if (absRelative === 2) {
+      const side = relativeIndex < 0 ? -1 : 1;
+      tx = sideX2 * side;
+      ty = -0.15;
+      tz = sideZFar;
+      ry = -0.5 * side; // Heavier tilt for edges
+      targetScale = 0.38;
+      targetOpacity = 0.25; // Muted outer models
     } else {
       const side = relativeIndex < 0 ? -1 : 1;
-      tx = 4 * side;
-      ty = 0;
-      tz = -2.4;
-      ry = side * 0.2;
-      rx = 0;
-      rz = 0;
-      targetScale = 0.38;
+      tx = 8 * side;
+      tz = -4;
+      targetScale = 0.2;
       targetOpacity = 0;
     }
 
-    group.position.x = THREE.MathUtils.damp(group.position.x, tx, 7, delta);
-    group.position.y = THREE.MathUtils.damp(group.position.y, ty, 7, delta);
-    group.position.z = THREE.MathUtils.damp(group.position.z, tz, 7, delta);
+    group.position.x = THREE.MathUtils.damp(group.position.x, tx, 6.5, delta);
+    group.position.y = THREE.MathUtils.damp(group.position.y, ty, 6.5, delta);
+    group.position.z = THREE.MathUtils.damp(group.position.z, tz, 6.5, delta);
 
-    group.rotation.x = THREE.MathUtils.damp(group.rotation.x, rx, 7, delta);
-    group.rotation.y = THREE.MathUtils.damp(group.rotation.y, ry, 7, delta);
-    group.rotation.z = THREE.MathUtils.damp(group.rotation.z, rz, 7, delta);
+    group.rotation.x = THREE.MathUtils.damp(group.rotation.x, rx, 6.5, delta);
+    group.rotation.y = THREE.MathUtils.damp(group.rotation.y, ry, 6.5, delta);
+    group.rotation.z = THREE.MathUtils.damp(group.rotation.z, rz, 6.5, delta);
 
-    const nextScale = THREE.MathUtils.damp(group.scale.x, targetScale, 7, delta);
+    const nextScale = THREE.MathUtils.damp(group.scale.x, targetScale, 6.5, delta);
     group.scale.setScalar(nextScale);
 
     group.traverse((child) => {
       const mesh = child as THREE.Mesh;
       if (!("material" in mesh) || !mesh.material) return;
-
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-
       materials.forEach((material) => {
         if (!material) return;
         material.transparent = true;
-        material.opacity = THREE.MathUtils.damp(
-          material.opacity ?? 1,
-          targetOpacity,
-          8,
-          delta
-        );
-        material.depthWrite = targetOpacity > 0.95;
+        material.opacity = THREE.MathUtils.damp(material.opacity ?? 1, targetOpacity, 8, delta);
+        material.depthWrite = targetOpacity > 0.9;
       });
     });
   });
@@ -237,9 +215,11 @@ export function Product3DCarousel({
     if (!el) return;
 
     const handleWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) < 18) return;
-      e.preventDefault();
-      lockStep(e.deltaY > 0 ? 1 : -1);
+      // Direct horizontal interaction only - prevents Accidental switching during page scroll
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 10) {
+        e.preventDefault();
+        lockStep(e.deltaX > 0 ? 1 : -1);
+      }
     };
 
     const handleTouchStart = (e: TouchEvent) => {
@@ -361,13 +341,12 @@ export function Product3DCarousel({
           <Suspense fallback={null}>
             <SceneEnvironment isDark={isDark} />
 
-            {/* Only render active model and immediate neighbors to prevent WebGL context overload */}
             <group position={[0, stageYOffset, 0]}>
               {productIds.map((key, index) => {
                 const relativeIndex = getRelativeIndex(index, activeIndex, productIds.length);
                 const modelPath = productsById[key].model;
-                // Only render active model and immediate neighbors
-                if (Math.abs(relativeIndex) > 1 || !modelPath) return null;
+                // Only render active model and 2 immediate neighbors on each side
+                if (Math.abs(relativeIndex) > 2 || !modelPath) return null;
 
                 return (
                   <StageModel

@@ -26,16 +26,23 @@ export function OrderReviewCard({
   orderStatus,
   reviewRequest,
   review,
+  embedded = false,
+  directEntry = false,
+  onRequestClose,
 }: {
   orderId: string;
   accessToken?: string;
   orderStatus: string;
   reviewRequest: OrderReviewRequestRow | null;
   review: OrderReviewRow | null;
+  embedded?: boolean;
+  directEntry?: boolean;
+  onRequestClose?: () => void;
 }) {
   const router = useRouter();
   const feedback = useFeedback();
-  const [stage, setStage] = useState<ReviewStage>(review ? "success" : "idle");
+  const initialStage: ReviewStage = review ? "success" : directEntry ? "rate" : "idle";
+  const [stage, setStage] = useState<ReviewStage>(initialStage);
   const [rating, setRating] = useState<number>(review?.rating ?? 0);
   const [comment, setComment] = useState(review?.body ?? "");
   const [error, setError] = useState("");
@@ -46,8 +53,8 @@ export function OrderReviewCard({
   if (!canReview && !review) {
     return (
       <div className={styles.infoCard}>
-        <div className={styles.infoTitle}>Ratings open after delivery</div>
-        <div className={styles.infoText}>Available after delivery.</div>
+        <div className={styles.infoTitle}>Rating unavailable</div>
+        <div className={styles.infoText}>After delivery.</div>
       </div>
     );
   }
@@ -97,13 +104,14 @@ export function OrderReviewCard({
 
   return (
     <div className={styles.card}>
-      <div className={styles.header}>
-        <div>
-          <h3 className={styles.title}>Order rating</h3>
-          <p className={styles.description}>Stars first. Comment optional.</p>
+      {!embedded ? (
+        <div className={styles.header}>
+          <div>
+            <h3 className={styles.title}>Order rating</h3>
+          </div>
+          {review ? <div className={styles.statusPill}>Submitted</div> : null}
         </div>
-        {review ? <div className={styles.statusPill}>Submitted</div> : null}
-      </div>
+      ) : null}
 
       <AnimatePresence mode="wait" initial={false}>
         {stage === "idle" ? (
@@ -169,6 +177,10 @@ export function OrderReviewCard({
                 className={styles.secondaryButton}
                 onClick={() => {
                   feedback.selection();
+                  if (directEntry && !review) {
+                    onRequestClose?.();
+                    return;
+                  }
                   setStage("idle");
                 }}
               >

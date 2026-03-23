@@ -9,7 +9,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Landmark } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { useFeedback } from "@/components/providers/FeedbackProvider";
 import {
   getClientErrorMessage,
@@ -86,15 +86,18 @@ export function PaymentProofUploadCard({
   paymentId,
   accessToken,
   paymentStatus,
+  embedded = false,
+  directEntry = false,
 }: {
   orderId: string;
   paymentId: string | null;
   accessToken?: string;
   paymentStatus?: string | null;
+  embedded?: boolean;
+  directEntry?: boolean;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [step, setStep] = useState<PaymentStep>("idle");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
@@ -105,6 +108,9 @@ export function PaymentProofUploadCard({
   const isLocked =
     typeof paymentStatus === "string" &&
     !["awaiting_transfer", "rejected"].includes(paymentStatus);
+  const [step, setStep] = useState<PaymentStep>(() =>
+    directEntry && !isLocked ? "pick" : "idle"
+  );
 
   const helperText = useMemo(() => {
     if (isLocked) {
@@ -115,7 +121,7 @@ export function PaymentProofUploadCard({
       return "Proof submitted.";
     }
 
-    return "Upload proof file.";
+    return "Upload proof.";
   }, [isLocked, paymentStatus]);
 
   if (!paymentId) {
@@ -292,13 +298,15 @@ export function PaymentProofUploadCard({
         onChange={onFileChange}
       />
 
-      <div className={styles.header}>
-        <div>
-          <h3 className={styles.title}>Payment proof</h3>
-          <p className={styles.description}>{helperText}</p>
+      {!embedded ? (
+        <div className={styles.header}>
+          <div>
+            <h3 className={styles.title}>Payment proof</h3>
+            <p className={styles.description}>{helperText}</p>
+          </div>
+          <div className={styles.statusPill}>{isLocked ? "Locked" : getStepLabel(step)}</div>
         </div>
-        <div className={styles.statusPill}>{isLocked ? "Locked" : getStepLabel(step)}</div>
-      </div>
+      ) : null}
 
       {!isLocked && step === "idle" ? (
         <div className={styles.compactScene}>
@@ -312,7 +320,6 @@ export function PaymentProofUploadCard({
           >
             Upload proof
           </button>
-          <p className={styles.sceneHint}>One file only.</p>
         </div>
       ) : null}
 
@@ -329,7 +336,7 @@ export function PaymentProofUploadCard({
             <button type="button" className={styles.dropZone} onClick={openPicker}>
               <span className={styles.dropZoneTitle}>Choose a file</span>
               <span className={styles.dropZoneText}>
-                PNG, JPG, WEBP, or PDF up to {MAX_FILE_MB} MB
+                PNG, JPG, WEBP, PDF - up to {MAX_FILE_MB} MB
               </span>
             </button>
 
@@ -411,7 +418,7 @@ export function PaymentProofUploadCard({
           >
             <div className={styles.successCard}>
               <div className={styles.successTitle}>Proof uploaded</div>
-              <div className={styles.successText}>Received. Pending review.</div>
+              <div className={styles.successText}>Pending review.</div>
             </div>
 
             <div className={styles.actionsRow}>
@@ -443,13 +450,6 @@ export function PaymentProofUploadCard({
         <div className={styles.successCard}>
           <div className={styles.successTitle}>Payment already reviewed</div>
           <div className={styles.successText}>Not editable for this status.</div>
-        </div>
-      ) : null}
-
-      {!isLocked ? (
-        <div className={styles.banner}>
-          <Landmark className="h-4 w-4 shrink-0" strokeWidth={1.8} />
-          <span>Reference linked to this order.</span>
         </div>
       ) : null}
     </div>

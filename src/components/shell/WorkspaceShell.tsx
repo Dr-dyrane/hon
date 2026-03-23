@@ -6,6 +6,7 @@ import { SignOutButton } from "@/components/auth/SignOutButton";
 import { WorkspaceHeaderTitle } from "@/components/shell/WorkspaceHeaderTitle";
 import { WorkspaceHeaderAction } from "@/components/shell/WorkspaceHeaderAction";
 import { WorkspaceNav } from "@/components/shell/WorkspaceNav";
+import { WorkspaceCartTrigger } from "@/components/shell/WorkspaceCartTrigger";
 import { WorkspaceNotificationSheet } from "@/components/shell/WorkspaceNotificationSheet";
 import type { ShellHeaderRoute, ShellNavItem } from "@/lib/app-shell";
 import type { WorkspaceNotification } from "@/lib/db/types";
@@ -24,6 +25,7 @@ export function WorkspaceShell({
   sessionEmail,
   sessionRoleLabel,
   notifications = [],
+  showCartTrigger = false,
 }: {
   eyebrow: string;
   title: string;
@@ -37,6 +39,7 @@ export function WorkspaceShell({
   sessionEmail?: string;
   sessionRoleLabel?: string;
   notifications?: WorkspaceNotification[];
+  showCartTrigger?: boolean;
 }) {
   const nativeMode = visualStyle === "native";
 
@@ -78,6 +81,12 @@ export function WorkspaceShell({
           <div className="mt-10 min-h-0 flex-1 overflow-y-auto pr-1 scrollbar-hide">
             <WorkspaceNav items={navItems} />
           </div>
+
+          {showCartTrigger ? (
+            <div className="mt-3 md:max-lg:mt-2">
+              <WorkspaceCartTrigger />
+            </div>
+          ) : null}
 
           <div
             className={cn(

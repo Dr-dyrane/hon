@@ -27,6 +27,19 @@ function resolvePort() {
   return Number.parseInt(serverEnv.database.port, 10);
 }
 
+function resolveRuntimeConnectionString() {
+  if (serverEnv.database.url) {
+    return serverEnv.database.url;
+  }
+
+  // Local/dev fallback: allow direct URL to bypass IAM OIDC refresh when running outside Vercel.
+  if (serverEnv.isDevelopment && serverEnv.database.directUrl) {
+    return serverEnv.database.directUrl;
+  }
+
+  return null;
+}
+
 function hasDirectCredentialConfig() {
   return Boolean(
     serverEnv.database.host &&
@@ -79,7 +92,7 @@ function createIamPasswordProvider() {
 }
 
 export function resolveDatabaseConnectionMode(): DatabaseConnectionMode {
-  if (serverEnv.database.url) {
+  if (resolveRuntimeConnectionString()) {
     return "connection_string";
   }
 
@@ -106,13 +119,20 @@ function getSharedClientConfig() {
 
 export function buildDatabasePoolConfig(): PoolConfig {
   switch (resolveDatabaseConnectionMode()) {
-    case "connection_string":
+    case "connection_string": {
+      const connectionString = resolveRuntimeConnectionString();
+
+      if (!connectionString) {
+        throw new Error("Database connection string is missing.");
+      }
+
       return {
-        connectionString: serverEnv.database.url!,
+        connectionString,
         ssl: resolveSslConfig(serverEnv.database.sslMode),
         max: 10,
         idleTimeoutMillis: 30_000,
       };
+    }
     case "password":
       return {
         ...getSharedClientConfig(),
@@ -134,11 +154,18 @@ export function buildDatabasePoolConfig(): PoolConfig {
 
 export function buildDatabaseClientConfig(): ClientConfig {
   switch (resolveDatabaseConnectionMode()) {
-    case "connection_string":
+    case "connection_string": {
+      const connectionString = resolveRuntimeConnectionString();
+
+      if (!connectionString) {
+        throw new Error("Database connection string is missing.");
+      }
+
       return {
-        connectionString: serverEnv.database.url!,
+        connectionString,
         ssl: resolveSslConfig(serverEnv.database.sslMode),
       };
+    }
     case "password":
       return {
         ...getSharedClientConfig(),

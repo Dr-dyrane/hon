@@ -17,9 +17,9 @@ export function SocialProof() {
 
   return (
     <SectionContainer variant="alt" id="social" className="overflow-hidden">
-      <div className="flex flex-col items-center">
-        <div className="text-center mb-12">
-          <div 
+      <div className="container-shell">
+        <div className="mb-20 text-center">
+          <div
             data-aos="fade-down"
             data-aos-duration="600"
             data-aos-delay="100"
@@ -29,7 +29,7 @@ export function SocialProof() {
               <Star key={i} size={16} fill="currentColor" stroke="none" />
             ))}
           </div>
-          <h2 
+          <h2
             data-aos="fade-up"
             data-aos-duration="800"
             data-aos-delay="200"
@@ -57,17 +57,17 @@ export function SocialProof() {
               data-aos-delay={400 + i * 100}
               className="text-center group"
             >
-              <motion.div 
+              <motion.div
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.3 }}
-                className="text-5xl md:text-8xl font-headline font-bold text-label mb-6 tracking-display italic group-hover:scale-110 transition-transform duration-700"
+                className="text-5xl md:text-8xl font-headline font-bold text-label mb-6 tracking-display italic group-hover:scale-110 transition-transform duration-700 truncate"
               >
                 {stat.value}
               </motion.div>
 
-              <Badge 
-                variant="accent" 
-                size="sm" 
+              <Badge
+                variant="accent"
+                size="sm"
                 animated={true}
                 className="mb-3 font-semibold tracking-headline"
               >
@@ -79,7 +79,7 @@ export function SocialProof() {
           ))}
         </div>
 
-        <div 
+        <div
           data-aos="fade-up"
           data-aos-duration="700"
           data-aos-delay="800"

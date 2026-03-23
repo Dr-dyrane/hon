@@ -49,8 +49,8 @@ export function CTASection() {
       id="cta"
       className="relative flex items-center justify-center px-4 pb-32 pt-20"
     >
-      <div className="w-full max-w-6xl">
-        <div className="mb-24 text-center">
+      <div className="container-shell">
+        <div className="mx-auto max-w-2xl text-center">
           <HeroEyebrow
             position="center"
             animated

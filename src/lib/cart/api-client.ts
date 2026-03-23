@@ -8,6 +8,18 @@ type JsonResponse<T> = {
   error?: string;
 };
 
+export type CartCheckoutDefaults = {
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  deliveryLocation: string;
+  notes: string;
+  latitude: string;
+  longitude: string;
+  hasSavedDetails: boolean;
+  sourceLabel: string | null;
+};
+
 async function readJson<T>(response: Response) {
   const payload = (await response.json()) as JsonResponse<T>;
 
@@ -25,6 +37,15 @@ export async function fetchCartSnapshot() {
   });
 
   return readJson<CartSnapshot>(response);
+}
+
+export async function fetchCartCheckoutDefaults() {
+  const response = await fetch("/api/cart/defaults", {
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+
+  return readJson<CartCheckoutDefaults | null>(response);
 }
 
 export async function replaceRemoteCartItems(

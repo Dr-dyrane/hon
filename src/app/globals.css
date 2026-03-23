@@ -50,9 +50,9 @@
   /* Layout */
   --spacing-section: 120px;
   --spacing-section-mobile: 88px;
-  --spacing-hero: 160px;
-  --spacing-hero-mobile: 112px;
-  --container-max: 1200px;
+  --spacing-hero: 120px;
+  --spacing-hero-mobile: 88px;
+  --container-max: 1800px; /* Panoramic Wide Grid */
 
   /* Radius */
   --radius-card: 64px;
@@ -257,8 +257,16 @@ canvas {
 }
 
 .container-shell {
-  width: min(100% - 16px, var(--container-max));
+  width: 100%;
+  max-width: var(--container-max);
   margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .container-shell {
+    padding-inline: 3rem;
+  }
 }
 
 .section-shell {
@@ -295,11 +303,9 @@ canvas {
 .workspace-shell-native {
   background:
     radial-gradient(circle at top, color-mix(in srgb, var(--accent) 6%, transparent) 0%, transparent 46%),
-    linear-gradient(
-      180deg,
+    linear-gradient(180deg,
       color-mix(in srgb, var(--system-background) 97%, var(--surface-alt) 3%) 0%,
-      color-mix(in srgb, var(--system-background) 92%, var(--surface-alt) 8%) 100%
-    );
+      color-mix(in srgb, var(--system-background) 92%, var(--surface-alt) 8%) 100%);
 }
 
 .workspace-surface {
@@ -316,11 +322,9 @@ canvas {
 @supports ((-webkit-hyphens: none) and (not (overflow: clip))) {
   .workspace-shell-native {
     background:
-      linear-gradient(
-        180deg,
+      linear-gradient(180deg,
         color-mix(in srgb, var(--system-background) 97%, var(--surface-alt) 3%) 0%,
-        color-mix(in srgb, var(--system-background) 92%, var(--surface-alt) 8%) 100%
-      );
+        color-mix(in srgb, var(--system-background) 92%, var(--surface-alt) 8%) 100%);
   }
 }
 
@@ -386,35 +390,28 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
 
 .liquid-glass {
   /* Base illumination layer */
-  background: 
-    linear-gradient(135deg, 
-      rgba(255,255,255,0.12) 0%, 
-      rgba(255,255,255,0.06) 40%,
-      rgba(255,255,255,0.02) 70%,
+  background:
+    linear-gradient(135deg,
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(255, 255, 255, 0.06) 40%,
+      rgba(255, 255, 255, 0.02) 70%,
       transparent 100%),
-    radial-gradient(circle at 30% 40%, 
-      rgba(255,255,255,0.15) 0%, 
+    radial-gradient(circle at 30% 40%,
+      rgba(255, 255, 255, 0.15) 0%,
       transparent 50%),
-    radial-gradient(circle at 70% 60%, 
-      rgba(100,200,255,0.08) 0%, 
+    radial-gradient(circle at 70% 60%,
+      rgba(100, 200, 255, 0.08) 0%,
       transparent 50%);
-  
+
   /* Advanced lensing simulation */
-  backdrop-filter: 
-    blur(24px) 
-    saturate(200%) 
-    brightness(1.12) 
-    contrast(0.92)
-    url(#liquid-distortion);
-  -webkit-backdrop-filter: 
-    blur(24px) 
-    saturate(200%) 
-    brightness(1.12) 
-    contrast(0.92);
-  
+  backdrop-filter:
+    blur(24px) saturate(200%) brightness(1.12) contrast(0.92) url(#liquid-distortion);
+  -webkit-backdrop-filter:
+    blur(24px) saturate(200%) brightness(1.12) contrast(0.92);
+
   corner-shape: squircle;
   /* Native Squircle Support */
-  
+
   /* Material physics */
   position: relative;
   overflow: hidden;
@@ -426,7 +423,8 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
     border-radius var(--duration-slow) var(--ease-premium);
   /* Mobile optimizations */
   will-change: transform, opacity;
-  transform: translateZ(0); /* Hardware acceleration */
+  transform: translateZ(0);
+  /* Hardware acceleration */
 }
 
 /* Highlight layer - light casting */
@@ -434,13 +432,13 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
   content: '';
   position: absolute;
   inset: 0;
-  background: 
-    radial-gradient(circle at var(--mouse-x, 30%) var(--mouse-y, 40%), 
-      rgba(255,255,255,0.4) 0%, 
-      rgba(255,255,255,0.1) 30%,
+  background:
+    radial-gradient(circle at var(--mouse-x, 30%) var(--mouse-y, 40%),
+      rgba(255, 255, 255, 0.4) 0%,
+      rgba(255, 255, 255, 0.1) 30%,
       transparent 60%),
-    radial-gradient(circle at calc(100% - var(--mouse-x, 30%)) calc(100% - var(--mouse-y, 40%)), 
-      rgba(100,200,255,0.15) 0%, 
+    radial-gradient(circle at calc(100% - var(--mouse-x, 30%)) calc(100% - var(--mouse-y, 40%)),
+      rgba(100, 200, 255, 0.15) 0%,
       transparent 40%);
   mix-blend-mode: screen;
   animation: liquid-flow 12s ease-in-out infinite;
@@ -453,9 +451,9 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
   content: '';
   position: absolute;
   inset: 0;
-  background: 
-    inset 0 0 20px rgba(0,0,0,0.1),
-    inset 0 0 40px rgba(0,0,0,0.05);
+  background:
+    inset 0 0 20px rgba(0, 0, 0, 0.1),
+    inset 0 0 40px rgba(0, 0, 0, 0.05);
   border-radius: inherit;
   pointer-events: none;
   z-index: 2;
@@ -465,16 +463,16 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
 .iridescent-overlay {
   position: absolute;
   inset: 0;
-  background: 
-    linear-gradient(45deg, 
+  background:
+    linear-gradient(45deg,
       transparent 30%,
-      rgba(255,0,255,0.03) 45%,
-      rgba(0,255,255,0.03) 55%,
+      rgba(255, 0, 255, 0.03) 45%,
+      rgba(0, 255, 255, 0.03) 55%,
       transparent 70%),
-    linear-gradient(-45deg, 
+    linear-gradient(-45deg,
       transparent 40%,
-      rgba(255,255,0,0.02) 50%,
-      rgba(0,255,0,0.02) 60%,
+      rgba(255, 255, 0, 0.02) 50%,
+      rgba(0, 255, 0, 0.02) 60%,
       transparent 80%);
   mix-blend-mode: overlay;
   animation: iridescent-shift 20s linear infinite;
@@ -484,18 +482,23 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
 
 /* Liquid flow animation */
 @keyframes liquid-flow {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateX(0) translateY(0) scale(1);
     opacity: 0.8;
   }
+
   25% {
     transform: translateX(5px) translateY(-3px) scale(1.02);
     opacity: 0.9;
   }
+
   50% {
     transform: translateX(-3px) translateY(2px) scale(0.98);
     opacity: 0.85;
   }
+
   75% {
     transform: translateX(2px) translateY(-1px) scale(1.01);
     opacity: 0.88;
@@ -508,10 +511,12 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
     transform: rotate(0deg) scale(1);
     opacity: 0.3;
   }
+
   50% {
     transform: rotate(180deg) scale(1.1);
     opacity: 0.5;
   }
+
   100% {
     transform: rotate(360deg) scale(1);
     opacity: 0.3;
@@ -521,154 +526,126 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
 /* Surface tension morphing */
 .liquid-glass:hover {
   transform: translateY(-4px) scale(1.01);
-  box-shadow: 
-    0 20px 60px rgba(0,0,0,0.15),
-    0 40px 120px rgba(100,200,255,0.08),
-    inset 0 0 30px rgba(255,255,255,0.1);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    0 40px 120px rgba(100, 200, 255, 0.08),
+    inset 0 0 30px rgba(255, 255, 255, 0.1);
 }
 
 /* Mobile liquid glass optimizations */
 @media (max-width: 768px) {
   .liquid-glass {
-    backdrop-filter: 
-      blur(16px) 
-      saturate(150%) 
-      brightness(1.08) 
-      contrast(0.95);
-    -webkit-backdrop-filter: 
-      blur(16px) 
-      saturate(150%) 
-      brightness(1.08) 
-      contrast(0.95);
+    backdrop-filter:
+      blur(16px) saturate(150%) brightness(1.08) contrast(0.95);
+    -webkit-backdrop-filter:
+      blur(16px) saturate(150%) brightness(1.08) contrast(0.95);
   }
-  
+
   .liquid-glass::before {
-    animation-duration: 15s; /* Slower animation on mobile */
+    animation-duration: 15s;
+    /* Slower animation on mobile */
   }
-  
+
   .iridescent-overlay {
-    animation-duration: 25s; /* Slower animation on mobile */
+    animation-duration: 25s;
+    /* Slower animation on mobile */
   }
 }
 
 /* Velocity-based blur intensity */
 .liquid-glass.scrolling-fast {
-  backdrop-filter: 
-    blur(32px) 
-    saturate(220%) 
-    brightness(1.15) 
-    contrast(0.88);
+  backdrop-filter:
+    blur(32px) saturate(220%) brightness(1.15) contrast(0.88);
 }
 
 .liquid-glass.scrolling-slow {
-  backdrop-filter: 
-    blur(18px) 
-    saturate(180%) 
-    brightness(1.08) 
-    contrast(0.95);
+  backdrop-filter:
+    blur(18px) saturate(180%) brightness(1.08) contrast(0.95);
 }
 
 /* Mobile velocity-based optimizations */
 @media (max-width: 768px) {
   .liquid-glass.scrolling-fast {
-    backdrop-filter: 
-      blur(20px) 
-      saturate(170%) 
-      brightness(1.10) 
-      contrast(0.92);
+    backdrop-filter:
+      blur(20px) saturate(170%) brightness(1.10) contrast(0.92);
   }
-  
+
   .liquid-glass.scrolling-slow {
-    backdrop-filter: 
-      blur(12px) 
-      saturate(140%) 
-      brightness(1.05) 
-      contrast(0.98);
+    backdrop-filter:
+      blur(12px) saturate(140%) brightness(1.05) contrast(0.98);
   }
 }
 
 /* Content layer positioning */
-.liquid-glass > * {
+.liquid-glass>* {
   position: relative;
   z-index: 4;
 }
 
 /* Dark mode adaptations */
 .dark .liquid-glass {
-  background: 
-    linear-gradient(135deg, 
-      rgba(255,255,255,0.08) 0%, 
-      rgba(255,255,255,0.04) 40%,
-      rgba(255,255,255,0.01) 70%,
+  background:
+    linear-gradient(135deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.04) 40%,
+      rgba(255, 255, 255, 0.01) 70%,
       transparent 100%);
-  border-color: rgba(255,255,255,0.15);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .dark .liquid-glass::before {
-  background: 
-    radial-gradient(circle at var(--mouse-x, 30%) var(--mouse-y, 40%), 
-      rgba(255,255,255,0.3) 0%, 
-      rgba(255,255,255,0.08) 30%,
+  background:
+    radial-gradient(circle at var(--mouse-x, 30%) var(--mouse-y, 40%),
+      rgba(255, 255, 255, 0.3) 0%,
+      rgba(255, 255, 255, 0.08) 30%,
       transparent 60%),
-    radial-gradient(circle at calc(100% - var(--mouse-x, 30%)) calc(100% - var(--mouse-y, 40%)), 
-      rgba(215,197,163,0.12) 0%, 
+    radial-gradient(circle at calc(100% - var(--mouse-x, 30%)) calc(100% - var(--mouse-y, 40%)),
+      rgba(215, 197, 163, 0.12) 0%,
       transparent 40%);
 }
 
 /* Liquid Glass Variants */
 .liquid-glass-clear {
-  background: 
-    linear-gradient(135deg, 
-      rgba(255,255,255,0.05) 0%, 
-      rgba(255,255,255,0.02) 40%,
+  background:
+    linear-gradient(135deg,
+      rgba(255, 255, 255, 0.05) 0%,
+      rgba(255, 255, 255, 0.02) 40%,
       transparent 70%);
-  backdrop-filter: 
-    blur(16px) 
-    saturate(150%) 
-    brightness(1.05) 
-    contrast(0.98);
-  border-color: rgba(255,255,255,0.12);
+  backdrop-filter:
+    blur(16px) saturate(150%) brightness(1.05) contrast(0.98);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .liquid-glass-tinted {
-  background: 
-    linear-gradient(135deg, 
-      rgba(15,61,46,0.12) 0%, 
-      rgba(15,61,46,0.06) 40%,
-      rgba(15,61,46,0.02) 70%,
+  background:
+    linear-gradient(135deg,
+      rgba(15, 61, 46, 0.12) 0%,
+      rgba(15, 61, 46, 0.06) 40%,
+      rgba(15, 61, 46, 0.02) 70%,
       transparent 100%);
-  border-color: rgba(15,61,46,0.25);
+  border-color: rgba(15, 61, 46, 0.25);
 }
 
 /* Intensity Variations */
 .liquid-glass-subtle {
-  backdrop-filter: 
-    blur(16px) 
-    saturate(160%) 
-    brightness(1.08) 
-    contrast(0.96);
+  backdrop-filter:
+    blur(16px) saturate(160%) brightness(1.08) contrast(0.96);
   /* Mobile optimizations */
   will-change: transform, opacity;
   transform: translateZ(0);
 }
 
 .liquid-glass-medium {
-  backdrop-filter: 
-    blur(24px) 
-    saturate(200%) 
-    brightness(1.12) 
-    contrast(0.92);
+  backdrop-filter:
+    blur(24px) saturate(200%) brightness(1.12) contrast(0.92);
   /* Mobile optimizations */
   will-change: transform, opacity;
   transform: translateZ(0);
 }
 
 .liquid-glass-strong {
-  backdrop-filter: 
-    blur(32px) 
-    saturate(240%) 
-    brightness(1.16) 
-    contrast(0.88);
+  backdrop-filter:
+    blur(32px) saturate(240%) brightness(1.16) contrast(0.88);
   /* Mobile optimizations */
   will-change: transform, opacity;
   transform: translateZ(0);
@@ -677,21 +654,19 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
 /* Mobile intensity optimizations */
 @media (max-width: 768px) {
   .liquid-glass-strong {
-    backdrop-filter: 
-      blur(20px) 
-      saturate(180%) 
-      brightness(1.10) 
-      contrast(0.92);
+    backdrop-filter:
+      blur(20px) saturate(180%) brightness(1.10) contrast(0.92);
   }
 }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
+
   .liquid-glass::before,
   .iridescent-overlay {
     animation: none;
   }
-  
+
   .liquid-glass:hover {
     transform: none;
     border-radius: 24px;
@@ -701,19 +676,19 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
 /* Fallback for browsers without backdrop-filter */
 @supports not (backdrop-filter: blur()) {
   .liquid-glass {
-    background: 
-      linear-gradient(135deg, 
-        rgba(255,255,255,0.95) 0%, 
-        rgba(255,255,255,0.9) 100%);
-    border: 1px solid rgba(0,0,0,0.1);
+    background:
+      linear-gradient(135deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(255, 255, 255, 0.9) 100%);
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
-  
+
   .dark .liquid-glass {
-    background: 
-      linear-gradient(135deg, 
-        rgba(20,20,20,0.95) 0%, 
-        rgba(30,30,30,0.9) 100%);
-    border-color: rgba(255,255,255,0.1);
+    background:
+      linear-gradient(135deg,
+        rgba(20, 20, 20, 0.95) 0%,
+        rgba(30, 30, 30, 0.9) 100%);
+    border-color: rgba(255, 255, 255, 0.1);
   }
 }
 
@@ -964,14 +939,10 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
   position: absolute;
   inset: 0;
   background-image: url("/images/hero/hero-grain.webp");
-  background-image: -webkit-image-set(
-    url("/images/hero/hero-grain.avif") type("image/avif"),
-    url("/images/hero/hero-grain.webp") type("image/webp")
-  );
-  background-image: image-set(
-    url("/images/hero/hero-grain.avif") type("image/avif"),
-    url("/images/hero/hero-grain.webp") type("image/webp")
-  );
+  background-image: -webkit-image-set(url("/images/hero/hero-grain.avif") type("image/avif"),
+      url("/images/hero/hero-grain.webp") type("image/webp"));
+  background-image: image-set(url("/images/hero/hero-grain.avif") type("image/avif"),
+      url("/images/hero/hero-grain.webp") type("image/webp"));
   background-repeat: repeat;
   opacity: 0.03;
   mix-blend-mode: overlay;
@@ -986,7 +957,8 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
   pointer-events: none;
   opacity: 0.15;
   will-change: transform, opacity;
-  transform: translateZ(0); /* Hardware acceleration */
+  transform: translateZ(0);
+  /* Hardware acceleration */
 }
 
 .hero-glow-primary {
@@ -1002,8 +974,10 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
   .hero-glow-primary {
     width: 80vw;
     height: 80vw;
-    filter: blur(80px); /* Reduced blur for mobile */
-    opacity: 0.08; /* Reduced opacity for performance */
+    filter: blur(80px);
+    /* Reduced blur for mobile */
+    opacity: 0.08;
+    /* Reduced opacity for performance */
   }
 }
 
@@ -1020,8 +994,10 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
   .hero-glow-secondary {
     width: 70vw;
     height: 70vw;
-    filter: blur(60px); /* Reduced blur for mobile */
-    opacity: 0.06; /* Reduced opacity for performance */
+    filter: blur(60px);
+    /* Reduced blur for mobile */
+    opacity: 0.06;
+    /* Reduced opacity for performance */
   }
 }
 
@@ -1147,7 +1123,8 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
   opacity: 0.15;
   filter: blur(140px);
   will-change: transform, opacity;
-  transform: translate(-50%, -50%) translateZ(0); /* Hardware acceleration */
+  transform: translate(-50%, -50%) translateZ(0);
+  /* Hardware acceleration */
 }
 
 .dark .stage-light {
@@ -1158,13 +1135,17 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
 /* Mobile optimized stage light */
 @media (max-width: 768px) {
   .stage-light {
-    filter: blur(100px); /* Reduced blur for mobile */
-    opacity: 0.08; /* Reduced opacity for performance */
+    filter: blur(100px);
+    /* Reduced blur for mobile */
+    opacity: 0.08;
+    /* Reduced opacity for performance */
   }
-  
+
   .dark .stage-light {
-    filter: blur(120px); /* Reduced blur for mobile */
-    opacity: 0.06; /* Further reduced for dark mode */
+    filter: blur(120px);
+    /* Reduced blur for mobile */
+    opacity: 0.06;
+    /* Further reduced for dark mode */
   }
 }
 

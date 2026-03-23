@@ -91,6 +91,7 @@ if (serverEnv.isProduction && serverEnv.auth.sessionSecret === "hop-development-
 
 export const hasDatabaseConfig = Boolean(
   serverEnv.database.url ||
+    (serverEnv.isDevelopment && serverEnv.database.directUrl) ||
     (serverEnv.database.host &&
       serverEnv.database.name &&
       serverEnv.database.user &&

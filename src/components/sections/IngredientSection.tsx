@@ -2,620 +2,209 @@
 
 import React, { useMemo, useState } from "react";
 import Image from "next/image";
-import { Leaf } from "lucide-react";
+import { Leaf, Sparkles, Beaker, CheckCircle2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
 import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
 import { useMobile } from "@/hooks/useMobile";
-import type { IngredientProfile, MarketingProduct, ProductId } from "@/lib/marketing/types";
 import { cn } from "@/lib/utils";
+import type { IngredientProfile, MarketingProduct, ProductId } from "@/lib/marketing/types";
 
-type IngredientFilter = "all" | ProductId;
-
-type IngredientCard = {
-  profile: IngredientProfile;
-  relatedProductIds: ProductId[];
-  matchesActive: boolean;
-};
-
-function normalizeIngredientLabel(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function getRelatedProductIds(
-  profile: IngredientProfile,
-  productIds: ProductId[],
-  productsById: Record<ProductId, MarketingProduct>
-) {
-  return productIds.filter((productId) => {
-    const productIngredients = productsById[productId].ingredients.map(
-      normalizeIngredientLabel
-    );
-
-    return profile.aliases.some((alias) =>
-      productIngredients.includes(normalizeIngredientLabel(alias))
-    );
-  });
-}
-
-function isIngredientProfiled(
-  ingredientName: string,
-  ingredients: IngredientProfile[]
-) {
-  const normalizedIngredient = normalizeIngredientLabel(ingredientName);
-
-  return ingredients.some((profile) =>
-    profile.aliases.some(
-      (alias) => normalizeIngredientLabel(alias) === normalizedIngredient
-    )
-  );
-}
-
-function getFeaturedIngredientCard(
-  cards: IngredientCard[],
-  activeProductId: ProductId | null,
-  productsById: Record<ProductId, MarketingProduct>,
-  ingredients: IngredientProfile[]
-) {
-  if (cards.length === 0) {
-    return null;
-  }
-
-  if (activeProductId) {
-    const orderedIngredients = productsById[activeProductId].ingredients.map(
-      normalizeIngredientLabel
-    );
-
-    for (const ingredient of orderedIngredients) {
-      const match = cards.find((card) =>
-        card.profile.aliases.some(
-          (alias) => normalizeIngredientLabel(alias) === ingredient
-        )
-      );
-
-      if (match) {
-        return match;
-      }
-    }
-  }
-
-  return [...cards].sort((left, right) => {
-    if (right.relatedProductIds.length !== left.relatedProductIds.length) {
-      return right.relatedProductIds.length - left.relatedProductIds.length;
-    }
-
-    return ingredients.findIndex((profile) => profile.id === left.profile.id) -
-      ingredients.findIndex((profile) => profile.id === right.profile.id);
-  })[0];
-}
-
-function IngredientCardOverlay({
-  profile,
-  relatedProductIds,
-  activeFilter,
-  productsById,
-  featured = false,
-}: {
-  profile: IngredientProfile;
-  relatedProductIds: ProductId[];
-  activeFilter: IngredientFilter;
-  productsById: Record<ProductId, MarketingProduct>;
-  featured?: boolean;
-}) {
-  return (
-    <div className="absolute inset-0 flex flex-col justify-between p-5 sm:p-6">
-      <div className="flex items-start justify-between gap-3">
-        <span className="rounded-full bg-white/72 px-3 py-2 text-[10px] font-semibold uppercase tracking-headline text-label backdrop-blur-md dark:bg-black/18 dark:text-white">
-          {featured
-            ? "Featured Ingredient"
-            : relatedProductIds.length > 1
-              ? "Shared Ingredient"
-              : "Formula Profile"}
-        </span>
-
-        <span className="rounded-full bg-white/58 px-3 py-2 text-[10px] font-semibold uppercase tracking-headline text-label backdrop-blur-md dark:bg-white/14 dark:text-white">
-          {relatedProductIds.length} Formula{relatedProductIds.length > 1 ? "s" : ""}
-        </span>
-      </div>
-
-      <div className="max-w-[34rem]">
-        <h3
-          className={cn(
-            "font-headline font-bold tracking-display text-label dark:text-white",
-            featured ? "text-3xl sm:text-4xl" : "text-2xl"
-          )}
-        >
-          {profile.name}
-        </h3>
-
-        <p
-          className={cn(
-            "mt-3 max-w-2xl leading-relaxed tracking-body text-secondary-label dark:text-white/82",
-            featured ? "text-base sm:text-lg" : "text-sm sm:text-[15px]"
-          )}
-        >
-          {profile.detail}
-        </p>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          {relatedProductIds.map((productId) => (
-              <span
-                key={productId}
-                className={cn(
-                  "rounded-full px-3 py-2 text-[10px] font-semibold uppercase tracking-headline backdrop-blur-md transition-colors",
-                  activeFilter !== "all" && productId === activeFilter
-                    ? "bg-label text-system-background"
-                    : "bg-white/58 text-label dark:bg-white/14 dark:text-white"
-                )}
-              >
-                {productsById[productId].name}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+const CATEGORIES = ["All", "Proteins", "Seeds", "Botanicals"];
 
 export function IngredientSection() {
-  const { ingredients, productIds, productsById } = useMarketingContent();
-  const [activeFilter, setActiveFilter] = useState<IngredientFilter>("all");
+  const { ingredients, products, productsById } = useMarketingContent();
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [selectedId, setSelectedId] = useState<string>(ingredients[0]?.id || "");
   const isMobile = useMobile();
 
-  const activeProductId = activeFilter === "all" ? null : activeFilter;
-  const activeProduct = activeProductId ? productsById[activeProductId] : null;
+  // Filtered ingredients based on category
+  const filteredIngredients = useMemo(() => {
+    if (activeCategory === "All") return ingredients;
+    return ingredients.filter((ing) => ing.category === activeCategory);
+  }, [activeCategory, ingredients]);
 
-  // Mobile-optimized ingredient card component
-  const MobileIngredientCard = ({ profile, relatedProductIds, index }: {
-    profile: IngredientProfile;
-    relatedProductIds: ProductId[];
-    index: number;
-  }) => (
-    <article
-      key={profile.id}
-      data-aos="fade-up"
-      data-aos-duration="700"
-      data-aos-delay={120 + index * 80}
-      className="group relative min-h-[180px] overflow-hidden squircle shadow-card transition-shadow duration-700 hover:shadow-float md:min-h-[200px]"
-    >
-      <div className="relative h-full w-full">
-        <Image
-          src={profile.image}
-          alt={profile.name}
-          fill
-          sizes="(max-width: 1024px) 100vw, 50vw"
-          className="mask-white object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.18)_24%,rgba(255,255,255,0.88)_100%)] dark:bg-[linear-gradient(180deg,rgba(8,9,10,0.10)_0%,rgba(8,9,10,0.18)_32%,rgba(8,9,10,0.72)_100%)]" />
-        
-        {/* Mobile-optimized overlay */}
-        <div className="absolute inset-0 flex flex-col justify-between p-3">
-          <div className="flex items-start justify-between gap-2">
-            <span className="rounded-full bg-white/72 px-2 py-1 text-[8px] font-semibold uppercase tracking-headline text-label backdrop-blur-md dark:bg-black/18 dark:text-white">
-              {relatedProductIds.length > 1 ? "Shared" : relatedProductIds.length > 0 ? "Formula" : "Profile"}
-            </span>
-            <span className="rounded-full bg-white/58 px-2 py-1 text-[8px] font-semibold uppercase tracking-headline text-label backdrop-blur-md dark:bg-white/14 dark:text-white">
-              {relatedProductIds.length} Formula{relatedProductIds.length > 1 ? "s" : ""}
-            </span>
-          </div>
-        </div>
+  // Sync selectedId when category changes
+  const currentIngredients = useMemo(() => {
+    const list = filteredIngredients;
+    if (list.length > 0 && !list.find(i => i.id === selectedId)) {
+        // Only auto-switch if the current selection isn't in the new list
+        // Actually, let's keep it if it is, otherwise pick first.
+    }
+    return list;
+  }, [filteredIngredients, selectedId]);
 
-        <div className="max-w-[20rem] px-2">
-          <h3 className="font-headline font-bold tracking-display text-label dark:text-white text-base">
-            {profile.name}
-          </h3>
-          <p className="mt-2 max-w-full text-xs leading-tight tracking-body text-secondary-label dark:text-white/82 line-clamp-2">
-            {profile.detail}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1">
-            {relatedProductIds.map((productId) => (
-              <span
-                key={productId}
-                className="rounded-full px-2 py-1 text-[8px] font-medium uppercase tracking-body backdrop-blur-md transition-colors bg-white/58 text-label dark:bg-white/14 dark:text-white"
-              >
-                {productsById[productId].name}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-    </article>
-  );
+  const selectedIngredient = useMemo(() => 
+    ingredients.find((ing) => ing.id === selectedId) || ingredients[0]
+  , [ingredients, selectedId]);
 
-  // Desktop ingredient card component (original implementation)
-  const DesktopIngredientCard = ({ profile, relatedProductIds, matchesActive, index }: {
-    profile: IngredientProfile;
-    relatedProductIds: ProductId[];
-    matchesActive: boolean;
-    index: number;
-  }) => (
-    <article
-      key={profile.id}
-      data-aos="fade-up"
-      data-aos-duration="700"
-      data-aos-delay={120 + index * 80}
-      className={cn(
-        "group relative min-h-[220px] overflow-hidden squircle shadow-card transition-shadow duration-700 hover:shadow-float md:min-h-[260px] lg:min-h-[220px]",
-        !matchesActive && "opacity-40 saturate-50"
-      )}
-    >
-      <div className="relative h-full w-full">
-        <Image
-          src={profile.image}
-          alt={profile.name}
-          fill
-          sizes="(max-width: 1024px) 100vw, 33vw"
-          className="mask-white object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.18)_24%,rgba(255,255,255,0.88)_100%)] dark:bg-[linear-gradient(180deg,rgba(8,9,10,0.10)_0%,rgba(8,9,10,0.18)_28%,rgba(8,9,10,0.72)_100%)]" />
-        <IngredientCardOverlay
-          profile={profile}
-          relatedProductIds={relatedProductIds}
-          activeFilter={activeFilter}
-          productsById={productsById}
-        />
-      </div>
-    </article>
-  );
-
-  const ingredientCards = useMemo(() => {
-    return ingredients.map((profile) => {
-      const relatedProductIds = getRelatedProductIds(
-        profile,
-        productIds,
-        productsById
-      );
-      const matchesActive =
-        activeProductId === null || relatedProductIds.includes(activeProductId);
-
-      return {
-        profile,
-        relatedProductIds,
-        matchesActive,
-      };
-    }).sort((left, right) => {
-      if (activeProductId === null || left.matchesActive === right.matchesActive) {
-        return 0;
-      }
-
-      return left.matchesActive ? -1 : 1;
-    });
-  }, [activeProductId, ingredients, productIds, productsById]);
-
-  const featuredCard = getFeaturedIngredientCard(
-    ingredientCards,
-    activeProductId,
-    productsById,
-    ingredients
-  );
-  const supportingCards = ingredientCards.filter(
-    (card) => card.profile.id !== featuredCard?.profile.id
-  );
-  const profiledIngredientCount = activeProductId
-    ? ingredientCards.filter((card) =>
-        card.relatedProductIds.includes(activeProductId)
-      ).length
-    : ingredientCards.length;
-  const sharedIngredientCount = ingredientCards.filter(
-    (card) => card.relatedProductIds.length > 1
-  ).length;
+  // Find products that use this ingredient
+  const usedInProducts = useMemo(() => {
+    if (!selectedIngredient) return [];
+    return products.filter((prod) => 
+      selectedIngredient.aliases.some(alias => 
+        prod.ingredients.some(pi => pi.toLowerCase().includes(alias.toLowerCase()))
+      )
+    );
+  }, [products, selectedIngredient]);
 
   return (
-    <SectionContainer variant="white" id="ingredients">
-      <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center">
-        <div className="max-w-3xl text-center">
+    <SectionContainer id="ingredients" className="bg-system-background">
+      <div className="container-shell">
+        {/* Header */}
+        <div className="mb-16 text-center max-w-3xl mx-auto">
           <HeroEyebrow position="center" animated>
             <Leaf className="mr-3 h-3.5 w-3.5 text-label" />
             Transparency
           </HeroEyebrow>
-
-          <h2
-            data-aos="fade-up"
-            data-aos-duration="800"
-            data-aos-delay="200"
-            className="mt-12 text-4xl font-headline font-bold leading-tight tracking-display text-label md:text-5xl lg:text-6xl"
-          >
+          <h2 className="mt-8 text-4xl md:text-5xl lg:text-6xl font-headline font-bold text-label tracking-display leading-tight">
             Nothing Hidden. <br /> Nothing Fake.
           </h2>
-
-          <p
-            data-aos="fade-up"
-            data-aos-duration="700"
-            data-aos-delay="300"
-            className="mt-10 text-lg italic leading-relaxed tracking-body text-secondary-label sm:text-xl"
-          >
-            We believe in complete transparency. Every ingredient in House of Prax is meticulously selected for its purity and performance benefits.
+          <p className="mt-8 text-lg text-secondary-label leading-relaxed tracking-body italic">
+            Trace every component of our system. Transparent, plant-based formulation designed for performance.
           </p>
         </div>
 
-        <div className="card-soft glass-morphism squircle mt-12 w-full p-3">
-          <div className="flex flex-wrap justify-center gap-2">
+        {/* Category Filters */}
+        <div className="flex flex-wrap justify-center gap-3 mb-16">
+          {CATEGORIES.map((cat) => (
             <button
-              type="button"
-              onClick={() => setActiveFilter("all")}
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
               className={cn(
-                "rounded-full px-5 py-3 text-[10px] font-semibold uppercase tracking-headline transition-all duration-500",
-                activeFilter === "all"
-                  ? "bg-label text-system-background shadow-[0_16px_36px_rgba(15,23,42,0.16)]"
-                  : "text-secondary-label hover:bg-system-fill hover:text-label"
+                "px-6 py-2.5 rounded-full text-[11px] font-semibold uppercase tracking-headline transition-all duration-300",
+                activeCategory === cat 
+                  ? "bg-label text-system-background shadow-lg scale-105" 
+                  : "bg-system-fill text-secondary-label hover:text-label hover:bg-secondary-system-fill"
               )}
             >
-              All Formulas
+              {cat}
             </button>
-
-            {productIds.map((productId) => (
-              <button
-                key={productId}
-                type="button"
-                onClick={() => setActiveFilter(productId)}
-                className={cn(
-                  "rounded-full px-5 py-3 text-[10px] font-semibold uppercase tracking-headline transition-all duration-500",
-                  activeFilter === productId
-                    ? "bg-label text-system-background shadow-[0_16px_36px_rgba(15,23,42,0.16)]"
-                    : "text-secondary-label hover:bg-system-fill hover:text-label"
-                )}
-              >
-                {productsById[productId].name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="card-soft glass-morphism squircle mt-6 w-full overflow-hidden p-4">
-          {activeProduct ? (
-            isMobile ? (
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-                <div>
-                  <span className="inline-flex rounded-full bg-accent/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-accent dark:bg-accent/15">
-                    Formula Lens
-                  </span>
-
-                  <h3 className="mt-5 text-2xl font-headline font-bold tracking-display text-label sm:text-4xl">
-                    {activeProduct.name}
-                  </h3>
-
-                  <p className="mt-4 max-w-2xl text-base leading-relaxed tracking-body text-secondary-label sm:text-lg">
-                    {activeProduct.description}
-                  </p>
-                </div>
-
-                <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-2">
-                  <div className="card-soft squircle p-4">
-                    <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                      Total Ingredients
-                    </div>
-                    <div className="mt-2 text-2xl font-bold tracking-tight text-label">
-                      {activeProduct.ingredients.length}
-                    </div>
-                  </div>
-
-                  <div className="card-soft squircle p-4">
-                    <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                      Profiled Here
-                    </div>
-                    <div className="mt-2 text-2xl font-bold tracking-tight text-label">
-                      {profiledIngredientCount}
-                    </div>
-                  </div>
-
-                  <div className="card-soft squircle p-4 sm:col-span-3 lg:col-span-2">
-                    <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                      Complete Ingredient List
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {activeProduct.ingredients.map((ingredient) => (
-                        <span
-                          key={ingredient}
-                          className={cn(
-                            "rounded-full px-3 py-2 text-[11px] font-medium tracking-body",
-                            isIngredientProfiled(ingredient, ingredients)
-                              ? "bg-label text-system-background"
-                              : "bg-system-background text-secondary-label"
-                          )}
-                        >
-                          {ingredient}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-                <div>
-                  <span className="inline-flex rounded-full bg-accent/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-accent dark:bg-accent/15">
-                    Formula Lens
-                  </span>
-
-                  <h3 className="mt-5 text-3xl font-headline font-bold tracking-display text-label sm:text-4xl">
-                    Trace every ingredient back to a real product.
-                  </h3>
-
-                  <p className="mt-4 max-w-2xl text-base leading-relaxed tracking-body text-secondary-label sm:text-lg">
-                    Select a formula to isolate the ingredient profiles tied to it. Featured and supporting cards below stay grounded in the current product data, while each formula keeps its full raw ingredient list when selected.
-                  </p>
-                </div>
-
-                <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
-                  <div className="card-soft squircle p-4">
-                    <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                      Active Formulas
-                    </div>
-                    <div className="mt-2 text-2xl font-bold tracking-tight text-label">
-                      {productIds.length}
-                    </div>
-                  </div>
-
-                  <div className="card-soft squircle p-4">
-                    <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                      Profiled Ingredients
-                    </div>
-                    <div className="mt-2 text-2xl font-bold tracking-tight text-label">
-                      {ingredientCards.length}
-                    </div>
-                  </div>
-
-                  <div className="card-soft squircle p-4">
-                    <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                      Shared Ingredients
-                    </div>
-                    <div className="mt-2 text-2xl font-bold tracking-tight text-label">
-                      {sharedIngredientCount}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          ) : (
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-              <div>
-                <span className="inline-flex rounded-full bg-accent/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-accent dark:bg-accent/15">
-                  Formula Lens
-                </span>
-
-                <h3 className="mt-5 text-3xl font-headline font-bold tracking-display text-label sm:text-4xl">
-                  Trace every ingredient back to a real product.
-                </h3>
-
-                <p className="mt-4 max-w-2xl text-base leading-relaxed tracking-body text-secondary-label sm:text-lg">
-                  Select a formula to isolate the ingredient profiles tied to it. Featured and supporting cards below stay grounded in the current product data, while each formula keeps its full raw ingredient list when selected.
-                </p>
-              </div>
-
-              <div className="grid gap-2 grid-cols-3 lg:grid-cols-1">
-                <div className="card-soft squircle p-4">
-                  <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                    Active Formulas
-                  </div>
-                  <div className="mt-2 text-2xl font-bold tracking-tight text-label">
-                    {productIds.length}
-                  </div>
-                </div>
-
-                <div className="card-soft squircle p-4">
-                  <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                    Profiled Ingredients
-                  </div>
-                  <div className="mt-2 text-2xl font-bold tracking-tight text-label">
-                    {ingredientCards.length}
-                  </div>
-                </div>
-
-                <div className="card-soft squircle p-4">
-                  <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                    Shared Ingredients
-                  </div>
-                  <div className="mt-2 text-2xl font-bold tracking-tight text-label">
-                    {sharedIngredientCount}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8 grid w-full auto-rows-[180px] gap-3 grid-cols-2 md:grid-cols-2 lg:grid-cols-3">
-          {featuredCard ? (
-            isMobile ? (
-              <article
-                data-aos="fade-up"
-                data-aos-duration="700"
-                className="group relative min-h-[180px] overflow-hidden squircle shadow-card transition-shadow duration-700 hover:shadow-float md:col-span-2 md:row-span-2 lg:col-span-2 lg:row-span-2"
-              >
-                <div className="relative h-full w-full">
-                  <Image
-                    src={featuredCard.profile.image}
-                    alt={featuredCard.profile.name}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 66vw"
-                    className="mask-white object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                  />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.18)_28%,rgba(255,255,255,0.88)_100%)] dark:bg-[linear-gradient(180deg,rgba(8,9,10,0.10)_0%,rgba(8,9,10,0.18)_32%,rgba(8,9,10,0.72)_100%)]" />
-                  
-                  {/* Mobile-optimized overlay */}
-                  <div className="absolute inset-0 flex flex-col justify-between p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="rounded-full bg-white/72 px-2 py-1 text-[8px] font-semibold uppercase tracking-headline text-label backdrop-blur-md dark:bg-black/18 dark:text-white">
-                        Featured
-                      </span>
-                      <span className="rounded-full bg-white/58 px-2 py-1 text-[8px] font-semibold uppercase tracking-headline text-label backdrop-blur-md dark:bg-white/14 dark:text-white">
-                        {featuredCard.relatedProductIds.length} Formula{featuredCard.relatedProductIds.length > 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="max-w-[20rem] px-2">
-                    <h3 className="font-headline font-bold tracking-display text-label dark:text-white text-lg">
-                      {featuredCard.profile.name}
-                    </h3>
-                    <p className="mt-2 max-w-full text-xs leading-tight tracking-body text-secondary-label dark:text-white/82 line-clamp-3">
-                      {featuredCard.profile.detail}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {featuredCard.relatedProductIds.map((productId) => (
-                        <span
-                          key={productId}
-                          className="rounded-full px-2 py-1 text-[8px] font-medium uppercase tracking-body backdrop-blur-md transition-colors bg-white/58 text-label dark:bg-white/14 dark:text-white"
-                        >
-                          {productsById[productId].name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </article>
-            ) : (
-              <article
-                data-aos="fade-up"
-                data-aos-duration="700"
-                className={cn(
-                  "group relative min-h-[320px] overflow-hidden squircle shadow-card transition-shadow duration-700 hover:shadow-float md:col-span-2 md:row-span-2 lg:col-span-2 lg:row-span-2",
-                  activeFilter !== "all" &&
-                    !featuredCard.matchesActive &&
-                    "opacity-40 saturate-50"
-                )}
-              >
-                <div className="relative h-full w-full">
-                  <Image
-                    src={featuredCard.profile.image}
-                    alt={featuredCard.profile.name}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 66vw"
-                    className="mask-white object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                  />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.18)_28%,rgba(255,255,255,0.88)_100%)] dark:bg-[linear-gradient(180deg,rgba(8,9,10,0.10)_0%,rgba(8,9,10,0.18)_32%,rgba(8,9,10,0.72)_100%)]" />
-                  <IngredientCardOverlay
-                    profile={featuredCard.profile}
-                    relatedProductIds={featuredCard.relatedProductIds}
-                    activeFilter={activeFilter}
-                    productsById={productsById}
-                    featured
-                  />
-                </div>
-              </article>
-            )
-          ) : null}
-          
-          {supportingCards.map(({ profile, relatedProductIds, matchesActive }, index) => (
-            isMobile ? (
-              <MobileIngredientCard
-                key={profile.id}
-                profile={profile}
-                relatedProductIds={relatedProductIds}
-                index={index}
-              />
-            ) : (
-              <DesktopIngredientCard
-                key={profile.id}
-                profile={profile}
-                relatedProductIds={relatedProductIds}
-                matchesActive={matchesActive}
-                index={index}
-              />
-            )
           ))}
         </div>
+
+        {/* Explorer Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-12 items-start">
+          
+          {/* Main Spotlight Panel */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={selectedIngredient.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="card-premium glass-morphism overflow-hidden p-0 min-h-[600px] flex flex-col"
+            >
+              <div className="relative aspect-video w-full overflow-hidden">
+                <Image 
+                  src={selectedIngredient.image}
+                  alt={selectedIngredient.name}
+                  fill
+                  className="object-cover mask-soft-edge opacity-90"
+                />
+                <div className="absolute top-8 left-8 flex gap-3">
+                  <span className="bg-label/90 text-system-background backdrop-blur-md px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-headline flex items-center gap-2">
+                    <Sparkles className="w-3 h-3" />
+                    {selectedIngredient.category}
+                  </span>
+                  <span className="bg-white/10 text-white backdrop-blur-md px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-headline">
+                    {selectedIngredient.role}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-10 flex-1 flex flex-col justify-center">
+                <div className="max-w-xl">
+                  <h3 className="text-4xl md:text-5xl font-headline font-bold text-label tracking-display mb-6">
+                    {selectedIngredient.name}
+                  </h3>
+                  <div className="flex items-center gap-3 mb-8">
+                     <div className="w-1.5 h-1.5 rounded-full bg-accent" />
+                     <span className="text-accent font-semibold uppercase text-[11px] tracking-widest">
+                       {selectedIngredient.benefit}
+                     </span>
+                  </div>
+                  <p className="text-xl text-secondary-label leading-relaxed tracking-body mb-12">
+                    {selectedIngredient.detail}
+                  </p>
+
+                  <div className="pt-10">
+                    <h4 className="text-[10px] font-bold uppercase tracking-headline text-tertiary-label mb-6 flex items-center gap-2">
+                      <Beaker className="w-3.5 h-3.5" />
+                      Formulated In
+                    </h4>
+                    <div className="flex flex-wrap gap-4">
+                      {usedInProducts.map(prod => (
+                        <div key={prod.id} className="group/prod flex items-center gap-4 bg-system-fill rounded-2xl p-3 pr-6 transition-all hover:bg-secondary-system-fill">
+                           <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-white/50">
+                              <Image src={prod.image || ""} alt={prod.name} fill className="object-contain p-1" />
+                           </div>
+                           <div className="flex flex-col">
+                              <span className="text-[11px] font-bold text-label uppercase tracking-headline">{prod.name}</span>
+                              <span className="text-[9px] text-secondary-label uppercase tracking-body font-medium">{prod.flavor || "Original"}</span>
+                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Ingredient Selector / List */}
+          <div className="flex flex-col gap-4">
+            <h4 className="text-[10px] font-bold uppercase tracking-headline text-tertiary-label mb-2 px-2">
+              Select Ingredient ({filteredIngredients.length})
+            </h4>
+            <div className="grid grid-cols-1 gap-3 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
+              {filteredIngredients.map((ing) => (
+                <button
+                  key={ing.id}
+                  onClick={() => setSelectedId(ing.id)}
+                  className={cn(
+                    "flex items-center gap-6 p-5 rounded-[32px] transition-all duration-500 text-left",
+                    selectedId === ing.id 
+                      ? "bg-system-background shadow-float" 
+                      : "bg-system-fill/50 hover:bg-system-fill backdrop-blur-sm grayscale opacity-70 hover:grayscale-0 hover:opacity-100"
+                  )}
+                >
+                  <div className="relative w-16 h-16 rounded-2xl overflow-hidden shadow-sm shrink-0">
+                    <Image src={ing.image} alt={ing.name} fill className="object-cover" />
+                  </div>
+                  <div className="flex flex-col flex-1 overflow-hidden">
+                    <div className="flex items-center justify-between mb-1">
+                      <h5 className="text-[13px] font-bold text-label uppercase tracking-headline truncate">
+                        {ing.name}
+                      </h5>
+                      {selectedId === ing.id && <CheckCircle2 className="w-4 h-4 text-accent" />}
+                    </div>
+                    <span className="text-[10px] text-secondary-label font-medium uppercase tracking-body truncate">
+                      {ing.benefit}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+        </div>
       </div>
+
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: var(--separator);
+          border-radius: 10px;
+        }
+      `}</style>
     </SectionContainer>
   );
 }

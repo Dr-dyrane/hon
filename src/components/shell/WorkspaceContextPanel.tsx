@@ -22,12 +22,14 @@ export function WorkspaceContextPanel({
   detail,
   tags = [],
   meta = [],
+  titleAction,
   actions,
 }: {
   title: string;
   detail?: string;
   tags?: ContextTag[];
   meta?: ContextMeta[];
+  titleAction?: ReactNode;
   actions?: ReactNode;
 }) {
   return (
@@ -36,9 +38,9 @@ export function WorkspaceContextPanel({
         <div className="min-w-0">
           {tags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5 md:gap-2">
-              {tags.map((tag) => (
+              {tags.map((tag, index) => (
                 <span
-                  key={tag.label}
+                  key={`${tag.label}-${tag.tone ?? "default"}-${index}`}
                   className={cn(
                     "rounded-full px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] md:text-[10px]",
                     tagToneClasses[tag.tone ?? "default"]
@@ -59,6 +61,8 @@ export function WorkspaceContextPanel({
               {detail}
             </p>
           ) : null}
+
+          {titleAction ? <div className="mt-3">{titleAction}</div> : null}
         </div>
 
         {actions ? <div className="shrink-0 self-start">{actions}</div> : null}
@@ -67,9 +71,9 @@ export function WorkspaceContextPanel({
       {meta.length > 0 ? (
         <>
           <div className="scrollbar-hide -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 md:hidden">
-            {meta.map((item) => (
+            {meta.map((item, index) => (
               <div
-                key={item.label}
+                key={`${item.label}-${index}`}
                 className="min-w-[148px] shrink-0 rounded-[20px] bg-system-fill/42 px-4 py-3"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">
@@ -81,9 +85,9 @@ export function WorkspaceContextPanel({
           </div>
 
           <div className="mt-5 hidden gap-3 sm:grid-cols-2 xl:grid-cols-3 md:grid">
-            {meta.map((item) => (
+            {meta.map((item, index) => (
               <div
-                key={item.label}
+                key={`${item.label}-${index}`}
                 className="rounded-[22px] bg-system-fill/42 px-4 py-3"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-label">

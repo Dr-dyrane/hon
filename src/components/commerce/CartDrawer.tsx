@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { useCommerce } from "@/components/providers/CommerceProvider";
@@ -16,12 +16,28 @@ import { useOverlayPresence } from "@/components/providers/UIProvider";
 const fieldClassName =
   "w-full rounded-[28px] bg-system-fill/80 px-4 py-3 text-sm text-label placeholder:text-secondary-label transition-colors duration-300 focus:bg-system-fill dark:bg-white/[0.05] dark:focus:bg-white/[0.08]";
 
+function isCheckoutSummaryReady(input: {
+  fullName: string;
+  phoneNumber: string;
+  deliveryLocation: string;
+}) {
+  return (
+    input.fullName.trim().length > 1 &&
+    input.phoneNumber.trim().length > 6 &&
+    input.deliveryLocation.trim().length > 2
+  );
+}
+
 export function CartDrawer() {
   const {
+    applySavedCheckoutDetails,
     canCheckout,
     cartLines,
+    checkoutDefaultsSourceLabel,
     checkoutError,
     checkoutForm,
+    hasSavedCheckoutDefaults,
+    isHydratingCheckoutDefaults,
     isCartReady,
     isRefreshingCart,
     isSubmittingCheckout,
@@ -44,12 +60,43 @@ export function CartDrawer() {
   const showEmptyState = isCartReady && cartLines.length === 0;
   const canRefreshCart =
     checkoutError === "Cart refreshed." || checkoutError === "Cart is empty.";
+  const checkoutSummaryReady = useMemo(
+    () => isCheckoutSummaryReady(checkoutForm),
+    [checkoutForm]
+  );
+  const [showCheckoutEditor, setShowCheckoutEditor] = useState(false);
+  const [showEmailField, setShowEmailField] = useState(() =>
+    Boolean(checkoutForm.email)
+  );
   const [showLocationPin, setShowLocationPin] = useState(() =>
     Boolean(checkoutForm.latitude || checkoutForm.longitude)
   );
   const [showNotesField, setShowNotesField] = useState(() =>
     Boolean(checkoutForm.notes)
   );
+  const canRevealAddressStep = useMemo(
+    () =>
+      checkoutForm.fullName.trim().length > 1 &&
+      checkoutForm.phoneNumber.trim().length > 6,
+    [checkoutForm.fullName, checkoutForm.phoneNumber]
+  );
+  const summaryLines = useMemo(() => {
+    const lines = [
+      checkoutForm.fullName.trim(),
+      checkoutForm.phoneNumber.trim(),
+      checkoutForm.deliveryLocation.trim(),
+    ].filter(Boolean);
+
+    return lines;
+  }, [checkoutForm.deliveryLocation, checkoutForm.fullName, checkoutForm.phoneNumber]);
+  const isCheckoutEditorOpen = !checkoutSummaryReady || showCheckoutEditor;
+  const isEmailFieldVisible = showEmailField;
+  const canCollapseCheckoutEditor = checkoutSummaryReady;
+  const closeDrawer = useCallback(() => {
+    setShowCheckoutEditor(false);
+    closeCart();
+  }, [closeCart]);
+
   useOverlayPresence("commerce-cart", isCartOpen);
 
   useEffect(() => {
@@ -60,7 +107,7 @@ export function CartDrawer() {
     const previousOverflow = document.body.style.overflow;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        closeCart();
+        closeDrawer();
       }
     };
 
@@ -71,7 +118,7 @@ export function CartDrawer() {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [closeCart, isCartOpen]);
+  }, [closeDrawer, isCartOpen]);
 
   return (
     <>
@@ -86,7 +133,7 @@ export function CartDrawer() {
         <button
           type="button"
           aria-label="Close cart"
-          onClick={closeCart}
+          onClick={closeDrawer}
           className="absolute inset-0 bg-black/48 backdrop-blur-md"
         />
       </div>
@@ -116,7 +163,7 @@ export function CartDrawer() {
 
             <button
               type="button"
-              onClick={closeCart}
+              onClick={closeDrawer}
               className="motion-press-soft flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-system-fill/80 text-label transition-colors duration-300 hover:bg-system-fill"
               aria-label="Close cart"
             >
@@ -155,7 +202,7 @@ export function CartDrawer() {
               <div className="mt-8 flex w-full flex-col gap-3">
                 <Link
                   href="/#shop"
-                  onClick={closeCart}
+                  onClick={closeDrawer}
                   className="button-primary min-h-[56px] w-full justify-center text-xs font-semibold uppercase tracking-headline"
                 >
                   Browse Products
@@ -300,166 +347,237 @@ export function CartDrawer() {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between gap-3 rounded-[24px] bg-system-fill/42 px-4 py-3">
-                    <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                        Account
+                  <div className="mt-4 rounded-[24px] bg-system-fill/42 px-4 py-3">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                          Delivery details
+                        </div>
+                        {isHydratingCheckoutDefaults ? (
+                          <p className="mt-1 text-sm text-secondary-label">Loading…</p>
+                        ) : summaryLines.length > 0 ? (
+                          <div className="mt-1 space-y-1">
+                            {summaryLines.map((line) => (
+                              <p
+                                key={line}
+                                className="truncate text-sm font-medium text-label"
+                              >
+                                {line}
+                              </p>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="mt-1 text-sm text-secondary-label">
+                            Add name, phone, and address.
+                          </p>
+                        )}
+                        {checkoutDefaultsSourceLabel ? (
+                          <p className="mt-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                            {checkoutDefaultsSourceLabel}
+                          </p>
+                        ) : null}
                       </div>
-                      <div className="mt-1 text-sm text-label">Use saved details</div>
+
+                      <div className="flex items-center gap-2">
+                        {hasSavedCheckoutDefaults ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              applySavedCheckoutDetails(true);
+                              setShowCheckoutEditor(false);
+                            }}
+                            className="motion-press-soft rounded-full bg-system-fill px-3 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/90 hover:text-label"
+                          >
+                            Use saved
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!canCollapseCheckoutEditor) {
+                              setShowCheckoutEditor(true);
+                              return;
+                            }
+
+                            setShowCheckoutEditor((current) => !current);
+                          }}
+                          className="motion-press-soft rounded-full bg-system-fill px-3 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/90 hover:text-label"
+                        >
+                          {!canCollapseCheckoutEditor
+                            ? "Required"
+                            : isCheckoutEditorOpen
+                              ? "Hide"
+                              : "Edit"}
+                        </button>
+                      </div>
                     </div>
-                    <Link
-                      href="/account"
-                      onClick={closeCart}
-                      className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:text-label"
-                    >
-                      Open
-                    </Link>
                   </div>
 
-                  <div className="mt-5 grid gap-3">
-                    <label className="grid gap-2">
-                      <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                        Name
-                      </span>
-                      <input
-                        type="text"
-                        value={checkoutForm.fullName}
-                        onChange={(event) =>
-                          updateCheckoutField("fullName", event.target.value)
-                        }
-                        className={fieldClassName}
-                        placeholder="Full name"
-                      />
-                    </label>
+                  {isCheckoutEditorOpen ? (
+                    <div className="mt-5 grid gap-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="grid gap-2">
+                          <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                            Name
+                          </span>
+                          <input
+                            type="text"
+                            value={checkoutForm.fullName}
+                            onChange={(event) =>
+                              updateCheckoutField("fullName", event.target.value)
+                            }
+                            className={fieldClassName}
+                            placeholder="Full name"
+                          />
+                        </label>
 
-                    <label className="grid gap-2">
-                      <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                        Email
-                      </span>
-                      <input
-                        type="email"
-                        value={checkoutForm.email}
-                        onChange={(event) =>
-                          updateCheckoutField("email", event.target.value)
-                        }
-                        className={fieldClassName}
-                        placeholder="Optional"
-                      />
-                    </label>
+                        <label className="grid gap-2">
+                          <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                            Phone
+                          </span>
+                          <input
+                            type="tel"
+                            value={checkoutForm.phoneNumber}
+                            onChange={(event) =>
+                              updateCheckoutField("phoneNumber", event.target.value)
+                            }
+                            className={fieldClassName}
+                            placeholder="080..."
+                          />
+                        </label>
+                      </div>
 
-                    <label className="grid gap-2">
-                      <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                        Phone
-                      </span>
-                      <input
-                        type="tel"
-                        value={checkoutForm.phoneNumber}
-                        onChange={(event) =>
-                          updateCheckoutField("phoneNumber", event.target.value)
-                        }
-                        className={fieldClassName}
-                        placeholder="080..."
-                      />
-                      <span className="px-1 text-[10px] text-secondary-label">
-                        Any working number is fine.
-                      </span>
-                    </label>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowEmailField((current) => !current)}
+                          className="motion-press-soft rounded-full bg-system-fill/46 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label"
+                        >
+                          {isEmailFieldVisible ? "Hide email" : "Add email"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowLocationPin((current) => !current)}
+                          className="motion-press-soft rounded-full bg-system-fill/46 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label"
+                        >
+                          {showLocationPin ? "Hide pin" : "Pin location"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowNotesField((current) => !current)}
+                          className="motion-press-soft rounded-full bg-system-fill/46 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label"
+                        >
+                          {showNotesField ? "Hide note" : "Add note"}
+                        </button>
+                      </div>
 
-                    <div className="grid gap-2">
-                      <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                        Delivery Address
-                      </span>
-                      <MapboxAddressAutocomplete
-                        value={checkoutForm.deliveryLocation}
-                        onChange={(value) => {
-                          updateCheckoutField("deliveryLocation", value);
-                          updateCheckoutField("latitude", "");
-                          updateCheckoutField("longitude", "");
-                        }}
-                        onSelect={(suggestion) => {
-                          updateCheckoutField("deliveryLocation", suggestion.label);
-                          updateCheckoutField("latitude", String(suggestion.latitude));
-                          updateCheckoutField("longitude", String(suggestion.longitude));
-                        }}
-                        inputClassName={fieldClassName}
-                        placeholder="House, street, area, landmark"
-                        proximity={
-                          checkoutForm.latitude && checkoutForm.longitude
-                            ? {
-                                latitude: Number(checkoutForm.latitude),
-                                longitude: Number(checkoutForm.longitude),
-                              }
-                            : null
-                        }
-                      />
+                      {isEmailFieldVisible ? (
+                        <label className="grid gap-2">
+                          <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                            Email
+                          </span>
+                          <input
+                            type="email"
+                            value={checkoutForm.email}
+                            onChange={(event) =>
+                              updateCheckoutField("email", event.target.value)
+                            }
+                            className={fieldClassName}
+                            placeholder="Optional"
+                          />
+                        </label>
+                      ) : null}
+
+                      {canRevealAddressStep || checkoutForm.deliveryLocation.trim() ? (
+                        <div className="grid gap-2">
+                          <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                            Delivery Address
+                          </span>
+                          <MapboxAddressAutocomplete
+                            value={checkoutForm.deliveryLocation}
+                            onChange={(value) => {
+                              updateCheckoutField("deliveryLocation", value);
+                              updateCheckoutField("latitude", "");
+                              updateCheckoutField("longitude", "");
+                            }}
+                            onSelect={(suggestion) => {
+                              updateCheckoutField("deliveryLocation", suggestion.label);
+                              updateCheckoutField("latitude", String(suggestion.latitude));
+                              updateCheckoutField("longitude", String(suggestion.longitude));
+                            }}
+                            inputClassName={fieldClassName}
+                            placeholder="House, street, area, landmark"
+                            proximity={
+                              checkoutForm.latitude && checkoutForm.longitude
+                                ? {
+                                    latitude: Number(checkoutForm.latitude),
+                                    longitude: Number(checkoutForm.longitude),
+                                  }
+                                : null
+                            }
+                          />
+                        </div>
+                      ) : (
+                        <p className="rounded-full bg-system-fill px-3 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                          Add name + phone to continue
+                        </p>
+                      )}
+
+                      {(showLocationPin ||
+                        Boolean(checkoutForm.latitude || checkoutForm.longitude)) &&
+                      (canRevealAddressStep ||
+                        checkoutForm.deliveryLocation.trim().length > 0) ? (
+                        <MapboxLocationPicker
+                          latitude={
+                            checkoutForm.latitude
+                              ? Number(checkoutForm.latitude)
+                              : null
+                          }
+                          longitude={
+                            checkoutForm.longitude
+                              ? Number(checkoutForm.longitude)
+                              : null
+                          }
+                          onChange={({ latitude, longitude }) => {
+                            updateCheckoutField(
+                              "latitude",
+                              latitude == null ? "" : String(latitude)
+                            );
+                            updateCheckoutField(
+                              "longitude",
+                              longitude == null ? "" : String(longitude)
+                            );
+                          }}
+                          onResolveAddress={(suggestion) => {
+                            updateCheckoutField("deliveryLocation", suggestion.label);
+                            updateCheckoutField("latitude", String(suggestion.latitude));
+                            updateCheckoutField("longitude", String(suggestion.longitude));
+                          }}
+                          className="h-[152px] sm:h-[170px]"
+                          isVisible={isCartOpen}
+                        />
+                      ) : null}
+
+                      {showNotesField ? (
+                        <label className="grid gap-2">
+                          <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
+                            Notes
+                          </span>
+                          <textarea
+                            rows={4}
+                            value={checkoutForm.notes}
+                            onChange={(event) =>
+                              updateCheckoutField("notes", event.target.value)
+                            }
+                            className={fieldClassName}
+                            placeholder="Gate, floor, landmark"
+                          />
+                        </label>
+                      ) : null}
                     </div>
+                  ) : null}
 
-                    <div className="flex flex-wrap gap-2 md:hidden">
-                      <button
-                        type="button"
-                        onClick={() => setShowLocationPin((current) => !current)}
-                        className="motion-press-soft rounded-full bg-system-fill/46 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label"
-                      >
-                        {showLocationPin ? "Hide pin" : "Pin location"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowNotesField((current) => !current)}
-                        className="motion-press-soft rounded-full bg-system-fill/46 px-4 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label transition-colors duration-300 hover:bg-system-fill/70 hover:text-label"
-                      >
-                        {showNotesField ? "Hide note" : "Add note"}
-                      </button>
-                    </div>
-
-                    <div className={cn(!showLocationPin && "hidden md:block")}>
-                      <MapboxLocationPicker
-                        latitude={
-                          checkoutForm.latitude
-                            ? Number(checkoutForm.latitude)
-                            : null
-                        }
-                        longitude={
-                          checkoutForm.longitude
-                            ? Number(checkoutForm.longitude)
-                            : null
-                        }
-                        onChange={({ latitude, longitude }) => {
-                          updateCheckoutField(
-                            "latitude",
-                            latitude == null ? "" : String(latitude)
-                          );
-                          updateCheckoutField(
-                            "longitude",
-                            longitude == null ? "" : String(longitude)
-                          );
-                        }}
-                        onResolveAddress={(suggestion) => {
-                          updateCheckoutField("deliveryLocation", suggestion.label);
-                          updateCheckoutField("latitude", String(suggestion.latitude));
-                          updateCheckoutField("longitude", String(suggestion.longitude));
-                        }}
-                        className="h-[152px] sm:h-[170px]"
-                        isVisible={isCartOpen}
-                      />
-                    </div>
-
-                    <label className={cn("grid gap-2", !showNotesField && "hidden md:grid")}>
-                      <span className="text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
-                        Notes
-                      </span>
-                      <textarea
-                        rows={4}
-                        value={checkoutForm.notes}
-                        onChange={(event) =>
-                          updateCheckoutField("notes", event.target.value)
-                        }
-                        className={fieldClassName}
-                        placeholder="Gate, floor, landmark"
-                      />
-                    </label>
-                  </div>
-
-                {checkoutError ? (
+                  {checkoutError ? (
                     <div className="mt-4 flex flex-wrap items-center gap-3">
                       <p className="rounded-full bg-system-fill px-3 py-2 text-[10px] font-semibold uppercase tracking-headline text-secondary-label">
                         {checkoutError}

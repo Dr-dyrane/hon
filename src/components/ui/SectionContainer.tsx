@@ -18,13 +18,17 @@ export const SectionContainer = forwardRef<HTMLElement, SectionContainerProps>((
     <section 
       id={id}
       ref={ref}
+      style={{ 
+        paddingTop: 'var(--spacing-section-mobile)', 
+        paddingBottom: 'var(--spacing-section-mobile)' 
+      }}
       className={cn(
-        "section-shell relative flex flex-col items-center justify-center",
+        "section-shell relative flex flex-col items-center justify-center overflow-hidden lg:[padding-block:var(--spacing-section)]",
         variant === "alt" && "section-shell--alt",
         className
       )}
     >
-      <div className="container-shell w-full">
+      <div className="container-shell">
         {children}
       </div>
     </section>

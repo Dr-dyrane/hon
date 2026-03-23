@@ -59,6 +59,7 @@ export function OrderReturnRequestCard({
   returnEvents,
   proofs,
   items,
+  embedded = false,
 }: {
   orderId: string;
   accessToken?: string;
@@ -67,6 +68,7 @@ export function OrderReturnRequestCard({
   returnEvents: OrderReturnEventRow[];
   proofs: OrderReturnProofRow[];
   items: PortalOrderLine[];
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const feedback = useFeedback();
@@ -116,8 +118,8 @@ export function OrderReturnRequestCard({
   if (!delivered && !hasOpenCase) {
     return (
       <div className={styles.infoCard}>
-        <div className={styles.infoTitle}>Returns open after delivery</div>
-        <div className={styles.infoText}>Available after delivery.</div>
+        <div className={styles.infoTitle}>Return unavailable</div>
+        <div className={styles.infoText}>After delivery.</div>
       </div>
     );
   }
@@ -245,7 +247,7 @@ export function OrderReturnRequestCard({
     return (
       <div className={styles.successCard}>
         <div className={styles.successTitle}>Return request submitted</div>
-        <div className={styles.successText}>Request received. Status updates appear here.</div>
+        <div className={styles.successText}>Submitted.</div>
       </div>
     );
   }
@@ -343,13 +345,16 @@ export function OrderReturnRequestCard({
 
   return (
     <div className={styles.card}>
-      <div className={styles.header}>
-        <div>
-          <h3 className={styles.title}>Start a return</h3>
-          <p className={styles.description}>Step by step.</p>
+      {!embedded ? (
+        <div className={styles.header}>
+          <div>
+            <h3 className={styles.title}>Start a return</h3>
+          </div>
+          <div className={styles.stepPill}>Step {step} of 4</div>
         </div>
+      ) : (
         <div className={styles.stepPill}>Step {step} of 4</div>
-      </div>
+      )}
 
       <AnimatePresence mode="wait" initial={false}>
         {step === 1 ? (

@@ -94,104 +94,54 @@ export function HeroSection() {
         </AnimatePresence>
       </div>
 
-      <motion.div
-        custom={0}
-        initial="hidden"
-        animate="visible"
-        variants={revealVariants}
-        className="flex justify-center lg:justify-start mb-8"
+      <div 
+        style={{ 
+          paddingTop: 'var(--spacing-hero-mobile)', 
+          paddingBottom: 'var(--spacing-hero-mobile)' 
+        }}
+        className="container-shell relative z-10 flex flex-col items-center justify-center min-h-[calc(100svh-120px)] lg:[padding-block:var(--spacing-hero)]"
       >
-        <span className="hero-eyebrow">
-          <Image
-            src="/images/hero/hop-mark.svg"
-            alt=""
-            width={14}
-            height={14}
-            className="mr-2 dark:invert"
-          />
-          <span className="vibrancy-label uppercase">Plant-Based Performance</span>
-        </span>
-      </motion.div>
+        {/* Top: Primary Headline */}
+        <div className="max-w-4xl text-center mx-auto mb-8 lg:mb-12">
+          <motion.div
+            custom={0}
+            initial="hidden"
+            animate="visible"
+            variants={revealVariants}
+            className="flex justify-center mb-8"
+          >
+            <span className="hero-eyebrow">
+              <Image
+                src="/images/hero/hop-mark.svg"
+                alt=""
+                width={14}
+                height={14}
+                className="mr-2 dark:invert"
+              />
+              <span className="vibrancy-label uppercase tracking-widest text-[10px] font-semibold">
+                Plant-Based Performance
+              </span>
+            </span>
+          </motion.div>
 
-      <div className="container-shell relative z-10 grid items-center gap-12 lg:grid-cols-2 min-h-[calc(100svh-120px)] py-0">
-        <div className="max-w-xl text-center lg:text-left pt-6 lg:pt-0 mx-auto lg:mx-0">
           <motion.h1
             custom={1}
             initial="hidden"
             animate="visible"
             variants={revealVariants}
-            className="font-headline text-5xl sm:text-6xl lg:text-7xl xl:text-8xl leading-tight tracking-display text-foreground"
+            className="font-headline text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[0.85] tracking-tight text-foreground"
           >
             Natural Energy
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={currentProduct}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 0.8, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="block mt-4 sm:mt-6 text-secondary-label italic font-headline tracking-headline"
-              >
-                {productsById[currentProduct]?.name}
-              </motion.span>
-            </AnimatePresence>
           </motion.h1>
-
-          <motion.div
-            custom={2}
-            initial="hidden"
-            animate="visible"
-            variants={revealVariants}
-            className="mt-16 flex flex-row gap-4 justify-center lg:justify-start items-center"
-          >
-            <Button
-              size="lg"
-              variant="primary"
-              className="px-10 sm:min-w-[240px] shadow-float"
-              whileTap={{ scale: 0.98 }}
-              onClick={() => {
-                const el = document.getElementById("shop");
-                if (el) {
-                  el.scrollIntoView({ behavior: "smooth" });
-                }
-              }}
-            >
-              Start Your Order
-            </Button>
-            <Button
-              size="lg"
-              variant="secondary"
-              className="px-10 liquid-glass !border-none text-label font-bold shadow-soft overflow-hidden"
-              onClick={() => {
-                const el = document.getElementById("ingredients");
-                if (el) {
-                  el.scrollIntoView({ behavior: "smooth" });
-                }
-              }}
-            >
-              View Ingredients
-            </Button>
-          </motion.div>
-
-          <BadgeList
-            items={
-              heroSettings?.badgeItems ?? [
-                "Plant-Based",
-                "Clean Ingredients",
-                "Easy Digestion",
-              ]
-            }
-            className="mt-16"
-            animated
-          />
         </div>
 
-        <div className="relative flex w-full items-center justify-center min-h-[420px] sm:min-h-[480px] lg:min-h-[560px] xl:min-h-[620px]">
-          <div className="relative w-full min-w-0 max-w-[440px] sm:max-w-[520px] lg:max-w-[580px] xl:max-w-[640px] aspect-[5/4] lg:aspect-[4/3] flex items-center justify-center">
-            <div className="product-shadow-wrap absolute bottom-0 md:bottom-[-5%] w-full">
+        {/* Middle: 3D Product Stage (Full-Width Seedance Style) */}
+        <div className="relative w-screen flex items-center justify-center overflow-visible mb-12 lg:mb-16">
+          <div className="relative w-full aspect-[4/3] sm:aspect-video lg:aspect-[21/9] flex items-center justify-center overflow-visible">
+            <div className="product-shadow-wrap absolute bottom-[2%] w-full">
               <div
                 className={cn(
-                  "w-full h-8 bg-black/10 blur-[40px] rounded-full scale-x-75 transition-opacity duration-1000",
+                  "w-full h-16 bg-black/10 blur-[100px] rounded-full scale-x-90 transition-opacity duration-1000",
                   isDark ? "opacity-30" : "opacity-20"
                 )}
               />
@@ -201,7 +151,7 @@ export function HeroSection() {
               <div className="absolute inset-0 flex items-center justify-center">
                 <ProductFallback
                   imagePath={productsById[currentProduct]?.image ?? ""}
-                  className="w-[78%] h-auto max-w-[360px] sm:max-w-[420px] lg:max-w-[460px]"
+                  className="w-[85%] h-auto max-w-[480px] drop-shadow-[0_45px_120px_rgba(0,0,0,0.22)]"
                   priority
                 />
               </div>
@@ -214,6 +164,62 @@ export function HeroSection() {
                 isDark={isDark}
               />
             )}
+          </div>
+        </div>
+
+        {/* Bottom: Variant Name and CTAs */}
+        <div className="max-w-4xl text-center mx-auto flex flex-col items-center">
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={currentProduct}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 0.9, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="block text-3xl sm:text-4xl text-secondary-label italic font-headline tracking-tighter"
+            >
+              {productsById[currentProduct]?.name}
+            </motion.span>
+          </AnimatePresence>
+
+          <motion.div
+            custom={2}
+            initial="hidden"
+            animate="visible"
+            variants={revealVariants}
+            className="mt-12 flex flex-col sm:flex-row gap-5 items-center justify-center"
+          >
+            <Button
+              size="lg"
+              variant="primary"
+              className="px-12 w-full sm:w-auto sm:min-w-[260px] h-[64px] rounded-full shadow-float text-sm font-bold tracking-widest uppercase transition-all duration-500 hover:scale-[1.02]"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                const el = document.getElementById("shop");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              Start Your Order
+            </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="px-12 w-full sm:w-auto sm:min-w-[260px] h-[64px] rounded-full liquid-glass !border-none text-label font-bold shadow-soft overflow-hidden transition-all duration-500 hover:bg-white/10 dark:hover:bg-white/5 active:scale-95"
+              onClick={() => {
+                const el = document.getElementById("ingredients");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              View Ingredients
+            </Button>
+          </motion.div>
+
+          <div className="mt-16 w-full flex justify-center">
+            <BadgeList
+              items={heroSettings?.badgeItems ?? ["Plant-Based", "Clean Ingredients", "Easy Digestion"]}
+              className="w-full justify-center"
+              animated
+            />
           </div>
         </div>
       </div>

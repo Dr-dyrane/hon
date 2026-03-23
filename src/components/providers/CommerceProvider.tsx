@@ -16,7 +16,9 @@ import { useFeedback } from "@/components/providers/FeedbackProvider";
 import {
   addRemoteCartItem,
   clearRemoteCart,
+  fetchCartCheckoutDefaults,
   fetchCartSnapshot,
+  type CartCheckoutDefaults,
   removeRemoteCartItem,
   replaceRemoteCartItems,
   setRemoteCartItemQuantity,
@@ -85,8 +87,11 @@ type CommerceContextType = {
   isCartReady: boolean;
   isRefreshingCart: boolean;
   isSubmittingCheckout: boolean;
+  isHydratingCheckoutDefaults: boolean;
   checkoutError: string | null;
   checkoutForm: CheckoutFormState;
+  hasSavedCheckoutDefaults: boolean;
+  checkoutDefaultsSourceLabel: string | null;
   shotBundleCount: number;
   subtotalUsd: number;
   subtotalNgn: number;
@@ -103,6 +108,7 @@ type CommerceContextType = {
   toggleCart: () => void;
   refreshCart: () => Promise<void>;
   updateCheckoutField: (field: CheckoutField, value: string) => void;
+  applySavedCheckoutDetails: (force?: boolean) => void;
   canCheckout: boolean;
   submitCheckout: () => Promise<void>;
 };
@@ -119,6 +125,30 @@ const emptyCheckoutForm: CheckoutFormState = {
   latitude: "",
   longitude: "",
 };
+
+function mergeCheckoutDefaults(
+  current: CheckoutFormState,
+  defaults: CartCheckoutDefaults,
+  force = false
+): CheckoutFormState {
+  const pick = (currentValue: string, fallback: string) => {
+    if (force) {
+      return fallback;
+    }
+
+    return currentValue.trim() ? currentValue : fallback;
+  };
+
+  return {
+    fullName: pick(current.fullName, defaults.fullName),
+    email: pick(current.email, defaults.email),
+    phoneNumber: pick(current.phoneNumber, defaults.phoneNumber),
+    deliveryLocation: pick(current.deliveryLocation, defaults.deliveryLocation),
+    notes: pick(current.notes, defaults.notes),
+    latitude: pick(current.latitude, defaults.latitude),
+    longitude: pick(current.longitude, defaults.longitude),
+  };
+}
 
 function sanitizeCartItems(value: unknown, productIds: Set<string>): CartItem[] {
   if (!Array.isArray(value)) {
@@ -218,6 +248,12 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
   const [isSubmittingCheckout, setIsSubmittingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutForm, setCheckoutForm] = useState(emptyCheckoutForm);
+  const [checkoutDefaults, setCheckoutDefaults] =
+    useState<CartCheckoutDefaults | null>(null);
+  const [isHydratingCheckoutDefaults, setIsHydratingCheckoutDefaults] =
+    useState(false);
+  const [hasRequestedCheckoutDefaults, setHasRequestedCheckoutDefaults] =
+    useState(false);
 
   useEffect(() => {
     const handleOpenCart = () => {
@@ -275,6 +311,72 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
     setCartItems(items);
     clearLegacyCartSnapshot();
   }, []);
+
+  useEffect(() => {
+    const handleSyncCart = (event: Event) => {
+      const payload = (event as CustomEvent<{ items?: CartItem[] }>).detail;
+      const items = sanitizeCartItems(payload?.items, validProductIds);
+      applyRemoteSnapshot(items);
+      setCheckoutError(null);
+    };
+
+    window.addEventListener("commerce:sync-cart", handleSyncCart as EventListener);
+    return () => {
+      window.removeEventListener("commerce:sync-cart", handleSyncCart as EventListener);
+    };
+  }, [applyRemoteSnapshot, validProductIds]);
+
+  const applySavedCheckoutDetails = useCallback(
+    (force = false) => {
+      if (!checkoutDefaults) {
+        return;
+      }
+
+      setCheckoutForm((current) =>
+        mergeCheckoutDefaults(current, checkoutDefaults, force)
+      );
+      setCheckoutError(null);
+    },
+    [checkoutDefaults]
+  );
+
+  useEffect(() => {
+    if (!isCartOpen || hasRequestedCheckoutDefaults) {
+      return;
+    }
+
+    let active = true;
+    setHasRequestedCheckoutDefaults(true);
+    setIsHydratingCheckoutDefaults(true);
+
+    void fetchCartCheckoutDefaults()
+      .then((defaults) => {
+        if (!active) {
+          return;
+        }
+
+        setCheckoutDefaults(defaults);
+        if (defaults) {
+          setCheckoutForm((current) => mergeCheckoutDefaults(current, defaults));
+        }
+      })
+      .catch(() => {
+        if (!active) {
+          return;
+        }
+
+        setCheckoutDefaults(null);
+      })
+      .finally(() => {
+        if (active) {
+          setIsHydratingCheckoutDefaults(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [hasRequestedCheckoutDefaults, isCartOpen]);
 
   const refreshCart = useCallback(async () => {
     setIsRefreshingCart(true);
@@ -480,6 +582,9 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
     setCheckoutError(null);
   }, []);
 
+  const hasSavedCheckoutDefaults = Boolean(checkoutDefaults?.hasSavedDetails);
+  const checkoutDefaultsSourceLabel = checkoutDefaults?.sourceLabel ?? null;
+
   const canCheckout =
     cartItems.length > 0 &&
     checkoutForm.fullName.trim().length > 1 &&
@@ -550,8 +655,11 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
       isCartReady,
       isRefreshingCart,
       isSubmittingCheckout,
+      isHydratingCheckoutDefaults,
       checkoutError,
       checkoutForm,
+      hasSavedCheckoutDefaults,
+      checkoutDefaultsSourceLabel,
       shotBundleCount,
       subtotalUsd,
       subtotalNgn,
@@ -568,20 +676,25 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
       toggleCart,
       refreshCart,
       updateCheckoutField,
+      applySavedCheckoutDetails,
       canCheckout,
       submitCheckout,
     }),
     [
       addItem,
+      applySavedCheckoutDetails,
       canCheckout,
       cartItems,
       cartLines,
+      checkoutDefaultsSourceLabel,
       checkoutError,
       checkoutForm,
       clearCart,
       closeCart,
       discountNgn,
       discountUsd,
+      hasSavedCheckoutDefaults,
+      isHydratingCheckoutDefaults,
       isCartOpen,
       isCartReady,
       isRefreshingCart,

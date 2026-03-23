@@ -55,7 +55,10 @@ export type MarketingProduct = {
 export type IngredientProfile = {
   id: IngredientId;
   name: string;
+  category: string;
+  role: "core" | "supporting";
   detail: string;
+  benefit: string;
   image: string;
   aliases: string[];
   sortOrder: number;

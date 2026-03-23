@@ -118,6 +118,7 @@ export function PaymentPanel({
   dimmed,
   accessToken,
   onToggle,
+  inSheet = false,
 }: {
   order: PortalOrderDetail;
   stageIcon: IconName;
@@ -127,8 +128,96 @@ export function PaymentPanel({
   dimmed: boolean;
   accessToken?: string;
   onToggle: () => void;
+  inSheet?: boolean;
 }) {
   const canOpen = Boolean(order.paymentId);
+  const showInlineForm = inSheet || isFocused;
+  const showEntryButton = !inSheet && !isFocused;
+
+  const content = (
+    <div className={cn(styles.taskShell, !inSheet && isFocused && styles.taskShellActive)}>
+      {!inSheet ? (
+        <TaskIntro
+          title={proofs.length > 0 ? "Payment proof activity" : "Upload payment proof"}
+          description={order.paymentId ? undefined : "Awaiting approval."}
+          status={stageLabel}
+          icon={stageIcon}
+        />
+      ) : null}
+
+      {order.paymentId ? (
+        <>
+          {showEntryButton ? (
+            <button
+              type="button"
+              className={styles.primaryTaskButton}
+              onClick={onToggle}
+            >
+              {proofs.length > 0 ? "Manage proofs" : "Upload proof"}
+            </button>
+          ) : null}
+
+          {showInlineForm ? (
+            inSheet ? (
+              <PaymentProofUploadCard
+                orderId={order.orderId}
+                paymentId={order.paymentId}
+                accessToken={accessToken}
+                paymentStatus={order.payment?.status ?? order.paymentStatus}
+                embedded
+                directEntry
+              />
+            ) : (
+              <AnimatedReveal show={isFocused} panelKey="payment-panel">
+                <div className={styles.formPanel}>
+                  <PaymentProofUploadCard
+                    orderId={order.orderId}
+                    paymentId={order.paymentId}
+                    accessToken={accessToken}
+                    paymentStatus={order.payment?.status ?? order.paymentStatus}
+                  />
+                </div>
+              </AnimatedReveal>
+            )
+          ) : null}
+        </>
+      ) : (
+        <div className={styles.calloutCard}>Awaiting approval.</div>
+      )}
+
+      {proofs.length > 0 ? (
+        <div className={styles.proofList}>
+          {proofs.map((proof) => {
+            const timestamp = formatOrderTimestamp(proof.createdAt);
+
+            if (!proof.publicUrl) {
+              return (
+                <span key={proof.proofId} className={styles.proofText}>
+                  {timestamp}
+                </span>
+              );
+            }
+
+            return (
+              <Link
+                key={proof.proofId}
+                href={proof.publicUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={styles.proofLink}
+              >
+                {timestamp}
+              </Link>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+
+  if (inSheet) {
+    return content;
+  }
 
   return (
     <FocusPanel
@@ -150,69 +239,7 @@ export function PaymentPanel({
         </div>
       }
     >
-      <div className={cn(styles.taskShell, isFocused && styles.taskShellActive)}>
-        <TaskIntro
-          title={proofs.length > 0 ? "Payment proof activity" : "Upload payment proof"}
-          description={order.paymentId ? undefined : "Awaiting approval."}
-          status={stageLabel}
-          icon={stageIcon}
-        />
-
-        {order.paymentId ? (
-          <>
-            {!isFocused ? (
-              <button
-                type="button"
-                className={styles.primaryTaskButton}
-                onClick={onToggle}
-              >
-                {proofs.length > 0 ? "Review proof status" : "Open upload form"}
-              </button>
-            ) : null}
-
-            <AnimatedReveal show={isFocused} panelKey="payment-panel">
-              <div className={styles.formPanel}>
-                <PaymentProofUploadCard
-                  orderId={order.orderId}
-                  paymentId={order.paymentId}
-                  accessToken={accessToken}
-                  paymentStatus={order.payment?.status ?? order.paymentStatus}
-                />
-              </div>
-            </AnimatedReveal>
-          </>
-        ) : (
-          <div className={styles.calloutCard}>Awaiting approval.</div>
-        )}
-
-        {proofs.length > 0 ? (
-          <div className={styles.proofList}>
-            {proofs.map((proof) => {
-              const timestamp = formatOrderTimestamp(proof.createdAt);
-
-              if (!proof.publicUrl) {
-                return (
-                  <span key={proof.proofId} className={styles.proofText}>
-                    {timestamp}
-                  </span>
-                );
-              }
-
-              return (
-                <Link
-                  key={proof.proofId}
-                  href={proof.publicUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={styles.proofLink}
-                >
-                  {timestamp}
-                </Link>
-              );
-            })}
-          </div>
-        ) : null}
-      </div>
+      {content}
     </FocusPanel>
   );
 }
@@ -337,7 +364,7 @@ export function PostDeliveryActionsPanel({
             className={styles.primaryTaskButton}
             onClick={onOpenReview}
           >
-            {reviewSubmitted ? "Review rating" : "Leave a rating"}
+            {reviewSubmitted ? "View rating" : "Rate order"}
           </button>
         ) : null}
 
@@ -360,11 +387,15 @@ export function ItemPreviewPanel({
   canReorder,
   isReordering,
   onReorder,
+  reorderMessage,
+  reorderTone,
 }: {
   item: PortalOrderDetail["items"][number];
   canReorder: boolean;
   isReordering: boolean;
   onReorder: () => void;
+  reorderMessage?: string | null;
+  reorderTone?: "success" | "error" | null;
 }) {
   return (
     <div className={styles.itemPreviewSheet}>
@@ -410,6 +441,19 @@ export function ItemPreviewPanel({
           </button>
         </div>
       ) : null}
+
+      {reorderMessage ? (
+        <div
+          className={cn(
+            styles.itemPreviewFeedback,
+            reorderTone === "success"
+              ? styles.itemPreviewFeedbackSuccess
+              : styles.itemPreviewFeedbackError
+          )}
+        >
+          {reorderMessage}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -423,6 +467,7 @@ export function ReturnPanel({
   isFocused,
   dimmed,
   onToggle,
+  inSheet = false,
 }: {
   order: PortalOrderDetail;
   returnCase: OrderReturnCaseRow | null;
@@ -432,7 +477,51 @@ export function ReturnPanel({
   isFocused: boolean;
   dimmed: boolean;
   onToggle: () => void;
+  inSheet?: boolean;
 }) {
+  const content = (
+    <div className={cn(styles.taskShell, !inSheet && isFocused && styles.taskShellActive)}>
+      {!inSheet ? <TaskIntro title="Return request" /> : null}
+
+      {!inSheet && !isFocused ? (
+        <button type="button" className={styles.primaryTaskButton} onClick={onToggle}>
+          {returnCase ? "Manage return" : "Start return"}
+        </button>
+      ) : null}
+
+      {inSheet ? (
+        <OrderReturnRequestCard
+          orderId={order.orderId}
+          accessToken={accessToken}
+          orderStatus={order.status}
+          returnCase={returnCase}
+          items={order.items}
+          returnEvents={returnEvents}
+          proofs={returnProofs}
+          embedded
+        />
+      ) : (
+        <AnimatedReveal show={isFocused} panelKey="return-panel">
+          <div className={styles.formPanel}>
+            <OrderReturnRequestCard
+              orderId={order.orderId}
+              accessToken={accessToken}
+              orderStatus={order.status}
+              returnCase={returnCase}
+              items={order.items}
+              returnEvents={returnEvents}
+              proofs={returnProofs}
+            />
+          </div>
+        </AnimatedReveal>
+      )}
+    </div>
+  );
+
+  if (inSheet) {
+    return content;
+  }
+
   return (
     <FocusPanel
       title="Return"
@@ -457,29 +546,7 @@ export function ReturnPanel({
         </div>
       }
     >
-      <div className={cn(styles.taskShell, isFocused && styles.taskShellActive)}>
-        <TaskIntro title="Return request" />
-
-        {!isFocused ? (
-          <button type="button" className={styles.primaryTaskButton} onClick={onToggle}>
-            {returnCase ? "Manage return" : "Start return"}
-          </button>
-        ) : null}
-
-        <AnimatedReveal show={isFocused} panelKey="return-panel">
-          <div className={styles.formPanel}>
-            <OrderReturnRequestCard
-              orderId={order.orderId}
-              accessToken={accessToken}
-              orderStatus={order.status}
-              returnCase={returnCase}
-              items={order.items}
-              returnEvents={returnEvents}
-              proofs={returnProofs}
-            />
-          </div>
-        </AnimatedReveal>
-      </div>
+      {content}
     </FocusPanel>
   );
 }
@@ -492,6 +559,7 @@ export function ReviewPanel({
   isFocused,
   dimmed,
   onToggle,
+  inSheet = false,
 }: {
   order: PortalOrderDetail;
   reviewRequest: OrderReviewRequestRow | null;
@@ -500,7 +568,49 @@ export function ReviewPanel({
   isFocused: boolean;
   dimmed: boolean;
   onToggle: () => void;
+  inSheet?: boolean;
 }) {
+  const content = (
+    <div className={cn(styles.taskShell, !inSheet && isFocused && styles.taskShellActive)}>
+      {!inSheet ? <TaskIntro title="Leave a rating" /> : null}
+
+      {!inSheet && !isFocused ? (
+        <button type="button" className={styles.primaryTaskButton} onClick={onToggle}>
+          {review ? "View rating" : "Rate order"}
+        </button>
+      ) : null}
+
+      {inSheet ? (
+        <OrderReviewCard
+          orderId={order.orderId}
+          accessToken={accessToken}
+          orderStatus={order.status}
+          reviewRequest={reviewRequest}
+          review={review}
+          embedded
+          directEntry
+          onRequestClose={onToggle}
+        />
+      ) : (
+        <AnimatedReveal show={isFocused} panelKey="review-panel">
+          <div className={styles.formPanel}>
+            <OrderReviewCard
+              orderId={order.orderId}
+              accessToken={accessToken}
+              orderStatus={order.status}
+              reviewRequest={reviewRequest}
+              review={review}
+            />
+          </div>
+        </AnimatedReveal>
+      )}
+    </div>
+  );
+
+  if (inSheet) {
+    return content;
+  }
+
   return (
     <FocusPanel
       title="Rating"
@@ -523,27 +633,7 @@ export function ReviewPanel({
         </div>
       }
     >
-      <div className={cn(styles.taskShell, isFocused && styles.taskShellActive)}>
-        <TaskIntro title="Leave a rating" />
-
-        {!isFocused ? (
-          <button type="button" className={styles.primaryTaskButton} onClick={onToggle}>
-            {review ? "Review rating" : "Open rating"}
-          </button>
-        ) : null}
-
-        <AnimatedReveal show={isFocused} panelKey="review-panel">
-          <div className={styles.formPanel}>
-            <OrderReviewCard
-              orderId={order.orderId}
-              accessToken={accessToken}
-              orderStatus={order.status}
-              reviewRequest={reviewRequest}
-              review={review}
-            />
-          </div>
-        </AnimatedReveal>
-      </div>
+      {content}
     </FocusPanel>
   );
 }

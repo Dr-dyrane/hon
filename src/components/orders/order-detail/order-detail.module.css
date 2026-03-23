@@ -746,6 +746,24 @@
   justify-content: flex-end;
 }
 
+.itemPreviewFeedback {
+  border-radius: 18px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  box-shadow: var(--order-shadow-crisp);
+}
+
+.itemPreviewFeedbackSuccess {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface) 90%);
+  color: color-mix(in srgb, var(--accent) 84%, var(--label) 16%);
+}
+
+.itemPreviewFeedbackError {
+  background: color-mix(in srgb, #ff3b30 12%, var(--surface) 88%);
+  color: var(--label);
+}
+
 .addressBlock {
   display: grid;
   gap: 4px;
@@ -773,6 +791,23 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
+}
+
+.sheetDetailsShell {
+  display: grid;
+  gap: 12px;
+}
+
+.sheetDetailsSummary {
+  display: grid;
+  gap: 4px;
+}
+
+.sheetDetailsCard {
+  border-radius: 28px;
+  padding: 14px;
+  background: color-mix(in srgb, var(--order-surface-muted) 86%, transparent);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--label) 5%, transparent);
 }
 
 .detailsTitle {
@@ -1016,6 +1051,7 @@
 :global(.dark) .panelSecondary,
 :global(.dark) .panelMuted,
 :global(.dark) .panelOverlay,
+:global(.dark) .sheetDetailsCard,
 :global(.dark) .detailsShell,
 :global(.dark) .detailsShellOpen,
 :global(.dark) .topMetric,

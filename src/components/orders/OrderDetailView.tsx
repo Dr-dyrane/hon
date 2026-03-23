@@ -5,12 +5,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { prepareReorderAction } from "@/app/(portal)/account/reorder/actions";
 import { formatNgn } from "@/lib/commerce";
 import { replaceRemoteCartItems } from "@/lib/cart/api-client";
+import { dispatchCommerceCartSync, dispatchCommerceOpenCart } from "@/lib/cart/events";
 import {
   formatOrderTimestamp,
   getDeliveryLine,
   getOrderHeroSummary,
   getTrackingCoords,
 } from "@/lib/orders/detail-view";
+import {
+  buildReorderSuccessMessage,
+  REORDER_EMPTY_MESSAGE,
+  REORDER_ERROR_MESSAGE,
+} from "@/lib/orders/reorder";
 import { resolveOrderLedgerState } from "@/lib/orders/ledger-policy";
 import { useFeedback } from "@/components/providers/FeedbackProvider";
 import {
@@ -138,6 +144,8 @@ export function OrderDetailView({
   );
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [isReordering, startReorderTransition] = useTransition();
+  const [reorderMessage, setReorderMessage] = useState<string | null>(null);
+  const [reorderTone, setReorderTone] = useState<"success" | "error" | null>(null);
   const canReorder = backHref.startsWith("/account");
 
   const updatePanelQuery = useCallback((nextPanel: ActivePanel) => {
@@ -184,6 +192,8 @@ export function OrderDetailView({
     (orderItemId: string) => {
       feedback.selection();
       closeActivePanel();
+      setReorderMessage(null);
+      setReorderTone(null);
       setActiveItemId(orderItemId);
     },
     [closeActivePanel, feedback]
@@ -234,6 +244,8 @@ export function OrderDetailView({
       return;
     }
 
+    setReorderMessage(null);
+    setReorderTone(null);
     feedback.selection();
 
     startReorderTransition(async () => {
@@ -241,23 +253,38 @@ export function OrderDetailView({
 
       if (!prepared.success || !prepared.data) {
         feedback.blocked();
+        setReorderMessage(prepared.error || REORDER_ERROR_MESSAGE);
+        setReorderTone("error");
         return;
       }
 
       if (prepared.data.items.length === 0) {
         feedback.blocked();
+        setReorderMessage(REORDER_EMPTY_MESSAGE);
+        setReorderTone("error");
         return;
       }
 
       try {
-        await replaceRemoteCartItems(prepared.data.items);
+        const snapshot = await replaceRemoteCartItems(prepared.data.items);
+        dispatchCommerceCartSync(snapshot.items);
       } catch {
         feedback.blocked();
+        setReorderMessage("Unable to update cart.");
+        setReorderTone("error");
         return;
       }
 
+      setReorderMessage(
+        buildReorderSuccessMessage({
+          unavailableCount: prepared.data.unavailableItems.length,
+          changedPriceCount: prepared.data.changedPriceCount,
+        })
+      );
+      setReorderTone("success");
       feedback.success();
-      window.dispatchEvent(new Event("commerce:open-cart"));
+      setActiveItemId(null);
+      dispatchCommerceOpenCart();
     });
   }, [canReorder, feedback, order, startReorderTransition]);
 
@@ -268,6 +295,8 @@ export function OrderDetailView({
         canReorder={canReorder}
         isReordering={isReordering}
         onReorder={handleReorder}
+        reorderMessage={reorderMessage}
+        reorderTone={reorderTone}
       />
     ) : activePanel === "payment" && showPaymentWorkflow && order && stage ? (
       <PaymentPanel
@@ -279,6 +308,7 @@ export function OrderDetailView({
         dimmed={false}
         accessToken={accessToken}
         onToggle={closeActivePanel}
+        inSheet
       />
     ) : activePanel === "return" && showReturn && order ? (
       <ReturnPanel
@@ -290,6 +320,7 @@ export function OrderDetailView({
         isFocused
         dimmed={false}
         onToggle={closeActivePanel}
+        inSheet
       />
     ) : activePanel === "review" && showReview && order ? (
       <ReviewPanel
@@ -300,6 +331,7 @@ export function OrderDetailView({
         isFocused
         dimmed={false}
         onToggle={closeActivePanel}
+        inSheet
       />
     ) : activePanel === "details" && hasDetailsSection ? (
       <OrderSecondaryDetails
@@ -309,6 +341,7 @@ export function OrderDetailView({
         isFocused
         dimmed={false}
         onToggle={closeActivePanel}
+        renderMode="sheet"
       />
     ) : null;
 
@@ -485,6 +518,8 @@ export function OrderDetailView({
         title={sheetHeading ?? "Details"}
         onClose={() => {
           if (selectedItem) {
+            setReorderMessage(null);
+            setReorderTone(null);
             setActiveItemId(null);
             return;
           }
