@@ -38,6 +38,8 @@ export const serverEnv = {
   database: {
     url: readOptionalEnv(process.env.DATABASE_URL),
     directUrl: readOptionalEnv(process.env.DATABASE_DIRECT_URL),
+    neonSyncUrl: readOptionalEnv(process.env.NEON_SYNC_DATABASE_URL),
+    neonSyncDirectUrl: readOptionalEnv(process.env.NEON_SYNC_DATABASE_DIRECT_URL),
     host: readOptionalEnv(process.env.PGHOST),
     port: process.env.PGPORT?.trim() || "5432",
     name: readOptionalEnv(process.env.PGDATABASE),

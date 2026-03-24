@@ -264,24 +264,30 @@ vercel env add RESEND_API_KEY preview
 
 ### Cron automation
 
-The repo uses:
+The repo exposes cron endpoints but does not define a built-in Vercel cron schedule:
 
 - [`vercel.json`](C:/Users/Dyrane/Documents/GitHub/hop/vercel.json)
 
-Current scheduled path:
+Order automation path:
 
 - `/api/cron/order-automation`
 
-Hobby plan rule:
+Manual standby sync path:
 
-- Vercel Hobby deployments fail if a cron is configured more than once per day
-- the committed schedule must stay at once daily unless the project moves to a plan that supports higher frequency
-- if Prax needs more frequent order automation before then, use an external scheduler to call `/api/cron/order-automation` with `Authorization: Bearer <CRON_SECRET>`
+- `/api/cron/db-sync`
+- sync reads `audit.audit_logs` from the primary database and replays `insert`/`update`/`delete` mutations into the standby `app.*` tables
+- source and standby must be different databases; the sync route will refuse to run if both resolve to the same target
+
+Scheduler rule:
+
+- call `/api/cron/order-automation` from an external scheduler with `Authorization: Bearer <CRON_SECRET>`
+- call `/api/cron/db-sync` from the same external scheduler with `Authorization: Bearer <CRON_SECRET>`
+- keep schedule frequency in the external scheduler configuration, not in `vercel.json`
 
 Protection rule:
 
 - set `CRON_SECRET` in Vercel
-- Vercel cron requests must send `Authorization: Bearer <CRON_SECRET>`
+- scheduled requests must send `Authorization: Bearer <CRON_SECRET>`
 - local development may call the route without a secret only when `NODE_ENV` is not `production`
 
 ### Deploy refresh guard
@@ -389,6 +395,11 @@ Every environment-variable change should satisfy all three:
 - `DATABASE_URL`
 - `DATABASE_DIRECT_URL`
 - `PGPASSWORD`
+
+### Optional standby sync target
+
+- `NEON_SYNC_DATABASE_URL`
+- `NEON_SYNC_DATABASE_DIRECT_URL`
 
 ### Required if using Cognito
 

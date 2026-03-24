@@ -14,6 +14,18 @@ function resolvePort() {
   return Number.parseInt(process.env.PGPORT || "5432", 10);
 }
 
+function resolveRuntimeConnectionString() {
+  if (process.env.DATABASE_DIRECT_URL) {
+    return process.env.DATABASE_DIRECT_URL;
+  }
+
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+
+  return null;
+}
+
 function hasDirectCredentialConfig() {
   return Boolean(
     process.env.PGHOST &&
@@ -66,9 +78,11 @@ function createIamPasswordProvider() {
 }
 
 export function getConnectionConfig() {
-  if (process.env.DATABASE_URL) {
+  const connectionString = resolveRuntimeConnectionString();
+
+  if (connectionString) {
     return {
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
       ssl: resolveSsl(),
     };
   }
