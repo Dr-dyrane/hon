@@ -17,6 +17,8 @@ The goal is that product, engineering, operations, and database rules are all re
 - [State Machines](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/STATE_MACHINES.md)
 - [Screen Specifications](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/SCREEN_SPECS.md)
 - [UI Implementation Doctrine](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/UI_IMPLEMENTATION_DOCTRINE.md)
+- [Admin Mobile Action Model](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/ADMIN_MOBILE_ACTION_MODEL.md)
+- [First-Run Onboarding Spec](C:/Users/Dyrane/Documents/GitHub/hop/docs/planning/FIRST_RUN_ONBOARDING_SPEC.md)
 
 ## Operations
 

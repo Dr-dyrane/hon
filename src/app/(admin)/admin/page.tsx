@@ -171,7 +171,11 @@ export default async function AdminPage() {
         <p className={styles.heroDetail}>{heroState.detail}</p>
 
         <div className={styles.heroActions}>
-          <Link href={primaryAction.href} className={styles.primaryAction}>
+          <Link
+            href={primaryAction.href}
+            className={styles.primaryAction}
+            data-tour-id="admin-overview-primary-action"
+          >
             {primaryAction.label}
           </Link>
           <Link href="/admin/delivery" className={styles.secondaryAction}>
@@ -203,7 +207,7 @@ export default async function AdminPage() {
           <span className={styles.workflowBadge}>{workflowState.badge}</span>
         </div>
 
-        <div className={styles.workflowActionGrid}>
+        <div className={styles.workflowActionGrid} data-tour-id="admin-overview-queue-grid">
           <QueueAction
             href="/admin/orders"
             label="Requests"

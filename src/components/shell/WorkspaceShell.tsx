@@ -8,6 +8,10 @@ import { WorkspaceHeaderAction } from "@/components/shell/WorkspaceHeaderAction"
 import { WorkspaceNav } from "@/components/shell/WorkspaceNav";
 import { WorkspaceCartTrigger } from "@/components/shell/WorkspaceCartTrigger";
 import { WorkspaceNotificationSheet } from "@/components/shell/WorkspaceNotificationSheet";
+import {
+  WorkspaceFirstRunGuide,
+  type FirstRunGuideScope,
+} from "@/components/shell/WorkspaceFirstRunGuide";
 import type { ShellHeaderRoute, ShellNavItem } from "@/lib/app-shell";
 import type { WorkspaceNotification } from "@/lib/db/types";
 import { cn } from "@/lib/utils";
@@ -26,6 +30,7 @@ export function WorkspaceShell({
   sessionRoleLabel,
   notifications = [],
   showCartTrigger = false,
+  firstRunGuideScope,
 }: {
   eyebrow: string;
   title: string;
@@ -40,6 +45,7 @@ export function WorkspaceShell({
   sessionRoleLabel?: string;
   notifications?: WorkspaceNotification[];
   showCartTrigger?: boolean;
+  firstRunGuideScope?: FirstRunGuideScope;
 }) {
   const nativeMode = visualStyle === "native";
 
@@ -168,6 +174,7 @@ export function WorkspaceShell({
         </div>
       </div>
 
+      {firstRunGuideScope ? <WorkspaceFirstRunGuide scope={firstRunGuideScope} /> : null}
       {mobileNav ? <WorkspaceNav items={navItems} headerRoutes={headerRoutes} mode="mobile" /> : null}
     </div>
   );

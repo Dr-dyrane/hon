@@ -1180,3 +1180,11 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
   --ease-apple-in-out: cubic-bezier(0.42, 0, 0.58, 1);
 }
 
+[data-tour-active="true"] {
+  position: relative;
+  z-index: calc(var(--z-popover) + 1);
+  box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent) 18%, transparent),
+    0 18px 36px rgba(15, 23, 42, 0.18);
+  transition: box-shadow var(--duration-fast) var(--ease-premium);
+}
+

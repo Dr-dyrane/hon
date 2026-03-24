@@ -9,6 +9,20 @@ type ResendSendEmailInput = {
   html: string;
 };
 
+function buildTextSupportFooter() {
+  const supportUrl = `${serverEnv.public.appUrl}/support`;
+  const helpUrl = `${serverEnv.public.appUrl}/help`;
+  const termsUrl = `${serverEnv.public.appUrl}/terms`;
+  const privacyUrl = `${serverEnv.public.appUrl}/privacy`;
+
+  return [
+    `Need help? Contact support: ${supportUrl}`,
+    `Help Center: ${helpUrl}`,
+    `Terms of Service: ${termsUrl}`,
+    `Privacy Policy: ${privacyUrl}`,
+  ].join("\n");
+}
+
 function requireResendConfig() {
   if (!serverEnv.email.resendApiKey) {
     throw new Error("Resend is not configured.");
@@ -22,6 +36,7 @@ function requireResendConfig() {
 export async function sendResendEmail(input: ResendSendEmailInput) {
   requireResendConfig();
   const recipients = Array.isArray(input.to) ? input.to : [input.to];
+  const text = `${input.text}\n\n${buildTextSupportFooter()}`;
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -33,7 +48,7 @@ export async function sendResendEmail(input: ResendSendEmailInput) {
       from: serverEnv.email.resendFromEmail,
       to: recipients,
       subject: input.subject,
-      text: input.text,
+      text,
       html: input.html,
     }),
     cache: "no-store",

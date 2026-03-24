@@ -108,6 +108,7 @@ export function WorkspaceNav({
       <>
         <nav
           aria-label="Section navigation"
+          data-tour-id="workspace-mobile-nav"
           className={cn(
             "z-layer-mobile-nav fixed bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] left-3 w-[calc(100vw-5.75rem)] max-w-[24rem] rounded-[28px] bg-[color:var(--surface)]/20 p-1.5 shadow-[0_20px_48px_rgba(15,23,42,0.14)] backdrop-blur-xl md:hidden",
             hasActiveOverlay && "pointer-events-none translate-y-4 opacity-0"
@@ -160,6 +161,7 @@ export function WorkspaceNav({
             type="button"
             onClick={handleMobileFab}
             aria-label={mobileFab.label}
+            data-tour-id="workspace-mobile-fab"
             className={cn(
               "motion-press z-layer-mobile-fab fixed right-3 bottom-[calc(env(safe-area-inset-bottom)+1rem)] inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-label)] shadow-[0_18px_40px_rgba(15,23,42,0.16)] transition-transform duration-200 md:hidden",
               hasActiveOverlay && "pointer-events-none translate-y-4 opacity-0"

@@ -12,10 +12,16 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   const links = [
-    ...navigation.map((item) => ({ name: item.label, href: item.href })),
+    ...navigation.map((item) => ({
+      name: item.label,
+      href: item.href.startsWith("#") ? `/${item.href}` : item.href,
+    })),
     { name: "Reviews", href: "#social" },
     { name: "Account", href: "/account" },
+    { name: "Help", href: "/help" },
+    { name: "Support", href: "/support" },
     { name: "Terms", href: "/terms" },
+    { name: "Privacy", href: "/privacy" },
   ];
 
   return (

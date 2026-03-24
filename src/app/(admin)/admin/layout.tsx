@@ -19,6 +19,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       sessionEmail={session.email}
       sessionRoleLabel="Administrator"
       notifications={notifications}
+      firstRunGuideScope="admin"
     >
       {children}
     </WorkspaceShell>

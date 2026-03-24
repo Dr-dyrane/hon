@@ -1,5 +1,7 @@
 import "server-only";
 
+import { serverEnv } from "@/lib/config/server";
+
 /**
  * Email-safe typography stack aligned with app usage and Apple system fonts.
  */
@@ -91,7 +93,6 @@ export function buildEmailThemeStyles() {
     </style>
   `;
 }
-
 /**
  * Builds a typography-first lockup for stable rendering in restrictive email clients.
  */
@@ -104,7 +105,6 @@ export function buildEmailBrandLockup() {
     </div>
   `;
 }
-
 export function buildEditorialEmail(input: {
   eyebrow: string;
   title: string;
@@ -118,6 +118,10 @@ export function buildEditorialEmail(input: {
   footnote?: string;
 }) {
   const facts = (input.facts ?? []).slice(0, 3);
+  const supportUrl = `${serverEnv.public.appUrl}/support`;
+  const helpUrl = `${serverEnv.public.appUrl}/help`;
+  const termsUrl = `${serverEnv.public.appUrl}/terms`;
+  const privacyUrl = `${serverEnv.public.appUrl}/privacy`;
 
   return `
     ${buildEmailThemeStyles()}
@@ -172,6 +176,12 @@ export function buildEditorialEmail(input: {
               ? `<p style="font-size:12px;color:#9ca3af;margin:20px 0 0;font-family:${EMAIL_FONT_STACK};">${input.footnote}</p>`
               : ""
           }
+          <p class="hop-email-legal" style="margin-top:24px;">
+            Need help? <a href="${supportUrl}">Contact support</a> or visit <a href="${helpUrl}">Help Center</a>.
+          </p>
+          <p class="hop-email-legal" style="margin-top:8px;">
+            <a href="${termsUrl}">Terms of Service</a> | <a href="${privacyUrl}">Privacy Policy</a>
+          </p>
           <p style="font-size:11px;color:#9ca3af;margin:40px 0 0;font-family:${EMAIL_FONT_STACK};">
             &copy; ${new Date().getFullYear()} House of Prax
           </p>
