@@ -14,46 +14,79 @@ export function buildEmailThemeStyles() {
     <style>
       .hop-email-root {
         margin: 0;
-        padding: 36px 16px;
-        background: #f4f2ea;
-        color: #161616;
+        padding: 24px 16px;
+        background: #ffffff;
+        color: #111111;
         font-family: ${EMAIL_FONT_STACK};
+        font-size: 16px;
+        line-height: 1.6;
       }
       .hop-email-shell {
         width: 100%;
-        max-width: 640px;
+        max-width: 680px;
         margin: 0 auto;
-        background: #ffffff;
-        border-radius: 30px;
-        box-shadow: 0 14px 38px rgba(15, 23, 42, 0.08);
+        background: transparent;
+        border-radius: 0;
+        box-shadow: none;
       }
       .hop-email-inner {
-        padding: 34px;
+        padding: 0;
       }
       .hop-email-legal {
-        margin: 16px auto 0;
-        text-align: center;
+        margin: 24px auto 0;
         font-size: 12px;
-        line-height: 1.4;
-        color: #88909c;
+        line-height: 1.5;
+        color: #6b7280;
         font-family: ${EMAIL_FONT_STACK};
       }
-      @media (max-width: 640px) {
-        .hop-email-root { padding: 24px 10px; }
-        .hop-email-inner { padding: 24px; }
+      .hop-email-root h1 {
+        margin: 0 0 10px;
+        font-size: 34px;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        font-weight: 650;
+        color: #111111;
       }
-      @media (prefers-color-scheme: dark) {
-        .hop-email-root {
-          background: #0f1210 !important;
-          color: #e9e4d9 !important;
-        }
-        .hop-email-shell {
-          background: #181d18 !important;
-          box-shadow: 0 18px 54px rgba(0, 0, 0, 0.42) !important;
-        }
-        .hop-email-legal {
-          color: rgba(233, 228, 217, 0.6) !important;
-        }
+      .hop-email-root h2 {
+        margin: 22px 0 8px;
+        font-size: 20px;
+        line-height: 1.25;
+        letter-spacing: -0.01em;
+        font-weight: 600;
+        color: #111111;
+      }
+      .hop-email-root p {
+        margin: 0 0 12px;
+        font-size: 15px;
+        line-height: 1.65;
+        color: #374151;
+      }
+      .hop-email-root a {
+        color: #0f3d2e;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        font-weight: 600;
+      }
+      .hop-email-root ul {
+        margin: 0 0 14px 18px;
+        padding: 0;
+      }
+      .hop-email-root li {
+        margin: 0 0 6px;
+        color: #374151;
+      }
+      .hop-email-root div,
+      .hop-email-root table,
+      .hop-email-root tbody,
+      .hop-email-root tr,
+      .hop-email-root td {
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
+      @media (max-width: 640px) {
+        .hop-email-root { padding: 18px 12px; }
       }
     </style>
   `;
@@ -64,12 +97,85 @@ export function buildEmailThemeStyles() {
  */
 export function buildEmailBrandLockup() {
   return `
-    <div style="margin-bottom:24px;padding-bottom:14px;border-bottom:1px solid rgba(15,23,42,0.08);font-family:${EMAIL_FONT_STACK};">
-      <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;font-weight:500;">
+    <div style="margin-bottom:18px;font-family:${EMAIL_FONT_STACK};">
+      <p style="margin:0;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#6b7280;font-weight:600;">
         House of Prax
-      </div>
-      <div style="margin-top:7px;font-size:20px;line-height:1.2;letter-spacing:-0.01em;color:#111827;font-weight:500;">
-        Official updates
+      </p>
+    </div>
+  `;
+}
+
+export function buildEditorialEmail(input: {
+  eyebrow: string;
+  title: string;
+  subtitle?: string;
+  highlight?: string;
+  reference?: string;
+  facts?: string[];
+  action?: string;
+  block?: string;
+  cta?: { label: string; url: string };
+  footnote?: string;
+}) {
+  const facts = (input.facts ?? []).slice(0, 3);
+
+  return `
+    ${buildEmailThemeStyles()}
+    <div class="hop-email-root">
+      <div class="hop-email-shell">
+        <div class="hop-email-inner">
+          ${buildEmailBrandLockup()}
+          <p style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9ca3af;margin:0 0 8px;font-family:${EMAIL_FONT_STACK};">
+            ${input.eyebrow}
+          </p>
+          <h1 style="font-size:28px;font-weight:600;letter-spacing:-0.02em;margin:0 0 12px;font-family:${EMAIL_FONT_STACK};">
+            ${input.title}
+          </h1>
+          ${
+            input.subtitle
+              ? `<p style="font-size:15px;color:#374151;margin:0 0 20px;font-family:${EMAIL_FONT_STACK};">${input.subtitle}</p>`
+              : ""
+          }
+          ${
+            input.highlight
+              ? `<p style="font-size:22px;font-weight:600;letter-spacing:-0.01em;margin:24px 0 8px;color:#111111;font-family:${EMAIL_FONT_STACK};">${input.highlight}</p>`
+              : ""
+          }
+          ${
+            input.reference
+              ? `<p style="font-size:12px;letter-spacing:0.08em;color:#6b7280;margin:0 0 20px;font-family:${EMAIL_FONT_STACK};">${input.reference}</p>`
+              : ""
+          }
+          ${facts
+            .map(
+              (fact) =>
+                `<p style="font-size:14px;color:#374151;margin:6px 0;font-family:${EMAIL_FONT_STACK};">${fact}</p>`
+            )
+            .join("")}
+          ${
+            input.action
+              ? `<p style="font-size:14px;margin:20px 0;font-family:${EMAIL_FONT_STACK};">${input.action}</p>`
+              : ""
+          }
+          ${
+            input.block
+              ? `<div style="margin:28px 0;font-family:${EMAIL_FONT_STACK};">${input.block}</div>`
+              : ""
+          }
+          ${
+            input.cta
+              ? `<p style="margin:24px 0 0;font-family:${EMAIL_FONT_STACK};"><a href="${input.cta.url}" style="font-size:14px;font-weight:500;color:#0f172a;text-decoration:underline;">${input.cta.label}</a></p>`
+              : ""
+          }
+          ${
+            input.footnote
+              ? `<p style="font-size:12px;color:#9ca3af;margin:20px 0 0;font-family:${EMAIL_FONT_STACK};">${input.footnote}</p>`
+              : ""
+          }
+          <p style="font-size:11px;color:#9ca3af;margin:40px 0 0;font-family:${EMAIL_FONT_STACK};">
+            &copy; ${new Date().getFullYear()} House of Prax
+          </p>
+        </div>
       </div>
     </div>
   `;

@@ -222,6 +222,39 @@ Direct credential paths remain supported for controlled cases:
 
 Use those only for local tooling, emergency access, or environments where OIDC/IAM is not available.
 
+### Local OIDC 403 recovery
+
+If local pages throw:
+
+- `Failed to refresh local Vercel OIDC token: 403 Forbidden`
+- `Database connection failed because local Vercel OIDC refresh was forbidden (403)`
+- `Not authorized to perform sts:AssumeRoleWithWebIdentity`
+
+Use this recovery sequence:
+
+```powershell
+npm run vercel:token:refresh
+```
+
+Then restart the local Next.js server.
+
+If refresh still fails, run:
+
+```powershell
+vercel login
+vercel link
+vercel pull --yes --environment=development
+```
+
+If local IAM continues to fail and development must continue immediately, switch to direct DB credentials in `.env.local`:
+
+- `DATABASE_DIRECT_URL`, or
+- `PGHOST` + `PGDATABASE` + `PGUSER` + `PGPASSWORD`
+
+and set:
+
+- `ALLOW_LOCAL_IAM_DB=false`
+
 ### Add a variable
 
 ```powershell

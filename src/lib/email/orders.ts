@@ -2,11 +2,7 @@ import "server-only";
 
 import { formatNgn } from "@/lib/commerce";
 import { serverEnv } from "@/lib/config/server";
-import {
-  EMAIL_FONT_STACK,
-  buildEmailBrandLockup,
-  buildEmailThemeStyles,
-} from "@/lib/email/brand";
+import { buildEditorialEmail } from "@/lib/email/brand";
 import { sendResendEmail } from "@/lib/email/resend";
 import { sendWorkspacePushToEmails } from "@/lib/push/web-push";
 import {
@@ -15,37 +11,6 @@ import {
 } from "@/lib/db/repositories/order-notification-repository";
 import { getWorkspaceNotificationPreference } from "@/lib/db/repositories/notification-preferences-repository";
 import { createGuestOrderAccessToken } from "@/lib/orders/access";
-
-function buildShell(input: {
-  eyebrow: string;
-  title: string;
-  intro: string;
-  bodyHtml: string;
-  footer?: string;
-}) {
-  return `
-    ${buildEmailThemeStyles()}
-    <div class="hop-email-root">
-      <div class="hop-email-shell">
-      <div class="hop-email-inner">
-        ${buildEmailBrandLockup()}
-        <div style="font-size:10px;letter-spacing:0.24em;text-transform:uppercase;color:#6b7280;font-weight:500;margin-bottom:12px;font-family:${EMAIL_FONT_STACK};">${input.eyebrow}</div>
-        <h1 style="margin:0 0 12px;font-size:34px;line-height:1.08;color:#111827;font-weight:600;letter-spacing:-0.024em;font-family:${EMAIL_FONT_STACK};">${input.title}</h1>
-        <p style="margin:0 0 28px;font-size:15px;line-height:1.55;color:#4b5563;font-family:${EMAIL_FONT_STACK};">${input.intro}</p>
-        ${input.bodyHtml}
-        ${
-          input.footer
-            ? `<div style="margin-top:30px;padding-top:22px;border-top:1px solid rgba(0,0,0,0.06);font-size:13px;line-height:1.6;color:#8b93a0;font-family:${EMAIL_FONT_STACK};">${input.footer}</div>`
-            : ""
-        }
-      </div>
-      </div>
-      <div class="hop-email-legal">
-        &copy; ${new Date().getFullYear()} House of Prax. All rights reserved.
-      </div>
-    </div>
-  `;
-}
 
 function formatEmailTimestamp(value: string | null | undefined) {
   if (!value) {
@@ -58,117 +23,87 @@ function formatEmailTimestamp(value: string | null | undefined) {
   }).format(new Date(value));
 }
 
-function buildProductSpotlight(order: OrderNotificationSnapshot) {
+function buildPrimaryItemFact(order: OrderNotificationSnapshot) {
   const firstItem = order.items[0];
 
   if (!firstItem) {
-    return "";
+    return null;
   }
 
-  return `
-    <div style="margin-top:20px;border-radius:26px;background:#f4f2ea;padding:18px;">
-      <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:500;">Featured in this order</div>
-      <div style="margin-top:8px;font-size:20px;font-weight:500;color:#111827;font-family:${EMAIL_FONT_STACK};">${firstItem.title}</div>
-      <div style="margin-top:6px;font-size:13px;line-height:1.5;color:#4b5563;font-family:${EMAIL_FONT_STACK};">
-        ${firstItem.quantity} item${firstItem.quantity === 1 ? "" : "s"} at ${formatNgn(firstItem.unitPriceNgn)} each.
-      </div>
-    </div>
-  `;
+  return `${firstItem.title} · ${firstItem.quantity} x ${formatNgn(firstItem.unitPriceNgn)}`;
 }
 
-function buildOrderItems(order: OrderNotificationSnapshot) {
-  if (order.items.length === 0) {
-    return "";
+function buildOrderFactLines(
+  order: OrderNotificationSnapshot,
+  options?: {
+    includeDeadline?: boolean;
+    includeDelivery?: boolean;
+    includeCustomer?: boolean;
+    includePlacedAt?: boolean;
+  }
+) {
+  const includeDeadline = options?.includeDeadline ?? false;
+  const includeDelivery = options?.includeDelivery ?? false;
+  const includeCustomer = options?.includeCustomer ?? false;
+  const includePlacedAt = options?.includePlacedAt ?? false;
+
+  const facts: string[] = [];
+  const deadlineLine =
+    includeDeadline && order.transferDeadlineAt
+      ? `By ${formatEmailTimestamp(order.transferDeadlineAt)}`
+      : "";
+  if (deadlineLine) facts.push(deadlineLine);
+  if (includeDelivery) facts.push(order.deliveryAddress);
+  if (includeCustomer) facts.push(order.customerName);
+  if (includePlacedAt) facts.push(formatEmailTimestamp(order.placedAt));
+  const itemFact = buildPrimaryItemFact(order);
+  if (itemFact) facts.push(itemFact);
+
+  return facts.slice(0, 3);
+}
+
+function buildOrderTransferBlock(order: OrderNotificationSnapshot) {
+  if (!order.bankName && !order.accountName && !order.accountNumber) {
+    return undefined;
   }
 
-  const visibleItems = order.items.slice(0, 3);
+  const bank = order.bankName ?? "Pending bank";
+  const accountName = order.accountName ?? "Pending account";
+  const accountNumber = order.accountNumber ?? "Pending number";
+  const instructions = order.instructions ? `<p style="margin:8px 0 0;font-size:14px;color:#374151;">${order.instructions}</p>` : "";
 
   return `
-    <div style="margin-top:20px;border-radius:26px;background:#f4f2ea;padding:10px 12px;">
-      ${visibleItems
-        .map((item) => {
-          return `
-            <div style="margin:8px 0;border-radius:18px;background:#ffffff;padding:10px 12px;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
-                <tr>
-                  <td style="padding:0 10px 0 0;vertical-align:middle;">
-                    <div style="font-size:15px;font-weight:500;color:#111827;font-family:${EMAIL_FONT_STACK};">${item.title}</div>
-                    <div style="margin-top:4px;font-size:12px;color:#6b7280;font-family:${EMAIL_FONT_STACK};">${item.quantity} &times; ${formatNgn(item.unitPriceNgn)}</div>
-                  </td>
-                  <td style="padding:0;vertical-align:middle;text-align:right;">
-                    <div style="font-size:15px;font-weight:500;color:#111827;font-family:${EMAIL_FONT_STACK};">${formatNgn(item.lineTotalNgn)}</div>
-                  </td>
-                </tr>
-              </table>
-            </div>
-          `;
-        })
-        .join("")}
-      ${
-        order.items.length > visibleItems.length
-          ? `<div style="padding:12px 4px 8px;font-size:12px;color:#6b7280;">+${order.items.length - visibleItems.length} more item${order.items.length - visibleItems.length === 1 ? "" : "s"}</div>`
-          : ""
-      }
-    </div>
+    <p style="margin:0 0 6px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9ca3af;">Transfer</p>
+    <p style="margin:0 0 4px;font-size:14px;color:#111111;">${bank}</p>
+    <p style="margin:0 0 4px;font-size:14px;color:#111111;">${accountName}</p>
+    <p style="margin:0 0 4px;font-size:14px;color:#111111;">${accountNumber}</p>
+    ${instructions}
   `;
 }
 
-function buildOrderFacts(order: OrderNotificationSnapshot) {
-  return `
-    <div style="display:grid;gap:14px;">
-      <div style="border-radius:26px;background:#f3f1e9;padding:22px;border:1px solid rgba(0,0,0,0.02);">
-        <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;font-weight:500;margin-bottom:6px;">Order</div>
-        <div style="font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.03em;font-family:${EMAIL_FONT_STACK};">#${order.orderNumber}</div>
-      </div>
-      
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:separate;border-spacing:10px 0;margin:0 -10px;">
-        <tr>
-          <td width="50%" style="padding:0 10px;vertical-align:top;">
-            <div style="border-radius:20px;background:#f8f7f2;padding:15px 16px;border:1px solid rgba(0,0,0,0.01);">
-              <div style="font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#9ca3af;font-weight:500;margin-bottom:4px;">Total</div>
-              <div style="font-size:17px;font-weight:500;color:#111827;font-family:${EMAIL_FONT_STACK};">${formatNgn(order.totalNgn)}</div>
-            </div>
-          </td>
-          <td width="50%" style="padding:0 10px;vertical-align:top;">
-            <div style="border-radius:20px;background:#f8f7f2;padding:15px 16px;border:1px solid rgba(0,0,0,0.01);">
-              <div style="font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#9ca3af;font-weight:500;margin-bottom:4px;">Items</div>
-              <div style="font-size:17px;font-weight:500;color:#111827;font-family:${EMAIL_FONT_STACK};">${order.itemCount}</div>
-            </div>
-          </td>
-        </tr>
-      </table>
-
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:separate;border-spacing:10px 0;margin:0 -10px;">
-        <tr>
-          <td width="50%" style="padding:0 10px;vertical-align:top;">
-            <div style="border-radius:20px;background:#f8f7f2;padding:15px 16px;border:1px solid rgba(0,0,0,0.01);">
-              <div style="font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#9ca3af;font-weight:500;margin-bottom:4px;">Reference</div>
-              <div style="font-size:15px;font-weight:500;color:#111827;word-break:break-all;font-family:${EMAIL_FONT_STACK};">${order.transferReference}</div>
-            </div>
-          </td>
-          <td width="50%" style="padding:0 10px;vertical-align:top;">
-            <div style="border-radius:20px;background:#f8f7f2;padding:15px 16px;border:1px solid rgba(0,0,0,0.01);">
-              <div style="font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#9ca3af;font-weight:500;margin-bottom:4px;">Placed</div>
-              <div style="font-size:14px;font-weight:500;color:#111827;font-family:${EMAIL_FONT_STACK};">${formatEmailTimestamp(order.placedAt)}</div>
-            </div>
-          </td>
-        </tr>
-      </table>
-
-      ${buildProductSpotlight(order)}
-      ${buildOrderItems(order)}
-    </div>
-  `;
-}
-
-function buildActionLink(label: string, href: string) {
-  return `
-    <div style="margin-top:18px;">
-      <a href="${href}" style="display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;border-radius:999px;background:#0f3d2e;color:#ffffff;text-decoration:none;font-size:12px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;font-family:${EMAIL_FONT_STACK};">
-        ${label}
-      </a>
-    </div>
-  `;
+function buildOrderEditorial(input: {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  order: OrderNotificationSnapshot;
+  facts?: string[];
+  action?: string;
+  block?: string;
+  cta?: { label: string; url: string };
+  footnote?: string;
+}) {
+  return buildEditorialEmail({
+    eyebrow: input.eyebrow,
+    title: input.title,
+    subtitle: input.subtitle,
+    highlight: formatNgn(input.order.totalNgn),
+    reference: input.order.orderNumber,
+    facts: input.facts,
+    action: input.action,
+    block: input.block,
+    cta: input.cta,
+    footnote: input.footnote,
+  });
 }
 
 function buildGuestOrderLink(orderId: string) {
@@ -191,6 +126,82 @@ function buildAdminOrderLink(orderId: string) {
 
 function buildAdminPaymentsLink() {
   return `${serverEnv.public.appUrl}/admin/payments`;
+}
+
+const ORDER_EMAIL_PREVIEW_SNAPSHOT: OrderNotificationSnapshot = {
+  orderId: "preview-order-id",
+  orderNumber: "HOP-7A9F102C",
+  customerName: "Amina Musa",
+  customerEmail: "amina@example.com",
+  customerPhone: "+2348012345678",
+  totalNgn: 58900,
+  status: "awaiting_transfer",
+  paymentStatus: "awaiting_transfer",
+  fulfillmentStatus: "pending",
+  transferReference: "HOP-7A9F102C",
+  transferDeadlineAt: "2026-03-25T18:00:00.000Z",
+  placedAt: "2026-03-23T11:26:00.000Z",
+  bankName: "Providus Bank",
+  accountName: "House of Prax Ltd",
+  accountNumber: "0123456789",
+  instructions: "Use your transfer reference as narration to speed up review.",
+  deliveryAddress: "No. 12 Admiralty Way, Lekki Phase 1, Lagos",
+  itemCount: 3,
+  items: [
+    {
+      orderItemId: "preview-item-1",
+      title: "Sea Moss Berry Blend",
+      quantity: 1,
+      unitPriceNgn: 21900,
+      lineTotalNgn: 21900,
+      productSlug: "sea-moss-berry",
+      imageUrl: null,
+    },
+    {
+      orderItemId: "preview-item-2",
+      title: "Tropical Hydration Mix",
+      quantity: 2,
+      unitPriceNgn: 18500,
+      lineTotalNgn: 37000,
+      productSlug: "tropical-hydration",
+      imageUrl: null,
+    },
+  ],
+};
+
+export function buildOrderPlacedPreviewHtml() {
+  const order = ORDER_EMAIL_PREVIEW_SNAPSHOT;
+  return buildOrderEditorial({
+    eyebrow: "Order update",
+    title: "Order received",
+    subtitle: "Your House of Prax order is now in motion.",
+    order,
+    facts: buildOrderFactLines(order, { includeDeadline: true }),
+    action: "Complete transfer before the deadline.",
+    block: buildOrderTransferBlock(order),
+    cta: {
+      label: "Open order",
+      url: `${serverEnv.public.appUrl}/checkout/orders/${order.orderId}`,
+    },
+    footnote: "Add payment proof after transfer.",
+  });
+}
+
+export function buildDeliveryUpdatePreviewHtml() {
+  const order = ORDER_EMAIL_PREVIEW_SNAPSHOT;
+
+  return buildOrderEditorial({
+    eyebrow: "Delivery",
+    title: "On the way",
+    subtitle: "Your blend is already moving.",
+    order,
+    facts: buildOrderFactLines(order, { includeDelivery: true }),
+    action: "Track the drop in real time.",
+    cta: {
+      label: "Track order",
+      url: `${serverEnv.public.appUrl}/checkout/orders/${order.orderId}/tracking`,
+    },
+  });
 }
 
 async function sendSafe(input: {
@@ -312,22 +323,7 @@ export async function sendOrderPlacedNotifications(input: {
         timeStyle: "short",
       }).format(new Date(order.transferDeadlineAt))
     : "soon";
-  const bankBlock =
-    order.bankName && order.accountName && order.accountNumber
-      ? `
-        <div style="margin-top:18px;border-radius:24px;background:#f4f2ea;padding:18px;">
-          <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:500;">Transfer details</div>
-          <div style="margin-top:8px;font-size:18px;font-weight:500;color:#111827;">${order.bankName}</div>
-          <div style="margin-top:4px;font-size:15px;color:#374151;">${order.accountName}</div>
-          <div style="margin-top:4px;font-size:24px;font-weight:600;color:#111827;">${order.accountNumber}</div>
-          ${
-            order.instructions
-              ? `<div style="margin-top:10px;font-size:13px;line-height:1.6;color:#6b7280;">${order.instructions}</div>`
-              : ""
-          }
-        </div>
-      `
-      : "";
+  const bankBlock = buildOrderTransferBlock(order);
 
   const customerEmail = await getSendableCustomerEmail(order);
 
@@ -340,16 +336,28 @@ export async function sendOrderPlacedNotifications(input: {
       text: isRequest
         ? `Your House of Prax request ${order.orderNumber} has been received. Transfer details will appear after approval.`
         : `Your House of Prax order ${order.orderNumber} is waiting for transfer. Use reference ${order.transferReference}. Total: ${formatNgn(order.totalNgn)}.`,
-      html: buildShell({
-        eyebrow: "House of Prax",
+      html: buildOrderEditorial({
+        eyebrow: "Order update",
         title: isRequest ? "Request received" : "Order received",
-        intro: isRequest
-          ? "Praxy received your request. Transfer details will appear once it is accepted."
-          : `Your order is ready for transfer. Use the reference ${order.transferReference} and complete payment before ${deadlineText}.`,
-        bodyHtml: `${buildOrderFacts(order)}${isRequest ? "" : bankBlock}${input.customerLink ? buildActionLink("Open order", input.customerLink) : ""}`,
-        footer: isRequest
-          ? "You can follow the request from your order page."
-          : "Once payment proof is added, Praxy will review it from the console.",
+        subtitle: isRequest
+          ? "Your request is now in motion."
+          : "Your order is now in motion.",
+        order,
+        facts: buildOrderFactLines(order, {
+          includeDeadline: !isRequest,
+          includePlacedAt: true,
+        }),
+        action: !isRequest ? `Complete transfer before ${deadlineText}.` : undefined,
+        block: !isRequest ? bankBlock : undefined,
+        cta: input.customerLink
+          ? {
+              label: "Open order",
+              url: input.customerLink,
+            }
+          : undefined,
+        footnote: isRequest
+          ? "You can follow this from your order page."
+          : "Add payment proof after transfer.",
       }),
     });
   }
@@ -375,19 +383,23 @@ export async function sendOrderPlacedNotifications(input: {
       text: isRequest
         ? `New request ${order.orderNumber} from ${order.customerName}.`
         : `New order ${order.orderNumber} from ${order.customerName}. Total: ${formatNgn(order.totalNgn)}.`,
-      html: buildShell({
+      html: buildEditorialEmail({
         eyebrow: "Operations console",
         title: isRequest ? "New request" : "New order",
-        intro: isRequest
-          ? `${order.customerName} submitted a new order request.`
-          : `${order.customerName} just placed an order and is waiting for transfer instructions.`,
-        bodyHtml: `${buildOrderFacts(order)}
-          <div style="margin-top:18px;border-radius:24px;background:#f4f2ea;padding:18px;">
-            <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:500;">Customer</div>
-            <div style="margin-top:8px;font-size:18px;font-weight:500;color:#111827;">${order.customerName}</div>
-            <div style="margin-top:4px;font-size:15px;color:#374151;">${order.customerPhone}</div>
-          </div>
-          ${buildActionLink("Open order", adminHref)}`,
+        subtitle: isRequest
+          ? "A new request needs attention."
+          : "A new order needs attention.",
+        reference: order.orderNumber,
+        facts: [
+          order.customerName,
+          order.customerPhone,
+          formatNgn(order.totalNgn),
+        ],
+        action: "Review and take action.",
+        cta: {
+          label: "Open console",
+          url: adminHref,
+        },
       }),
     });
   }
@@ -425,13 +437,21 @@ export async function sendPaymentProofSubmittedNotifications(input: {
       text: proofIncluded
         ? `Payment proof for order ${order.orderNumber} has been received and is waiting for review.`
         : `Payment for order ${order.orderNumber} has been marked as sent and is waiting for review.`,
-      html: buildShell({
-        eyebrow: "House of Prax",
+      html: buildOrderEditorial({
+        eyebrow: "Payment",
         title: proofIncluded ? "Proof received" : "Payment submitted",
-        intro: proofIncluded
-          ? "Your payment proof is in. Praxy will review it shortly."
-          : "Your payment is marked as sent. Praxy will review it shortly.",
-        bodyHtml: `${buildOrderFacts(order)}${input.customerLink ? buildActionLink("Open order", input.customerLink) : ""}`,
+        subtitle: proofIncluded
+          ? "Your payment proof is in."
+          : "Your payment is marked as sent.",
+        order,
+        facts: buildOrderFactLines(order, { includePlacedAt: true }),
+        action: "Praxy will review this next.",
+        cta: input.customerLink
+          ? {
+              label: "Open order",
+              url: input.customerLink,
+            }
+          : undefined,
       }),
     });
   }
@@ -455,13 +475,19 @@ export async function sendPaymentProofSubmittedNotifications(input: {
       text: proofIncluded
         ? `Payment proof for order ${order.orderNumber} is ready for review.`
         : `Payment for order ${order.orderNumber} is ready for review.`,
-      html: buildShell({
+      html: buildEditorialEmail({
         eyebrow: "Operations console",
         title: proofIncluded ? "Proof waiting" : "Payment waiting",
-        intro: proofIncluded
-          ? `${order.customerName} added payment proof for order ${order.orderNumber}.`
-          : `${order.customerName} marked payment as sent for order ${order.orderNumber}.`,
-        bodyHtml: `${buildOrderFacts(order)}${buildActionLink("Open payments", adminHref)}`,
+        subtitle: proofIncluded
+          ? "A proof is waiting in queue."
+          : "A payment is waiting in queue.",
+        reference: order.orderNumber,
+        facts: [order.customerName, formatNgn(order.totalNgn)],
+        action: "Review and take action.",
+        cta: {
+          label: "Open console",
+          url: adminHref,
+        },
       }),
     });
   }
@@ -495,19 +521,19 @@ export async function sendTransferReminderNotification(input: {
     to: customerEmail,
     subject: `Transfer reminder for ${order.orderNumber}`,
     text: `Complete payment for order ${order.orderNumber} before the transfer window closes.`,
-    html: buildShell({
-      eyebrow: "House of Prax",
+    html: buildOrderEditorial({
+      eyebrow: "Transfer",
       title: "Transfer reminder",
-      intro: "Your order is still open. Complete the transfer before the window closes.",
-      bodyHtml: `${buildOrderFacts(order)}
-        <div style="margin-top:18px;border-radius:24px;background:#f4f2ea;padding:18px;">
-          <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:500;">Transfer details</div>
-          <div style="margin-top:8px;font-size:18px;font-weight:500;color:#111827;">${order.bankName ?? "Pending"}</div>
-          <div style="margin-top:4px;font-size:15px;color:#374151;">${order.accountName ?? "Pending"}</div>
-          <div style="margin-top:4px;font-size:24px;font-weight:600;color:#111827;">${order.accountNumber ?? "Pending"}</div>
-        </div>
-        ${buildActionLink("Open order", orderHref)}`,
-      footer: "Once the transfer is sent, tap the confirmation button from the order page.",
+      subtitle: "Your order is still open.",
+      order,
+      facts: buildOrderFactLines(order, { includeDeadline: true }),
+      action: "Complete transfer before the window closes.",
+      block: buildOrderTransferBlock(order),
+      cta: {
+        label: "Open order",
+        url: orderHref,
+      },
+      footnote: "Confirm payment from your order page after transfer.",
     }),
   });
 
@@ -540,12 +566,17 @@ export async function sendReviewReminderNotification(input: {
     to: customerEmail,
     subject: `Rate ${order.orderNumber}`,
     text: `Leave a quick rating for order ${order.orderNumber}.`,
-    html: buildShell({
-      eyebrow: "House of Prax",
+    html: buildOrderEditorial({
+      eyebrow: "Review",
       title: "One quick rating",
-      intro: "Your order is already delivered. A quick rating helps Praxy close the loop.",
-      bodyHtml: `${buildOrderFacts(order)}${buildActionLink("Rate order", orderHref)}`,
-      footer: "You can also rate it directly from your account order history.",
+      subtitle: "Your order has arrived.",
+      order,
+      facts: buildOrderFactLines(order, { includePlacedAt: true }),
+      action: "A quick rating helps us close the loop.",
+      cta: {
+        label: "Rate order",
+        url: orderHref,
+      },
     }),
   });
 
@@ -572,12 +603,18 @@ export async function sendPaymentQueueReminderNotification(input: {
     to: adminRecipients,
     subject: `Payment still waiting for ${order.orderNumber}`,
     text: `Order ${order.orderNumber} still needs payment review.`,
-    html: buildShell({
+    html: buildEditorialEmail({
       eyebrow: "Operations console",
       title: "Payment still waiting",
-      intro: `${order.customerName} is still waiting for payment review on order ${order.orderNumber}.`,
-      bodyHtml: `${buildOrderFacts(order)}${buildActionLink("Open payments", `${serverEnv.public.appUrl}/admin/payments`)}`,
-      footer: "Use the payments queue to confirm, reject, or keep it under review.",
+      subtitle: "A customer payment is still waiting.",
+      reference: order.orderNumber,
+      facts: [order.customerName, formatNgn(order.totalNgn)],
+      action: "Review and take action.",
+      cta: {
+        label: "Open console",
+        url: `${serverEnv.public.appUrl}/admin/payments`,
+      },
+      footnote: "Confirm, reject, or hold.",
     }),
   });
 
@@ -608,33 +645,39 @@ export async function sendReturnQueueReminderNotification(input: {
       ? {
           subject: `Return still waiting for ${order.orderNumber}`,
           title: "Return still waiting",
-          intro: `${order.customerName}'s return request is still waiting for review.`,
-          footer: "Approve or reject it from the order detail.",
+          intro: "A return request is still waiting.",
+          footer: "Approve or reject from order detail.",
         }
       : input.status === "approved"
         ? {
             subject: `Return still inbound for ${order.orderNumber}`,
             title: "Return still inbound",
-            intro: `${order.customerName}'s approved return is still waiting to be marked received.`,
-            footer: "Mark it received once the product is back with House of Prax.",
+            intro: "An approved return is still inbound.",
+            footer: "Mark received when the item arrives.",
           }
         : {
             subject: `Refund still open for ${order.orderNumber}`,
             title: "Refund still open",
-            intro: `${order.customerName}'s return is received, but the refund step is still open.`,
-            footer: "Complete the refund from the order detail once it has been sent.",
+            intro: "A received return still needs refund action.",
+            footer: "Complete refund from order detail.",
           };
 
   const sent = await sendSafe({
     to: adminRecipients,
     subject: copy.subject,
     text: `${copy.title}. Order ${order.orderNumber}.`,
-    html: buildShell({
+    html: buildEditorialEmail({
       eyebrow: "Operations console",
       title: copy.title,
-      intro: copy.intro,
-      bodyHtml: `${buildOrderFacts(order)}${buildActionLink("Open order", `${serverEnv.public.appUrl}/admin/orders/${order.orderId}`)}`,
-      footer: copy.footer,
+      subtitle: copy.intro,
+      reference: order.orderNumber,
+      facts: [order.customerName, formatNgn(order.totalNgn)],
+      action: "Review and take action.",
+      cta: {
+        label: "Open console",
+        url: `${serverEnv.public.appUrl}/admin/orders/${order.orderId}`,
+      },
+      footnote: copy.footer,
     }),
   });
 
@@ -670,33 +713,31 @@ export async function sendPaymentDecisionNotification(input: {
       ? {
           subject: `Payment confirmed for ${order.orderNumber}`,
           title: "Payment confirmed",
-          intro: "Your payment is confirmed. House of Prax is preparing your order.",
+          intro: "Your payment is confirmed. Preparation has started.",
         }
       : input.action === "rejected"
         ? {
             subject: `Payment update for ${order.orderNumber}`,
             title: "Payment needs attention",
-            intro: "Your payment could not be confirmed yet. Please review the note from Praxy.",
+            intro: "Your payment could not be confirmed yet.",
           }
         : {
             subject: `Payment under review for ${order.orderNumber}`,
             title: "Under review",
-            intro: "Your payment is under review. You will get another update once it is cleared.",
+            intro: "Your payment is under review.",
           };
 
   await sendSafe({
     to: customerEmail,
     subject: copy.subject,
     text: `${copy.title}. Order ${order.orderNumber}.`,
-    html: buildShell({
-      eyebrow: "House of Prax",
+    html: buildOrderEditorial({
+      eyebrow: "Payment",
       title: copy.title,
-      intro: copy.intro,
-      bodyHtml: `${buildOrderFacts(order)}${
-        input.note
-          ? `<div style="margin-top:18px;border-radius:24px;background:#f4f2ea;padding:18px;font-size:14px;line-height:1.6;color:#374151;">${input.note}</div>`
-          : ""
-      }`,
+      subtitle: copy.intro,
+      order,
+      facts: buildOrderFactLines(order),
+      action: input.note ?? undefined,
     }),
   });
 
@@ -732,12 +773,12 @@ export async function sendDeliveryStatusNotification(input: {
       ? {
           subject: `Delivered: ${order.orderNumber}`,
           title: "Delivered",
-          intro: "Your House of Prax order has been delivered. Open it once more to rate it.",
+          intro: "Your House of Prax order has arrived.",
         }
       : {
           subject: `Out for delivery: ${order.orderNumber}`,
           title: "On the way",
-          intro: "Your House of Prax order is now on the road.",
+          intro: "Your blend is already moving.",
         };
   const orderHref = buildGuestOrderLink(order.orderId);
 
@@ -745,20 +786,20 @@ export async function sendDeliveryStatusNotification(input: {
     to: customerEmail,
     subject: copy.subject,
     text: `${copy.title}. Order ${order.orderNumber}.`,
-    html: buildShell({
-      eyebrow: "House of Prax",
+    html: buildOrderEditorial({
+      eyebrow: "Delivery",
       title: copy.title,
-      intro: copy.intro,
-      bodyHtml: `${buildOrderFacts(order)}
-        <div style="margin-top:18px;border-radius:24px;background:#f4f2ea;padding:18px;">
-          <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:500;">Drop</div>
-          <div style="margin-top:8px;font-size:15px;color:#111827;">${order.deliveryAddress}</div>
-        </div>
-        ${buildActionLink(input.status === "delivered" ? "Rate order" : "Open order", orderHref)}`,
-      footer:
+      subtitle: copy.intro,
+      order,
+      facts: buildOrderFactLines(order, { includeDelivery: true }),
+      action:
         input.status === "delivered"
           ? "A quick rating helps Praxy close the loop."
-          : undefined,
+          : "Track your delivery in real time.",
+      cta: {
+        label: input.status === "delivered" ? "Rate order" : "Open order",
+        url: orderHref,
+      },
     }),
   });
 
@@ -795,15 +836,13 @@ export async function sendOrderCancelledNotification(input: {
     to: customerEmail,
     subject: `Order cancelled: ${order.orderNumber}`,
     text: `Order ${order.orderNumber} has been cancelled.`,
-    html: buildShell({
-      eyebrow: "House of Prax",
+    html: buildOrderEditorial({
+      eyebrow: "Order update",
       title: "Order cancelled",
-      intro: "This order has been closed from the operations console.",
-      bodyHtml: `${buildOrderFacts(order)}${
-        input.note
-          ? `<div style="margin-top:18px;border-radius:24px;background:#f4f2ea;padding:18px;font-size:14px;line-height:1.6;color:#374151;">${input.note}</div>`
-          : ""
-      }`,
+      subtitle: "This order has been closed.",
+      order,
+      facts: buildOrderFactLines(order),
+      action: input.note ?? undefined,
     }),
   });
 
@@ -829,12 +868,13 @@ export async function sendOrderReturnRequestedNotifications(input: {
       to: customerEmail,
       subject: `Return request received for ${order.orderNumber}`,
       text: `Your return request for order ${order.orderNumber} is with Praxy now.`,
-      html: buildShell({
-        eyebrow: "House of Prax",
+      html: buildOrderEditorial({
+        eyebrow: "Returns",
         title: "Return received",
-        intro: "Your return request is now in the operations queue.",
-        bodyHtml: buildOrderFacts(order),
-        footer: "You will get another update once Praxy reviews it.",
+        subtitle: "Your return request is now in motion.",
+        order,
+        facts: buildOrderFactLines(order, { includePlacedAt: true }),
+        action: "We will update you after review.",
       }),
     });
   }
@@ -851,11 +891,17 @@ export async function sendOrderReturnRequestedNotifications(input: {
       to: adminRecipients,
       subject: `Return requested for ${order.orderNumber}`,
       text: `Order ${order.orderNumber} has a new return request.`,
-      html: buildShell({
+      html: buildEditorialEmail({
         eyebrow: "Operations console",
         title: "Return requested",
-        intro: `${order.customerName} requested a return for order ${order.orderNumber}.`,
-        bodyHtml: `${buildOrderFacts(order)}${buildActionLink("Open order", `${serverEnv.public.appUrl}/admin/orders/${order.orderId}`)}`,
+        subtitle: "A return request needs attention.",
+        reference: order.orderNumber,
+        facts: [order.customerName, formatNgn(order.totalNgn)],
+        action: "Review and take action.",
+        cta: {
+          label: "Open console",
+          url: `${serverEnv.public.appUrl}/admin/orders/${order.orderId}`,
+        },
       }),
     });
   }
@@ -884,12 +930,17 @@ export async function sendOrderReturnProofSubmittedNotifications(input: {
       to: customerEmail,
       subject: `Return proof received for ${order.orderNumber}`,
       text: `Return proof for order ${order.orderNumber} has been received.`,
-      html: buildShell({
-        eyebrow: "House of Prax",
+      html: buildOrderEditorial({
+        eyebrow: "Returns",
         title: "Return proof received",
-        intro: "Your return proof is in. Praxy can now keep the return moving.",
-        bodyHtml: `${buildOrderFacts(order)}${buildActionLink("Open order", buildGuestOrderLink(order.orderId))}`,
-        footer: "You will get another update if Praxy leaves the return queue or completes the refund.",
+        subtitle: "Your return proof is in.",
+        order,
+        facts: buildOrderFactLines(order, { includePlacedAt: true }),
+        action: "Your return case is moving.",
+        cta: {
+          label: "Open order",
+          url: buildGuestOrderLink(order.orderId),
+        },
       }),
     });
   }
@@ -906,12 +957,17 @@ export async function sendOrderReturnProofSubmittedNotifications(input: {
       to: adminRecipients,
       subject: `Return proof waiting for ${order.orderNumber}`,
       text: `Order ${order.orderNumber} now has return proof waiting in the order detail.`,
-      html: buildShell({
+      html: buildEditorialEmail({
         eyebrow: "Operations console",
         title: "Return proof waiting",
-        intro: `${order.customerName} added return proof for order ${order.orderNumber}.`,
-        bodyHtml: `${buildOrderFacts(order)}${buildActionLink("Open order", `${serverEnv.public.appUrl}/admin/orders/${order.orderId}`)}`,
-        footer: "Use the return section in the order detail to review the proof and continue the case.",
+        subtitle: "Return proof is waiting for review.",
+        reference: order.orderNumber,
+        facts: [order.customerName, formatNgn(order.totalNgn)],
+        action: "Review and continue.",
+        cta: {
+          label: "Open console",
+          url: `${serverEnv.public.appUrl}/admin/orders/${order.orderId}`,
+        },
       }),
     });
   }
@@ -946,20 +1002,20 @@ export async function sendOrderReturnDecisionNotification(input: {
       ? {
           subject: `Return approved for ${order.orderNumber}`,
           title: "Return approved",
-          intro: "Praxy approved your return request.",
-          footer: "Once the return is received, the refund step can be completed.",
+          intro: "Your return request is approved.",
+          footer: "Refund can proceed after receipt.",
         }
       : input.action === "received"
         ? {
             subject: `Return received for ${order.orderNumber}`,
             title: "Return received",
-            intro: "Your returned order is back with House of Prax.",
-            footer: "Praxy can now complete the refund step.",
+            intro: "Your return is now received.",
+            footer: "Refund can now be completed.",
           }
         : {
             subject: `Return update for ${order.orderNumber}`,
             title: "Return not approved",
-            intro: "Praxy could not approve this return request.",
+            intro: "This return request could not be approved.",
             footer: undefined,
           };
 
@@ -967,16 +1023,14 @@ export async function sendOrderReturnDecisionNotification(input: {
     to: customerEmail,
     subject: copy.subject,
     text: `${copy.title}. Order ${order.orderNumber}.`,
-    html: buildShell({
-      eyebrow: "House of Prax",
+    html: buildOrderEditorial({
+      eyebrow: "Returns",
       title: copy.title,
-      intro: copy.intro,
-      bodyHtml: `${buildOrderFacts(order)}${
-        input.note
-          ? `<div style="margin-top:18px;border-radius:24px;background:#f4f2ea;padding:18px;font-size:14px;line-height:1.6;color:#374151;">${input.note}</div>`
-          : ""
-      }`,
-      footer: copy.footer,
+      subtitle: copy.intro,
+      order,
+      facts: buildOrderFactLines(order),
+      action: input.note ?? undefined,
+      footnote: copy.footer,
     }),
   });
 
@@ -1013,26 +1067,17 @@ export async function sendOrderRefundedNotification(input: {
     to: customerEmail,
     subject: `Refund sent for ${order.orderNumber}`,
     text: `Refund for order ${order.orderNumber} has been sent.`,
-    html: buildShell({
-      eyebrow: "House of Prax",
+    html: buildOrderEditorial({
+      eyebrow: "Refund",
       title: "Refund sent",
-      intro: "Praxy marked this refund as sent from the operations console.",
-      bodyHtml: `${buildOrderFacts(order)}
-        <div style="margin-top:18px;display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr));">
-          <div style="border-radius:22px;background:#f4f2ea;padding:14px 16px;">
-            <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:500;">Refund</div>
-            <div style="margin-top:6px;font-size:18px;font-weight:500;color:#111827;">${formatNgn(input.refundAmountNgn ?? order.totalNgn)}</div>
-          </div>
-          <div style="border-radius:22px;background:#f4f2ea;padding:14px 16px;">
-            <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7280;font-weight:500;">Reference</div>
-            <div style="margin-top:6px;font-size:18px;font-weight:500;color:#111827;">${input.refundReference ?? "Pending"}</div>
-          </div>
-        </div>
-        ${
-          input.note
-            ? `<div style="margin-top:18px;border-radius:24px;background:#f4f2ea;padding:18px;font-size:14px;line-height:1.6;color:#374151;">${input.note}</div>`
-            : ""
-      }`,
+      subtitle: "Your refund is now in motion.",
+      order,
+      facts: [
+        formatNgn(input.refundAmountNgn ?? order.totalNgn),
+        input.refundReference ?? "Pending",
+        ...(input.note ? [input.note] : []),
+      ],
+      action: "Keep this reference for your records.",
     }),
   });
 

@@ -635,6 +635,9 @@ Implement in this order:
 
 After that:
 
+- Error boundary
+- Modal and sheet zindex should be above nav
+- Mobile crud operations should be seemingless and easy (catalog and order managemnt, quick and detailed crud)
 1. enforce viewport-native mobile, tablet, and desktop compositions across remaining admin and portal routes
 2. deepen delivery quality where ETA/live behavior still feels thin
 3. harden uploads and decide the next audit/push expansion scope
