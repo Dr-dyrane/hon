@@ -102,6 +102,12 @@ export function AdminTeamManager({ users }: { users: AdminUserSummary[] }) {
                     "glass-morphism w-full rounded-[30px] bg-[color:var(--surface)]/88 p-4 text-left shadow-[0_18px_40px_rgba(15,23,42,0.06)] transition-colors duration-200 md:p-5",
                     selected && "bg-accent text-accent-label"
                   )}
+
+                  style={
+                    {
+                      background: selected ? 'slate' : ''
+                    }
+                  }
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
