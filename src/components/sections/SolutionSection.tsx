@@ -1,17 +1,15 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   motion,
   useReducedMotion,
-  useScroll,
-  useSpring,
-  useTransform,
 } from "framer-motion";
 import Image from "next/image";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
 import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
+import { useUI } from "@/components/providers/UIProvider";
 import { CleanIcon, PlantIcon, DigestionIcon } from "@/components/ui/Icons";
 import { Lightbulb } from "lucide-react";
 import { LiquidGlassCard } from "@/components/ui/LiquidGlassCard";
@@ -34,10 +32,12 @@ export function SolutionSection({
   isScrollingIntoSection: (sectionId: string) => boolean;
 }) {
   const { brand, homeSectionsByKey, productIds, productsById } = useMarketingContent();
+  const { performanceMode } = useUI();
   const prefersReducedMotion = useReducedMotion();
   const isMobile = useMobile();
-  const enableAmbientMotion = !prefersReducedMotion && !isMobile;
-  const containerRef = useRef<HTMLDivElement>(null);
+  const enableAmbientMotion =
+    performanceMode === "premium" && !prefersReducedMotion && !isMobile;
+  const allow3D = performanceMode === "premium";
   const [Product3DViewerComponent, setProduct3DViewerComponent] = useState<
     (typeof import("@/components/3d/Product3DViewer"))["Product3DViewer"] | null
   >(null);
@@ -50,7 +50,13 @@ export function SolutionSection({
   const scrollActive = isScrollingIntoSection("solution");
 
   useEffect(() => {
-    if (!scrollActive || !currentProduct || !productsById[currentProduct]?.model || Product3DViewerComponent) {
+    if (
+      !allow3D ||
+      !scrollActive ||
+      !currentProduct ||
+      !productsById[currentProduct]?.model ||
+      Product3DViewerComponent
+    ) {
       return;
     }
 
@@ -65,17 +71,7 @@ export function SolutionSection({
     return () => {
       active = false;
     };
-  }, [Product3DViewerComponent, currentProduct, productsById, scrollActive]);
-
-  // Parallax & Scroll Effects
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"],
-  });
-
-  const rotate = useTransform(scrollYProgress, [0, 1], [0, 45]);
-  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.8, 1, 0.9]);
-  const springScale = useSpring(scale, { stiffness: 100, damping: 30 });
+  }, [Product3DViewerComponent, allow3D, currentProduct, productsById, scrollActive]);
 
   if (!currentProduct || !productsById[currentProduct]) return null;
 
@@ -84,13 +80,22 @@ export function SolutionSection({
       {/* Background Cinematic Atmosphere */}
       <div className="absolute inset-0 pointer-events-none">
         <motion.div 
-          style={enableAmbientMotion ? { rotate } : undefined}
+          animate={
+            enableAmbientMotion
+              ? { rotate: [0, 18, 0], scale: [1, 1.04, 1] }
+              : undefined
+          }
+          transition={
+            enableAmbientMotion
+              ? { duration: 18, repeat: Infinity, ease: "easeInOut" }
+              : undefined
+          }
           className="absolute -top-[20%] -right-[10%] w-[60%] aspect-square rounded-full bg-accent/5 blur-[120px]" 
         />
         <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-system-background to-transparent" />
       </div>
 
-      <div ref={containerRef} className="mx-auto flex w-full max-w-7xl flex-col items-center relative z-10">
+      <div className="mx-auto flex w-full max-w-7xl flex-col items-center relative z-10">
         <div className="mb-12 flex flex-col items-center text-center sm:mb-16 lg:mb-20">
           <HeroEyebrow position="center" animated>
             <Lightbulb className="w-3.5 h-3.5 mr-3 text-label" />
@@ -116,7 +121,6 @@ export function SolutionSection({
 
           {/* Central 3D Showcase */}
           <motion.div 
-            style={{ scale: springScale }}
             className="order-1 relative flex items-center justify-center py-4 sm:py-6 md:py-8 lg:order-2 lg:col-span-6 lg:py-12"
           >
             {/* Orbital Glass Rings */}
@@ -142,7 +146,7 @@ export function SolutionSection({
               <div className="absolute w-[70%] aspect-square bg-accent/[0.03] rounded-full blur-3xl" />
             </div>
 
-            {scrollActive && Product3DViewerComponent ? (
+            {allow3D && scrollActive && Product3DViewerComponent ? (
               <Product3DViewerComponent
                 modelPath={productsById[currentProduct]?.model ?? ""}
                 theme="light"

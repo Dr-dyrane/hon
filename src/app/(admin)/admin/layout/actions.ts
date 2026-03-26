@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
+import { revalidateMarketingSnapshot } from "@/lib/marketing/cache";
 import { 
   ensureLayoutDraft, 
   publishLayoutVersion, 
@@ -75,6 +76,7 @@ export async function publishDraftAction(versionId: string) {
       email: actor.email,
       role: "admin",
     });
+    revalidateMarketingSnapshot();
     revalidatePath("/admin/layout");
     revalidatePath("/"); // Revalidate marketing home
     return { success: true };
@@ -94,6 +96,7 @@ export async function restoreLayoutVersionAction(versionId: string) {
       email: actor.email,
       role: "admin",
     });
+    revalidateMarketingSnapshot();
     revalidatePath("/admin/layout");
     revalidatePath("/"); // Revalidate marketing home
     return { success: true };

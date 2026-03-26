@@ -7,6 +7,7 @@ import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
 import { BadgeList } from "@/components/ui/Badge";
 import { Camera, ChevronRight, ChevronLeft } from "lucide-react";
 import Image from "next/image";
+import { useUI } from "@/components/providers/UIProvider";
 import { cn } from "@/lib/utils";
 import { useMobile } from "@/hooks/useMobile";
 
@@ -43,9 +44,11 @@ const IMAGES = [
 
 export function LifestyleGallery() {
   const [index, setIndex] = useState(0);
+  const { performanceMode } = useUI();
   const prefersReducedMotion = useReducedMotion();
   const isMobile = useMobile();
-  const lightweightMode = isMobile || prefersReducedMotion;
+  const lightweightMode =
+    performanceMode !== "premium" || isMobile || prefersReducedMotion;
 
   const next = () => setIndex((prev) => (prev + 1) % IMAGES.length);
   const prev = () => setIndex((prev) => (prev - 1 + IMAGES.length) % IMAGES.length);
@@ -75,7 +78,12 @@ export function LifestyleGallery() {
           }
           className="absolute -top-[10%] -left-[10%] w-[50%] aspect-square rounded-full bg-accent/10 blur-[120px]" 
         />
-        <div className="absolute inset-0 backdrop-blur-3xl bg-system-background/20" />
+        <div
+          className={cn(
+            "absolute inset-0 bg-system-background/20",
+            performanceMode === "premium" ? "backdrop-blur-3xl" : "backdrop-blur-md"
+          )}
+        />
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-[1400px]">
@@ -139,7 +147,7 @@ export function LifestyleGallery() {
             </AnimatePresence>
           ) : (
             <>
-              <AnimatePresence mode="popLayout" initial={false}>
+              <AnimatePresence initial={false}>
                 {IMAGES.map((image, i) => {
                   const isCenter = i === index;
                   const isNext = i === (index + 1) % IMAGES.length;
@@ -177,6 +185,7 @@ export function LifestyleGallery() {
                           src={image.src}
                           alt={image.alt}
                           fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 85vw, 900px"
                           className="object-cover transition-transform duration-1000 group-hover:scale-110"
                         />
 

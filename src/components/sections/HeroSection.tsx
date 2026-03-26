@@ -7,6 +7,7 @@ import { BadgeList } from "@/components/ui/Badge";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
+import { useUI } from "@/components/providers/UIProvider";
 import { cn } from "@/lib/utils";
 import { ProductFallback } from "@/components/3d/ProductFallback";
 import { useHydrated } from "@/hooks/useHydrated";
@@ -14,6 +15,7 @@ import type { ProductId } from "@/lib/marketing/types";
 
 export function HeroSection() {
   const { homeSectionsByKey, productIds, productsById } = useMarketingContent();
+  const { performanceMode } = useUI();
   const { resolvedTheme } = useTheme();
   const hydrated = useHydrated();
   const [enableHero3D, setEnableHero3D] = useState(false);
@@ -28,9 +30,10 @@ export function HeroSection() {
       ? heroSettings.featuredProductId
       : productIds[0] ?? null;
   const [currentProduct, setCurrentProduct] = useState<ProductId | null>(defaultProductId);
+  const canUseHero3D = performanceMode === "premium";
 
   useEffect(() => {
-    if (!enableHero3D || Product3DCarouselComponent) {
+    if (!enableHero3D || !canUseHero3D || Product3DCarouselComponent) {
       return;
     }
 
@@ -45,11 +48,11 @@ export function HeroSection() {
     return () => {
       active = false;
     };
-  }, [Product3DCarouselComponent, enableHero3D]);
+  }, [Product3DCarouselComponent, canUseHero3D, enableHero3D]);
 
   const isDark = hydrated && resolvedTheme === "dark";
   const requestHero3D = () => {
-    if (!hydrated) {
+    if (!hydrated || !canUseHero3D) {
       return;
     }
     setEnableHero3D(true);
@@ -159,7 +162,7 @@ export function HeroSection() {
               </div>
             )}
 
-            {enableHero3D && Product3DCarouselComponent && (
+            {enableHero3D && canUseHero3D && Product3DCarouselComponent && (
               <Product3DCarouselComponent
                 activeId={currentProduct}
                 onChange={setCurrentProduct}

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
+import { revalidateMarketingSnapshot } from "@/lib/marketing/cache";
 import { 
   archiveAdminCatalogProduct,
   createAdminCatalogProduct,
@@ -18,6 +19,7 @@ import {
 import { deleteFromS3 } from "@/lib/storage/s3";
 
 function revalidateCatalogPaths(productId?: string) {
+  revalidateMarketingSnapshot();
   revalidatePath("/");
   revalidatePath("/admin/catalog/products");
 

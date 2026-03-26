@@ -17,6 +17,8 @@ interface LiquidGlassState {
   isScrolling: boolean;
 }
 
+export type PerformanceMode = "premium" | "safe" | "flat";
+
 interface NavUIContextType {
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
@@ -24,10 +26,12 @@ interface NavUIContextType {
   setIsScrollNavCollapsed: (collapsed: boolean) => void;
   hasActiveOverlay: boolean;
   setOverlayActive: (id: string, active: boolean) => void;
+  performanceMode: PerformanceMode;
 }
 
 interface LiquidGlassContextType {
   liquidGlassState: LiquidGlassState;
+  performanceMode: PerformanceMode;
 }
 
 const NavUIContext = createContext<NavUIContextType | undefined>(undefined);
@@ -43,14 +47,58 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrollNavCollapsed, setIsScrollNavCollapsed] = useState(true);
   const [activeOverlayIds, setActiveOverlayIds] = useState<string[]>([]);
+  const [performanceMode, setPerformanceMode] = useState<PerformanceMode>("premium");
   const [liquidGlassState, setLiquidGlassState] = useState(defaultLiquidGlassState);
   const stateRef = useRef(defaultLiquidGlassState);
 
   useEffect(() => {
-    const canTrackPointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const deviceNavigator = navigator as Navigator & { deviceMemory?: number };
+
+    const resolvePerformanceMode = (): PerformanceMode => {
+      if (reducedMotionQuery.matches) {
+        return "flat";
+      }
+
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isAndroid = userAgent.includes("android");
+      const deviceMemory = deviceNavigator.deviceMemory ?? null;
+      const hardwareConcurrency = navigator.hardwareConcurrency ?? null;
+      const lowPowerDevice =
+        (typeof deviceMemory === "number" && deviceMemory <= 4) ||
+        (typeof hardwareConcurrency === "number" && hardwareConcurrency <= 4);
+
+      if (isAndroid || lowPowerDevice) {
+        return "safe";
+      }
+
+      return "premium";
+    };
+
+    const applyPerformanceMode = () => {
+      setPerformanceMode(resolvePerformanceMode());
+    };
+
+    applyPerformanceMode();
+    reducedMotionQuery.addEventListener("change", applyPerformanceMode);
+
+    return () => {
+      reducedMotionQuery.removeEventListener("change", applyPerformanceMode);
+    };
+  }, []);
+
+  useEffect(() => {
+    const canTrackPointer =
+      performanceMode === "premium" &&
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const shouldTrackScrollVelocity = performanceMode === "premium";
     let rafId: number | null = null;
     let lastScrollY = window.scrollY;
     let scrollTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    if (!shouldTrackScrollVelocity) {
+      stateRef.current = defaultLiquidGlassState;
+    }
 
     const flush = () => {
       rafId = null;
@@ -77,6 +125,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
     };
 
     const handleScroll = () => {
+      if (!shouldTrackScrollVelocity) return;
+
       const currentScrollY = window.scrollY;
 
       stateRef.current = {
@@ -101,17 +151,21 @@ export function UIProvider({ children }: { children: ReactNode }) {
     if (canTrackPointer) {
       window.addEventListener("mousemove", handleMouseMove, { passive: true });
     }
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    if (shouldTrackScrollVelocity) {
+      window.addEventListener("scroll", handleScroll, { passive: true });
+    }
 
     return () => {
       if (canTrackPointer) {
         window.removeEventListener("mousemove", handleMouseMove);
       }
-      window.removeEventListener("scroll", handleScroll);
+      if (shouldTrackScrollVelocity) {
+        window.removeEventListener("scroll", handleScroll);
+      }
       if (rafId !== null) cancelAnimationFrame(rafId);
       if (scrollTimeout) clearTimeout(scrollTimeout);
     };
-  }, []);
+  }, [performanceMode]);
 
   const setOverlayActive = useCallback((id: string, active: boolean) => {
     setActiveOverlayIds((current) => {
@@ -133,6 +187,14 @@ export function UIProvider({ children }: { children: ReactNode }) {
     };
   }, [hasActiveOverlay]);
 
+  useEffect(() => {
+    document.documentElement.dataset.performanceMode = performanceMode;
+
+    return () => {
+      delete document.documentElement.dataset.performanceMode;
+    };
+  }, [performanceMode]);
+
   const navValue = useMemo(
     () => ({
       isMobileMenuOpen,
@@ -141,53 +203,62 @@ export function UIProvider({ children }: { children: ReactNode }) {
       setIsScrollNavCollapsed,
       hasActiveOverlay,
       setOverlayActive,
+      performanceMode,
     }),
-    [hasActiveOverlay, isMobileMenuOpen, isScrollNavCollapsed, setOverlayActive]
+    [
+      hasActiveOverlay,
+      isMobileMenuOpen,
+      isScrollNavCollapsed,
+      performanceMode,
+      setOverlayActive,
+    ]
   );
 
   const liquidGlassValue = useMemo(
-    () => ({ liquidGlassState }),
-    [liquidGlassState]
+    () => ({ liquidGlassState, performanceMode }),
+    [liquidGlassState, performanceMode]
   );
 
   return (
     <NavUIContext.Provider value={navValue}>
       <LiquidGlassContext.Provider value={liquidGlassValue}>
-        <svg
-          aria-hidden="true"
-          focusable="false"
-          style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}
-        >
-          <filter id="liquid-distortion">
-            <feTurbulence
-              baseFrequency="0.02"
-              numOctaves="3"
-              result="turbulence"
-              seed={0}
-            >
-              <animate
-                attributeName="baseFrequency"
-                values="0.02;0.025;0.02"
-                dur="8s"
-                repeatCount="indefinite"
+        {performanceMode === "premium" ? (
+          <svg
+            aria-hidden="true"
+            focusable="false"
+            style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}
+          >
+            <filter id="liquid-distortion">
+              <feTurbulence
+                baseFrequency="0.02"
+                numOctaves="3"
+                result="turbulence"
+                seed={0}
+              >
+                <animate
+                  attributeName="baseFrequency"
+                  values="0.02;0.025;0.02"
+                  dur="8s"
+                  repeatCount="indefinite"
+                />
+              </feTurbulence>
+              <feDisplacementMap
+                in="SourceGraphic"
+                in2="turbulence"
+                scale="3"
+                xChannelSelector="R"
+                yChannelSelector="G"
               />
-            </feTurbulence>
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="turbulence"
-              scale="3"
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-            <feGaussianBlur stdDeviation="0.5" />
-            <feColorMatrix
-              values="1 0 0 0 0
-                      0 1 0 0 0
-                      0 0 1 0 0
-                      0 0 0 0.95 0"
-            />
-          </filter>
-        </svg>
+              <feGaussianBlur stdDeviation="0.5" />
+              <feColorMatrix
+                values="1 0 0 0 0
+                        0 1 0 0 0
+                        0 0 1 0 0
+                        0 0 0 0.95 0"
+              />
+            </filter>
+          </svg>
+        ) : null}
         {children}
       </LiquidGlassContext.Provider>
     </NavUIContext.Provider>

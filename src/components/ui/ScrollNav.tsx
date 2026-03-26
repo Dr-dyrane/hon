@@ -7,6 +7,7 @@ import { useTheme } from "next-themes";
 import { Home, AlertTriangle, Lightbulb, Sparkles, Leaf, Cog, Star, ShoppingBag, Rocket, TestTube, Sun, Moon, X, UnfoldVertical } from "lucide-react";
 import { LucideProps } from "lucide-react";
 import { useHydrated } from "@/hooks/useHydrated";
+import { useMobile } from "@/hooks/useMobile";
 
 interface ScrollNavProps {
   className?: string;
@@ -34,9 +35,10 @@ const SECTIONS: Section[] = [
 export function ScrollNav({ className }: ScrollNavProps) {
   const [activeSection, setActiveSection] = useState<string>("hero");
   const [isVisible, setIsVisible] = useState(false);
-  const { isMobileMenuOpen, isScrollNavCollapsed, setIsScrollNavCollapsed } = useUI();
+  const { isMobileMenuOpen, isScrollNavCollapsed, performanceMode, setIsScrollNavCollapsed } = useUI();
   const { theme, setTheme } = useTheme();
   const hydrated = useHydrated();
+  const isMobile = useMobile(1024);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -74,6 +76,10 @@ export function ScrollNav({ className }: ScrollNavProps) {
       element.scrollIntoView({ behavior: "smooth" });
     }
   };
+
+  if (isMobile || performanceMode !== "premium") {
+    return null;
+  }
 
   return (
     <nav

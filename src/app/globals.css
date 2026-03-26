@@ -659,6 +659,68 @@ body[data-overlay-active="true"] .z-layer-mobile-fab {
   }
 }
 
+:root[data-performance-mode='safe'] .liquid-glass,
+:root[data-performance-mode='safe'] .liquid-glass-clear,
+:root[data-performance-mode='safe'] .liquid-glass-tinted,
+:root[data-performance-mode='safe'] .liquid-glass-subtle,
+:root[data-performance-mode='safe'] .liquid-glass-medium,
+:root[data-performance-mode='safe'] .liquid-glass-strong {
+  backdrop-filter: blur(10px) saturate(120%) brightness(1.02);
+  -webkit-backdrop-filter: blur(10px) saturate(120%) brightness(1.02);
+}
+
+:root[data-performance-mode='safe'] .liquid-glass::before,
+:root[data-performance-mode='safe'] .iridescent-overlay {
+  animation: none;
+}
+
+:root[data-performance-mode='safe'] .liquid-glass::before {
+  opacity: 0.3;
+}
+
+:root[data-performance-mode='safe'] .liquid-glass.scrolling-fast,
+:root[data-performance-mode='safe'] .liquid-glass.scrolling-slow {
+  backdrop-filter: blur(10px) saturate(120%) brightness(1.02);
+  -webkit-backdrop-filter: blur(10px) saturate(120%) brightness(1.02);
+}
+
+:root[data-performance-mode='safe'] .button-secondary {
+  backdrop-filter: blur(8px) saturate(110%);
+  -webkit-backdrop-filter: blur(8px) saturate(110%);
+}
+
+:root[data-performance-mode='flat'] .liquid-glass,
+:root[data-performance-mode='flat'] .liquid-glass-clear,
+:root[data-performance-mode='flat'] .liquid-glass-tinted,
+:root[data-performance-mode='flat'] .liquid-glass-subtle,
+:root[data-performance-mode='flat'] .liquid-glass-medium,
+:root[data-performance-mode='flat'] .liquid-glass-strong {
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--surface) 88%, rgba(255, 255, 255, 0.08)) 0%,
+      color-mix(in srgb, var(--surface) 96%, transparent) 100%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--shadow-card);
+}
+
+:root[data-performance-mode='flat'] .liquid-glass::before,
+:root[data-performance-mode='flat'] .liquid-glass::after,
+:root[data-performance-mode='flat'] .iridescent-overlay {
+  display: none;
+}
+
+:root[data-performance-mode='flat'] .liquid-glass:hover {
+  transform: none;
+  box-shadow: var(--shadow-card);
+}
+
+:root[data-performance-mode='flat'] .button-secondary {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
 

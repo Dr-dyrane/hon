@@ -10,6 +10,7 @@ import { useMarketingContent } from "@/components/providers/MarketingContentProv
 import { formatNgn, getProductPriceSnapshot } from "@/lib/commerce";
 import { Button } from "@/components/ui/Button";
 import { useCommerce } from "@/components/providers/CommerceProvider";
+import { useUI } from "@/components/providers/UIProvider";
 import { LiquidGlassCard } from "@/components/ui/LiquidGlassCard";
 import { cn } from "@/lib/utils";
 import type { ProductId } from "@/lib/marketing/types";
@@ -20,6 +21,7 @@ export function ProductSelector({
   isScrollingIntoSection?: (sectionId: string) => boolean;
 }) {
   const { categories, productIds, productsById } = useMarketingContent();
+  const { performanceMode } = useUI();
   const { resolvedTheme } = useTheme();
   const { addItem } = useCommerce();
   const [Product3DViewerComponent, setProduct3DViewerComponent] = useState<
@@ -34,6 +36,7 @@ export function ProductSelector({
   const [activeCategory, setActiveCategory] = useState(visibleCategories[0]?.id ?? "");
   const [selectedProduct, setSelectedProduct] = useState<ProductId>(productIds[0]);
   const isDark = resolvedTheme === "dark";
+  const allow3D = performanceMode === "premium";
   const scrollActive = isScrollingIntoSection ? isScrollingIntoSection("shop") : true;
 
   // Logic for filtered products based on category
@@ -43,7 +46,7 @@ export function ProductSelector({
   const pricing = getProductPriceSnapshot(productsById, safeSelectedProduct);
 
   useEffect(() => {
-    if (!scrollActive || !activeProduct?.model || Product3DViewerComponent) {
+    if (!allow3D || !scrollActive || !activeProduct?.model || Product3DViewerComponent) {
       return;
     }
 
@@ -58,7 +61,7 @@ export function ProductSelector({
     return () => {
       active = false;
     };
-  }, [Product3DViewerComponent, activeProduct?.model, scrollActive]);
+  }, [Product3DViewerComponent, activeProduct?.model, allow3D, scrollActive]);
 
   if (!activeProduct) return null;
 
@@ -130,7 +133,7 @@ export function ProductSelector({
                   transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   className="relative z-10 w-full h-full"
                 >
-                  {activeProduct?.model && scrollActive && Product3DViewerComponent ? (
+                  {allow3D && activeProduct?.model && scrollActive && Product3DViewerComponent ? (
                     <Product3DViewerComponent
                       modelPath={activeProduct.model}
                       theme={isDark ? "dark" : "light"}
@@ -143,6 +146,7 @@ export function ProductSelector({
                       src={activeProduct.image || ""}
                       alt={activeProduct.name}
                       fill
+                      sizes="(max-width: 1024px) 100vw, 42vw"
                       className="object-contain drop-shadow-[0_40px_80px_rgba(0,0,0,0.3)]"
                     />
                   )}
@@ -151,10 +155,7 @@ export function ProductSelector({
             </div>
             
             {/* The Floating Price Badge */}
-            <motion.div 
-              layoutId="price-badge"
-              className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-30 w-full max-w-xs"
-            >
+            <motion.div className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-30 w-full max-w-xs">
               <LiquidGlassCard
                 variant="default"
                 intensity="subtle"

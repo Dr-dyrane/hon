@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion, useScroll, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Equal, ShoppingBag, X } from "lucide-react";
 import { useMarketingContent } from "@/components/providers/MarketingContentProvider";
 import { cn } from "@/lib/utils";
@@ -16,13 +16,17 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useUI();
   const { itemCount, openCart } = useCommerce();
-  const { scrollY } = useScroll();
 
   useEffect(() => {
-    return scrollY.on("change", (latest) => {
-      setIsScrolled(latest > 50);
-    });
-  }, [scrollY]);
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -88,9 +92,9 @@ export function Navbar() {
 
           {/* Right Actions */}
           <div className="flex items-center justify-end gap-2 md:gap-3 w-auto md:w-1/4">
-            <motion.div layout className="hidden md:flex">
+            <div className="hidden md:flex">
               <ThemeToggle />
-            </motion.div>
+            </div>
 
             <Link
               href="/account"
@@ -116,16 +120,14 @@ export function Navbar() {
               ) : null}
             </button>
 
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
               {isScrolled && (
                 <motion.div
-                  layout
-                  initial={{ opacity: 0, scale: 0.8, width: 0 }}
-                  animate={{ opacity: 1, scale: 1, width: "auto" }}
-                  exit={{ opacity: 0, scale: 0.8, width: 0 }}
+                  initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.96 }}
                   transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                  className="overflow-hidden"
-                  style={{ display: "flex", alignItems: "center" }}
+                  className="hidden md:flex items-center"
                 >
                   <Link
                     href="#shop"

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
+import { revalidateMarketingSnapshot } from "@/lib/marketing/cache";
 import {
   createAdminCatalogCategory,
   createAdminCatalogIngredient,
@@ -40,6 +41,7 @@ function revalidateCatalogTaxonomyPaths(
   taxonomyType?: CatalogTaxonomyType,
   taxonomyId?: string
 ) {
+  revalidateMarketingSnapshot();
   revalidatePath("/");
   revalidatePath("/admin/catalog/products");
   revalidatePath("/admin/catalog/taxonomy");

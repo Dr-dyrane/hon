@@ -42,7 +42,7 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
 }) => {
   const cardRef = useRef<HTMLDivElement | null>(null)
   const [isVisible, setIsVisible] = useState(false)
-  const { liquidGlassState } = useLiquidGlass()
+  const { liquidGlassState, performanceMode } = useLiquidGlass()
 
   useEffect(() => {
     const node = cardRef.current
@@ -73,7 +73,7 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
   }
 
   const cssVariables = useMemo(() => {
-    if (!interactive || !isVisible) {
+    if (!interactive || !isVisible || performanceMode !== 'premium') {
       return {
         '--mouse-x': '50%',
         '--mouse-y': '50%'
@@ -84,14 +84,14 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
       '--mouse-x': `${liquidGlassState.mousePosition.x}%`,
       '--mouse-y': `${liquidGlassState.mousePosition.y}%`
     } as Record<string, string>
-  }, [interactive, isVisible, liquidGlassState.mousePosition.x, liquidGlassState.mousePosition.y])
+  }, [interactive, isVisible, liquidGlassState.mousePosition.x, liquidGlassState.mousePosition.y, performanceMode])
 
   const blurClass = useMemo(() => {
-    if (!isVisible) return ''
+    if (!isVisible || performanceMode !== 'premium') return ''
     if (liquidGlassState.scrollVelocity > 20) return 'scrolling-fast'
     if (liquidGlassState.scrollVelocity > 5) return 'scrolling-slow'
     return ''
-  }, [isVisible, liquidGlassState.scrollVelocity])
+  }, [isVisible, liquidGlassState.scrollVelocity, performanceMode])
 
   return (
     <>
@@ -108,13 +108,13 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        whileHover={interactive ? {
+        whileHover={interactive && performanceMode === 'premium' ? {
           scale: 1.005,
           transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
         } : undefined}
       >
         {/* Iridescent overlay for soap bubble effect - only render if visible */}
-        {isVisible && <div className="iridescent-overlay" />}
+        {isVisible && performanceMode === 'premium' ? <div className="iridescent-overlay" /> : null}
         
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-between h-full">

@@ -6,15 +6,19 @@ import { SectionContainer } from "@/components/ui/SectionContainer";
 import { HeroEyebrow } from "@/components/ui/HeroEyebrow";
 import { Cog, Plus, MoveRight, Timer } from "lucide-react";
 import Image from "next/image";
+import { useUI } from "@/components/providers/UIProvider";
 import { LiquidGlassCard } from "@/components/ui/LiquidGlassCard";
 import { useMobile } from "@/hooks/useMobile";
 
 export function HowItWorks() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { performanceMode } = useUI();
   const prefersReducedMotion = useReducedMotion();
   const isMobile = useMobile();
-  const enableParallax = !prefersReducedMotion && !isMobile;
-  const enableLoopingMotion = !prefersReducedMotion && !isMobile;
+  const enableParallax =
+    performanceMode === "premium" && !prefersReducedMotion && !isMobile;
+  const enableLoopingMotion =
+    performanceMode === "premium" && !prefersReducedMotion && !isMobile;
   const steps = [
     { label: "1 Scoop", sub: "Clean Fuel" },
     { label: "Water", sub: "Or Milk" },

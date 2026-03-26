@@ -1,7 +1,9 @@
 import "server-only";
 
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { marketingBootstrap } from "@/lib/marketing/bootstrap";
+import { MARKETING_SNAPSHOT_TAG } from "@/lib/marketing/cache";
 import { createMarketingSnapshot, type MarketingSnapshot } from "@/lib/marketing/snapshot";
 import type { IngredientProfile } from "@/lib/marketing/types";
 import {
@@ -16,10 +18,21 @@ import {
   getLayoutDraftDetail 
 } from "@/lib/db/repositories/layout-repository";
 import { isDatabaseConfigured } from "@/lib/db/client";
-import { type PublishedPageSection } from "@/lib/db/types";
 
 function getBootstrapSnapshot() {
   return createMarketingSnapshot(marketingBootstrap, "bootstrap");
+}
+
+async function getHomeSectionRows(mode: "published" | "draft") {
+  if (mode === "draft") {
+    const draftDetail = await getLayoutDraftDetail("home");
+
+    if (draftDetail) {
+      return getPageSectionsByVersion(draftDetail.version.versionId);
+    }
+  }
+
+  return getPublishedPageSections("home");
 }
 
 function readSetting<T>(settings: Map<string, unknown>, key: string, fallback: T) {
@@ -120,29 +133,17 @@ function resolveIngredientProfile(
   return null;
 }
 
-// Use a shared cache key that includes the version type
-export const getMarketingSnapshot = cache(async (mode: "published" | "draft" = "published"): Promise<MarketingSnapshot> => {
+async function buildMarketingSnapshot(
+  mode: "published" | "draft" = "published"
+): Promise<MarketingSnapshot> {
   if (!isDatabaseConfigured()) {
     return getBootstrapSnapshot();
   }
 
   try {
-    let sectionRows: PublishedPageSection[] = [];
-    
-    // Fetch sections based on mode
-    if (mode === "draft") {
-      const draftDetail = await getLayoutDraftDetail("home");
-      if (draftDetail) {
-        sectionRows = await getPageSectionsByVersion(draftDetail.version.versionId);
-      } else {
-        sectionRows = await getPublishedPageSections("home");
-      }
-    } else {
-      sectionRows = await getPublishedPageSections("home");
-    }
-
-    const [categories, products, ingredients, settingRows] =
+    const [sectionRows, categories, products, ingredients, settingRows] =
       await Promise.all([
+        getHomeSectionRows(mode),
         listMarketingCategories(),
         listMarketingProducts(),
         listMarketingIngredients(),
@@ -228,4 +229,23 @@ export const getMarketingSnapshot = cache(async (mode: "published" | "draft" = "
   } catch {
     return getBootstrapSnapshot();
   }
-});
+}
+
+const getCachedPublishedMarketingSnapshot = unstable_cache(
+  async () => buildMarketingSnapshot("published"),
+  ["marketing-snapshot:published"],
+  { tags: [MARKETING_SNAPSHOT_TAG] }
+);
+
+// Use a shared cache key that includes the version type
+export const getMarketingSnapshot = cache(
+  async (
+    mode: "published" | "draft" = "published"
+  ): Promise<MarketingSnapshot> => {
+    if (mode === "draft") {
+      return buildMarketingSnapshot("draft");
+    }
+
+    return getCachedPublishedMarketingSnapshot();
+  }
+);
