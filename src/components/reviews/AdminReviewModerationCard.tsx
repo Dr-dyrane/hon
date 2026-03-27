@@ -3,6 +3,8 @@
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { moderateReviewAction } from "@/app/(admin)/admin/reviews/actions";
+import { useFeedback } from "@/components/providers/FeedbackProvider";
+import { ActionStatusMessage } from "@/components/ui/ActionStatusMessage";
 import { INITIAL_REVIEW_ACTION_STATE } from "@/lib/reviews/action-state";
 import styles from "./AdminReviewModerationCard.module.css";
 
@@ -16,6 +18,7 @@ export function AdminReviewModerationCard({
   isFeatured: boolean;
 }) {
   const router = useRouter();
+  const feedback = useFeedback();
   const [state, formAction, pending] = useActionState(
     moderateReviewAction,
     INITIAL_REVIEW_ACTION_STATE
@@ -23,12 +26,22 @@ export function AdminReviewModerationCard({
 
   useEffect(() => {
     if (state.status === "success") {
+      feedback.success();
       router.refresh();
+      return;
     }
-  }, [router, state.status]);
+
+    if (state.status === "error") {
+      feedback.blocked();
+    }
+  }, [feedback, router, state.status]);
 
   return (
-    <form action={formAction} className={styles.form}>
+    <form
+      action={formAction}
+      className={styles.form}
+      onSubmitCapture={() => feedback.selection()}
+    >
       <input type="hidden" name="reviewId" value={reviewId} />
 
       {status !== "approved" ? (
@@ -67,7 +80,13 @@ export function AdminReviewModerationCard({
         </button>
       ) : null}
 
-      {state.message ? <p className={styles.message}>{state.message}</p> : null}
+      {pending ? (
+        <ActionStatusMessage tone="info">Saving moderation update...</ActionStatusMessage>
+      ) : state.message ? (
+        <ActionStatusMessage tone={state.status === "error" ? "error" : "success"}>
+          {state.message}
+        </ActionStatusMessage>
+      ) : null}
     </form>
   );
 }

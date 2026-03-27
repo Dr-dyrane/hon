@@ -9,9 +9,12 @@ import {
   setDefaultAddressAction,
 } from "@/app/(portal)/account/addresses/actions";
 import { useUI } from "@/components/providers/UIProvider";
+import { useFeedback } from "@/components/providers/FeedbackProvider";
+import { ActionStatusMessage } from "@/components/ui/ActionStatusMessage";
 import { cn } from "@/lib/utils";
 import { MapboxLocationPicker } from "@/components/maps/MapboxLocationPicker";
 import { MapboxAddressAutocomplete } from "@/components/maps/MapboxAddressAutocomplete";
+import { dispatchCommerceRefreshCheckoutDefaults } from "@/lib/cart/events";
 import type { MapboxAddressSuggestion } from "@/lib/mapbox-search";
 
 const emptyDraft = {
@@ -31,11 +34,18 @@ const emptyDraft = {
   isDefault: false,
 };
 
+function notifyCheckoutDefaultsChanged() {
+  dispatchCommerceRefreshCheckoutDefaults();
+}
+
 export function AddressBook({ addresses }: { addresses: PortalAddress[] }) {
   const { hasActiveOverlay } = useUI();
+  const feedback = useFeedback();
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
-  const [messageTone, setMessageTone] = useState<"success" | "error" | null>(null);
+  const [messageTone, setMessageTone] = useState<"success" | "error" | "info" | null>(
+    null
+  );
   const [activeStep, setActiveStep] = useState<"who" | "where" | "finish">("who");
   const [draft, setDraft] = useState(() =>
     addresses[0]
@@ -103,8 +113,9 @@ export function AddressBook({ addresses }: { addresses: PortalAddress[] }) {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage(null);
-    setMessageTone(null);
+    feedback.selection();
+    setMessage(editingId ? "Updating address..." : "Saving address...");
+    setMessageTone("info");
 
     const formData = new FormData(event.currentTarget);
     formData.set("addressId", editingId ?? "");
@@ -116,23 +127,28 @@ export function AddressBook({ addresses }: { addresses: PortalAddress[] }) {
       if (!result.success) {
         setMessage(result.error || "Unable to save.");
         setMessageTone("error");
+        feedback.blocked();
         return;
       }
 
-      setMessage(editingId ? "Updated." : "Added.");
+      setMessage(editingId ? "Address updated." : "Address added to saved places.");
       setMessageTone("success");
       setEditingId(null);
       setDraft(emptyDraft);
       setActiveStep("who");
+      notifyCheckoutDefaultsChanged();
+      feedback.success();
     });
   }
 
   function runMutation(
     action: () => Promise<{ success: boolean; error?: string }>,
-    successMessage: string
+    successMessage: string,
+    pendingMessage: string
   ) {
-    setMessage(null);
-    setMessageTone(null);
+    feedback.selection();
+    setMessage(pendingMessage);
+    setMessageTone("info");
 
     startTransition(async () => {
       const result = await action();
@@ -140,6 +156,7 @@ export function AddressBook({ addresses }: { addresses: PortalAddress[] }) {
       if (!result.success) {
         setMessage(result.error || "Unable to update.");
         setMessageTone("error");
+        feedback.blocked();
         return;
       }
 
@@ -150,6 +167,8 @@ export function AddressBook({ addresses }: { addresses: PortalAddress[] }) {
         setDraft(emptyDraft);
         setActiveStep("who");
       }
+      notifyCheckoutDefaultsChanged();
+      feedback.success();
     });
   }
 
@@ -408,6 +427,12 @@ export function AddressBook({ addresses }: { addresses: PortalAddress[] }) {
         </div>
       </form>
 
+      {message ? (
+        <ActionStatusMessage tone={messageTone ?? "info"}>
+          {message}
+        </ActionStatusMessage>
+      ) : null}
+
       {!hasAddressArchive ? (
         <div className="rounded-[28px] bg-[color:var(--surface)]/88 px-5 py-6 text-sm text-secondary-label shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
           No addresses yet.
@@ -459,7 +484,8 @@ export function AddressBook({ addresses }: { addresses: PortalAddress[] }) {
                         onClick={() =>
                           runMutation(
                             () => setDefaultAddressAction(address.addressId),
-                            "Default updated."
+                            "Default updated.",
+                            "Updating default address..."
                           )
                         }
                         className="flex min-h-[40px] items-center rounded-[18px] bg-system-fill/42 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label"
@@ -469,7 +495,10 @@ export function AddressBook({ addresses }: { addresses: PortalAddress[] }) {
                     ) : null}
                     <button
                       type="button"
-                      onClick={() => loadDraft(address)}
+                      onClick={() => {
+                        feedback.selection();
+                        loadDraft(address);
+                      }}
                       className="flex min-h-[40px] items-center rounded-[18px] bg-system-fill/42 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label"
                     >
                       Edit
@@ -479,7 +508,8 @@ export function AddressBook({ addresses }: { addresses: PortalAddress[] }) {
                       onClick={() =>
                         runMutation(
                           () => deleteAddressAction(address.addressId),
-                          "Removed."
+                          "Removed.",
+                          "Deleting address..."
                         )
                       }
                       className="flex min-h-[40px] items-center rounded-[18px] bg-system-fill/42 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-secondary-label"
@@ -506,6 +536,7 @@ export function AddressBook({ addresses }: { addresses: PortalAddress[] }) {
               "text-xs font-medium",
               messageTone === "success" && "text-accent",
               messageTone === "error" && "text-red-500",
+              messageTone === "info" && "text-secondary-label",
               !messageTone && "text-secondary-label"
             )}
           >

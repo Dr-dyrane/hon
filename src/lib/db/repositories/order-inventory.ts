@@ -21,6 +21,7 @@ type InventoryState = {
 };
 
 type OrderInventoryReadinessState = {
+  productId: string | null;
   variantId: string;
   quantity: number;
   title: string;
@@ -54,6 +55,7 @@ export async function getOrderInventoryAcceptanceReadiness(
   const result = await queryFn<OrderInventoryReadinessState>(
     `
       select
+        p.id as "productId",
         oi.variant_id as "variantId",
         sum(oi.quantity)::int as quantity,
         max(oi.title) as title,
@@ -61,11 +63,16 @@ export async function getOrderInventoryAcceptanceReadiness(
         ii.reserved as "reserved",
         ii.reorder_threshold as "reorderThreshold"
       from app.order_items oi
+      left join app.product_variants pv
+        on pv.id = oi.variant_id
+      left join app.products p
+        on p.id = pv.product_id
       left join app.inventory_items ii
         on ii.variant_id = oi.variant_id
       where oi.order_id = $1
         and oi.variant_id is not null
       group by
+        p.id,
         oi.variant_id,
         ii.on_hand,
         ii.reserved,
@@ -78,6 +85,7 @@ export async function getOrderInventoryAcceptanceReadiness(
   const rows: AdminOrderInventoryReadinessRow[] = result.rows.map((row) => {
     if (row.onHand === null || row.reserved === null) {
       return {
+        productId: row.productId,
         variantId: row.variantId,
         title: row.title,
         quantity: row.quantity,
@@ -96,6 +104,7 @@ export async function getOrderInventoryAcceptanceReadiness(
 
     if (available < row.quantity) {
       return {
+        productId: row.productId,
         variantId: row.variantId,
         title: row.title,
         quantity: row.quantity,
@@ -113,6 +122,7 @@ export async function getOrderInventoryAcceptanceReadiness(
 
     if (remainingAfterAccept <= lowThreshold || remainingAfterAccept === 0) {
       return {
+        productId: row.productId,
         variantId: row.variantId,
         title: row.title,
         quantity: row.quantity,
@@ -129,6 +139,7 @@ export async function getOrderInventoryAcceptanceReadiness(
     }
 
     return {
+      productId: row.productId,
       variantId: row.variantId,
       title: row.title,
       quantity: row.quantity,

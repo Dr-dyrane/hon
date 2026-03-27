@@ -4,7 +4,7 @@ import {
   submitPaymentForReview,
 } from "@/lib/db/repositories/orders-repository";
 import { sendPaymentProofSubmittedNotifications } from "@/lib/email/orders";
-import { serverEnv } from "@/lib/config/server";
+import { buildCustomerOrderLink } from "@/lib/orders/customer-links";
 import { resolveOrderProofAccess } from "@/lib/orders/proof-access";
 
 export async function POST(request: Request) {
@@ -74,9 +74,16 @@ export async function POST(request: Request) {
       proofIncluded: Boolean(storageKey),
       customerLink:
         access.mode === "guest" && body.accessToken?.trim()
-          ? `${serverEnv.public.appUrl}/checkout/orders/${orderId}?access=${encodeURIComponent(body.accessToken.trim())}`
+          ? buildCustomerOrderLink({
+              orderId,
+              scope: "guest",
+              accessToken: body.accessToken.trim(),
+            })
           : access.mode === "session"
-            ? `${serverEnv.public.appUrl}/account/orders/${orderId}`
+            ? buildCustomerOrderLink({
+                orderId,
+                scope: "account",
+              })
             : null,
     });
 

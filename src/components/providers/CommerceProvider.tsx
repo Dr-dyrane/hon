@@ -26,6 +26,11 @@ import {
   submitCheckoutOrder,
 } from "@/lib/cart/api-client";
 import {
+  COMMERCE_OPEN_CART_EVENT,
+  COMMERCE_REFRESH_CHECKOUT_DEFAULTS_EVENT,
+  COMMERCE_SYNC_CART_EVENT,
+} from "@/lib/cart/events";
+import {
   clearPersistedCheckoutDraft,
   persistCartItems,
   persistCheckoutDraft,
@@ -279,18 +284,26 @@ export function CommerceProvider({
     useState<CartCheckoutDefaults | null>(null);
   const [isHydratingCheckoutDefaults, setIsHydratingCheckoutDefaults] =
     useState(false);
-  const [hasRequestedCheckoutDefaults, setHasRequestedCheckoutDefaults] =
-    useState(false);
+  const checkoutDefaultsRequestRef = useRef(0);
+  const checkoutDefaultsAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const handleOpenCart = () => {
       setIsCartOpen(true);
     };
 
-    window.addEventListener("commerce:open-cart", handleOpenCart);
+    window.addEventListener(COMMERCE_OPEN_CART_EVENT, handleOpenCart);
 
     return () => {
-      window.removeEventListener("commerce:open-cart", handleOpenCart);
+      window.removeEventListener(COMMERCE_OPEN_CART_EVENT, handleOpenCart);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      checkoutDefaultsRequestRef.current += 1;
+      checkoutDefaultsAbortRef.current?.abort();
+      checkoutDefaultsAbortRef.current = null;
     };
   }, []);
 
@@ -394,9 +407,12 @@ export function CommerceProvider({
       setCheckoutError(null);
     };
 
-    window.addEventListener("commerce:sync-cart", handleSyncCart as EventListener);
+    window.addEventListener(COMMERCE_SYNC_CART_EVENT, handleSyncCart as EventListener);
     return () => {
-      window.removeEventListener("commerce:sync-cart", handleSyncCart as EventListener);
+      window.removeEventListener(
+        COMMERCE_SYNC_CART_EVENT,
+        handleSyncCart as EventListener
+      );
     };
   }, [applyRemoteSnapshot, validProductIds]);
 
@@ -414,43 +430,76 @@ export function CommerceProvider({
     [checkoutDefaults]
   );
 
+  const refreshCheckoutDefaults = useCallback(async () => {
+    const requestId = checkoutDefaultsRequestRef.current + 1;
+    checkoutDefaultsAbortRef.current?.abort();
+    const controller = new AbortController();
+    checkoutDefaultsRequestRef.current = requestId;
+    checkoutDefaultsAbortRef.current = controller;
+    setIsHydratingCheckoutDefaults(true);
+
+    try {
+      const defaults = await fetchCartCheckoutDefaults({
+        signal: controller.signal,
+      });
+
+      if (checkoutDefaultsRequestRef.current !== requestId) {
+        return;
+      }
+
+      setCheckoutDefaults(defaults ?? null);
+
+      if (defaults) {
+        setCheckoutForm((current) => mergeCheckoutDefaults(current, defaults));
+      }
+    } catch (error) {
+      if (
+        checkoutDefaultsRequestRef.current !== requestId ||
+        (error instanceof DOMException && error.name === "AbortError")
+      ) {
+        return;
+      }
+
+      setCheckoutDefaults(null);
+    } finally {
+      if (checkoutDefaultsRequestRef.current !== requestId) {
+        return;
+      }
+
+      if (checkoutDefaultsAbortRef.current === controller) {
+        checkoutDefaultsAbortRef.current = null;
+      }
+
+      if (checkoutDefaultsRequestRef.current === requestId) {
+        setIsHydratingCheckoutDefaults(false);
+      }
+    }
+  }, []);
+
   useEffect(() => {
-    if (!isCartOpen || hasRequestedCheckoutDefaults) {
+    if (!isCartOpen) {
       return;
     }
 
-    let active = true;
-    setHasRequestedCheckoutDefaults(true);
-    setIsHydratingCheckoutDefaults(true);
+    void refreshCheckoutDefaults();
+  }, [isCartOpen, refreshCheckoutDefaults]);
 
-    void fetchCartCheckoutDefaults()
-      .then((defaults) => {
-        if (!active) {
-          return;
-        }
+  useEffect(() => {
+    const handleRefreshCheckoutDefaults = () => {
+      if (isCartOpen) {
+        void refreshCheckoutDefaults();
+      }
+    };
 
-        setCheckoutDefaults(defaults);
-        if (defaults) {
-          setCheckoutForm((current) => mergeCheckoutDefaults(current, defaults));
-        }
-      })
-      .catch(() => {
-        if (!active) {
-          return;
-        }
-
-        setCheckoutDefaults(null);
-      })
-      .finally(() => {
-        if (active) {
-          setIsHydratingCheckoutDefaults(false);
-        }
-      });
+    window.addEventListener(COMMERCE_REFRESH_CHECKOUT_DEFAULTS_EVENT, handleRefreshCheckoutDefaults);
 
     return () => {
-      active = false;
+      window.removeEventListener(
+        COMMERCE_REFRESH_CHECKOUT_DEFAULTS_EVENT,
+        handleRefreshCheckoutDefaults
+      );
     };
-  }, [hasRequestedCheckoutDefaults, isCartOpen]);
+  }, [isCartOpen, refreshCheckoutDefaults]);
 
   const refreshCart = useCallback(async () => {
     setIsRefreshingCart(true);

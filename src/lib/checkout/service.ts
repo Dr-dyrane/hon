@@ -1,9 +1,9 @@
 import "server-only";
 
 import { createOrderFromCart } from "@/lib/db/repositories/cart-repository";
-import { serverEnv } from "@/lib/config/server";
 import { sendOrderPlacedNotifications } from "@/lib/email/orders";
 import { createGuestOrderAccessToken } from "@/lib/orders/access";
+import { buildCustomerOrderLink } from "@/lib/orders/customer-links";
 import { getPhoneValidationMessage, normalizePhoneToE164 } from "@/lib/phone";
 
 export type CheckoutPayload = {
@@ -77,9 +77,11 @@ export async function createCheckoutOrder(payload: CheckoutPayload) {
   const guestAccessToken = validated.userId
     ? null
     : createGuestOrderAccessToken(createdOrder.orderId);
-  const customerLink = guestAccessToken
-    ? `${serverEnv.public.appUrl}/checkout/orders/${createdOrder.orderId}?access=${encodeURIComponent(guestAccessToken)}`
-    : `${serverEnv.public.appUrl}/account/orders/${createdOrder.orderId}`;
+  const customerLink = buildCustomerOrderLink({
+    orderId: createdOrder.orderId,
+    scope: guestAccessToken ? "guest" : "account",
+    accessToken: guestAccessToken,
+  });
 
   await sendOrderPlacedNotifications({
     orderId: createdOrder.orderId,

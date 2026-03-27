@@ -10,7 +10,11 @@ import {
   type OrderNotificationSnapshot,
 } from "@/lib/db/repositories/order-notification-repository";
 import { getWorkspaceNotificationPreference } from "@/lib/db/repositories/notification-preferences-repository";
-import { createGuestOrderAccessToken } from "@/lib/orders/access";
+import {
+  buildCustomerOrderLink,
+  buildCustomerTrackingLink,
+  type CustomerLinkScope,
+} from "@/lib/orders/customer-links";
 
 function formatEmailTimestamp(value: string | null | undefined) {
   if (!value) {
@@ -106,18 +110,33 @@ function buildOrderEditorial(input: {
   });
 }
 
-function buildGuestOrderLink(orderId: string) {
-  const token = createGuestOrderAccessToken(orderId);
-
-  return `${serverEnv.public.appUrl}/checkout/orders/${orderId}?access=${encodeURIComponent(token)}`;
+function resolveCustomerLinkScope(
+  order: Pick<OrderNotificationSnapshot, "hasAccountAccess">
+): CustomerLinkScope {
+  return order.hasAccountAccess ? "account" : "guest";
 }
 
-function buildAccountOrderLink(orderId: string) {
-  return `${serverEnv.public.appUrl}/account/orders/${orderId}`;
+function resolveCustomerOrderLink(
+  order: Pick<OrderNotificationSnapshot, "orderId" | "hasAccountAccess">,
+  override?: string | null
+) {
+  if (override) {
+    return override;
+  }
+
+  return buildCustomerOrderLink({
+    orderId: order.orderId,
+    scope: resolveCustomerLinkScope(order),
+  });
 }
 
-function buildAccountTrackingLink(orderId: string) {
-  return `${serverEnv.public.appUrl}/account/tracking/${orderId}`;
+function resolveCustomerTrackingLink(
+  order: Pick<OrderNotificationSnapshot, "orderId" | "hasAccountAccess">
+) {
+  return buildCustomerTrackingLink({
+    orderId: order.orderId,
+    scope: resolveCustomerLinkScope(order),
+  });
 }
 
 function buildAdminOrderLink(orderId: string) {
@@ -131,6 +150,7 @@ function buildAdminPaymentsLink() {
 const ORDER_EMAIL_PREVIEW_SNAPSHOT: OrderNotificationSnapshot = {
   orderId: "preview-order-id",
   orderNumber: "HOP-7A9F102C",
+  hasAccountAccess: false,
   customerName: "Amina Musa",
   customerEmail: "amina@example.com",
   customerPhone: "+2348012345678",
@@ -181,7 +201,10 @@ export function buildOrderPlacedPreviewHtml() {
     block: buildOrderTransferBlock(order),
     cta: {
       label: "Open order",
-      url: `${serverEnv.public.appUrl}/checkout/orders/${order.orderId}`,
+      url: buildCustomerOrderLink({
+        orderId: order.orderId,
+        scope: "guest",
+      }),
     },
     footnote: "Add payment proof after transfer.",
   });
@@ -199,7 +222,10 @@ export function buildDeliveryUpdatePreviewHtml() {
     action: "Track the drop in real time.",
     cta: {
       label: "Track order",
-      url: `${serverEnv.public.appUrl}/checkout/orders/${order.orderId}/tracking`,
+      url: buildCustomerTrackingLink({
+        orderId: order.orderId,
+        scope: "guest",
+      }),
     },
   });
 }
@@ -284,7 +310,7 @@ async function sendCustomerWorkspacePush(
   return sendWorkspacePushToEmails([customerEmail], {
     title: input.title,
     body: input.body,
-    href: input.href ?? buildAccountOrderLink(order.orderId),
+    href: input.href ?? resolveCustomerOrderLink(order),
     tag: input.tag ?? `order-${order.orderId}`,
   });
 }
@@ -324,6 +350,10 @@ export async function sendOrderPlacedNotifications(input: {
       }).format(new Date(order.transferDeadlineAt))
     : "soon";
   const bankBlock = buildOrderTransferBlock(order);
+  const customerLink =
+    input.customerLink === null
+      ? null
+      : resolveCustomerOrderLink(order, input.customerLink);
 
   const customerEmail = await getSendableCustomerEmail(order);
 
@@ -349,10 +379,10 @@ export async function sendOrderPlacedNotifications(input: {
         }),
         action: !isRequest ? `Complete transfer before ${deadlineText}.` : undefined,
         block: !isRequest ? bankBlock : undefined,
-        cta: input.customerLink
+        cta: customerLink
           ? {
               label: "Open order",
-              url: input.customerLink,
+              url: customerLink,
             }
           : undefined,
         footnote: isRequest
@@ -367,7 +397,7 @@ export async function sendOrderPlacedNotifications(input: {
     body: isRequest
       ? `Order #${order.orderNumber} is with Praxy now.`
       : `Use ${order.transferReference} to complete payment.`,
-    href: buildAccountOrderLink(order.orderId),
+    href: customerLink ?? undefined,
   });
 
   const adminRecipients =
@@ -414,6 +444,63 @@ export async function sendOrderPlacedNotifications(input: {
   }
 }
 
+export async function sendOrderAcceptedNotification(input: {
+  orderId: string;
+  customerLink?: string | null;
+}) {
+  const order = await loadOrder(input.orderId);
+
+  if (!order) {
+    return;
+  }
+
+  const customerLink =
+    input.customerLink === null
+      ? null
+      : resolveCustomerOrderLink(order, input.customerLink);
+  const deadlineText = order.transferDeadlineAt
+    ? new Intl.DateTimeFormat("en-US", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(order.transferDeadlineAt))
+    : "soon";
+  const customerEmail = await getSendableCustomerEmail(order);
+
+  if (customerEmail) {
+    await sendSafe({
+      to: customerEmail,
+      subject: `Request accepted: ${order.orderNumber}`,
+      text: `Your request ${order.orderNumber} is approved. Use reference ${order.transferReference} to complete payment before ${deadlineText}.`,
+      html: buildOrderEditorial({
+        eyebrow: "Order update",
+        title: "Request accepted",
+        subtitle: "Your order is ready for payment.",
+        order,
+        facts: buildOrderFactLines(order, {
+          includeDeadline: true,
+          includePlacedAt: true,
+        }),
+        action: `Complete transfer before ${deadlineText}.`,
+        block: buildOrderTransferBlock(order),
+        cta: customerLink
+          ? {
+              label: "Open order",
+              url: customerLink,
+            }
+          : undefined,
+        footnote: "Add payment proof after transfer.",
+      }),
+    });
+  }
+
+  await sendCustomerWorkspacePush(order, {
+    title: "Transfer ready",
+    body: `#${order.orderNumber} was accepted. Use ${order.transferReference} to pay.`,
+    href: customerLink ?? undefined,
+    tag: `order-accepted-${order.orderId}`,
+  });
+}
+
 export async function sendPaymentProofSubmittedNotifications(input: {
   orderId: string;
   customerLink?: string | null;
@@ -426,6 +513,10 @@ export async function sendPaymentProofSubmittedNotifications(input: {
   }
 
   const proofIncluded = input.proofIncluded ?? true;
+  const customerLink =
+    input.customerLink === null
+      ? null
+      : resolveCustomerOrderLink(order, input.customerLink);
   const customerEmail = await getSendableCustomerEmail(order);
 
   if (customerEmail) {
@@ -446,10 +537,10 @@ export async function sendPaymentProofSubmittedNotifications(input: {
         order,
         facts: buildOrderFactLines(order, { includePlacedAt: true }),
         action: "Praxy will review this next.",
-        cta: input.customerLink
+        cta: customerLink
           ? {
               label: "Open order",
-              url: input.customerLink,
+              url: customerLink,
             }
           : undefined,
       }),
@@ -515,7 +606,7 @@ export async function sendTransferReminderNotification(input: {
     return false;
   }
 
-  const orderHref = buildGuestOrderLink(order.orderId);
+  const orderHref = resolveCustomerOrderLink(order);
 
   const sent = await sendSafe({
     to: customerEmail,
@@ -560,7 +651,7 @@ export async function sendReviewReminderNotification(input: {
     return false;
   }
 
-  const orderHref = buildGuestOrderLink(order.orderId);
+  const orderHref = resolveCustomerOrderLink(order);
 
   const sent = await sendSafe({
     to: customerEmail,
@@ -708,6 +799,7 @@ export async function sendPaymentDecisionNotification(input: {
     return;
   }
 
+  const customerLink = resolveCustomerOrderLink(order);
   const copy =
     input.action === "confirmed"
       ? {
@@ -738,6 +830,12 @@ export async function sendPaymentDecisionNotification(input: {
       order,
       facts: buildOrderFactLines(order),
       action: input.note ?? undefined,
+      cta: customerLink
+        ? {
+            label: "Open order",
+            url: customerLink,
+          }
+        : undefined,
     }),
   });
 
@@ -780,7 +878,8 @@ export async function sendDeliveryStatusNotification(input: {
           title: "On the way",
           intro: "Your blend is already moving.",
         };
-  const orderHref = buildGuestOrderLink(order.orderId);
+  const orderHref = resolveCustomerOrderLink(order);
+  const trackingHref = resolveCustomerTrackingLink(order);
 
   await sendSafe({
     to: customerEmail,
@@ -798,7 +897,7 @@ export async function sendDeliveryStatusNotification(input: {
           : "Track your delivery in real time.",
       cta: {
         label: input.status === "delivered" ? "Rate order" : "Open order",
-        url: orderHref,
+        url: input.status === "delivered" ? orderHref : trackingHref,
       },
     }),
   });
@@ -809,10 +908,7 @@ export async function sendDeliveryStatusNotification(input: {
       input.status === "delivered"
         ? `Order #${order.orderNumber} has been delivered.`
         : `Order #${order.orderNumber} is on the road.`,
-    href:
-      input.status === "delivered"
-        ? buildAccountOrderLink(order.orderId)
-        : buildAccountTrackingLink(order.orderId),
+    href: input.status === "delivered" ? orderHref ?? undefined : trackingHref,
   });
 }
 
@@ -832,6 +928,8 @@ export async function sendOrderCancelledNotification(input: {
     return;
   }
 
+  const customerLink = resolveCustomerOrderLink(order);
+
   await sendSafe({
     to: customerEmail,
     subject: `Order cancelled: ${order.orderNumber}`,
@@ -843,6 +941,12 @@ export async function sendOrderCancelledNotification(input: {
       order,
       facts: buildOrderFactLines(order),
       action: input.note ?? undefined,
+      cta: customerLink
+        ? {
+            label: "Open order",
+            url: customerLink,
+          }
+        : undefined,
     }),
   });
 
@@ -862,6 +966,7 @@ export async function sendOrderReturnRequestedNotifications(input: {
   }
 
   const customerEmail = await getSendableCustomerEmail(order);
+  const customerLink = resolveCustomerOrderLink(order);
 
   if (customerEmail) {
     await sendSafe({
@@ -875,6 +980,12 @@ export async function sendOrderReturnRequestedNotifications(input: {
         order,
         facts: buildOrderFactLines(order, { includePlacedAt: true }),
         action: "We will update you after review.",
+        cta: customerLink
+          ? {
+              label: "Open order",
+              url: customerLink,
+            }
+          : undefined,
       }),
     });
   }
@@ -939,7 +1050,7 @@ export async function sendOrderReturnProofSubmittedNotifications(input: {
         action: "Your return case is moving.",
         cta: {
           label: "Open order",
-          url: buildGuestOrderLink(order.orderId),
+          url: resolveCustomerOrderLink(order),
         },
       }),
     });
@@ -997,6 +1108,7 @@ export async function sendOrderReturnDecisionNotification(input: {
     return;
   }
 
+  const customerLink = resolveCustomerOrderLink(order);
   const copy =
     input.action === "approved"
       ? {
@@ -1030,6 +1142,12 @@ export async function sendOrderReturnDecisionNotification(input: {
       order,
       facts: buildOrderFactLines(order),
       action: input.note ?? undefined,
+      cta: customerLink
+        ? {
+            label: "Open order",
+            url: customerLink,
+          }
+        : undefined,
       footnote: copy.footer,
     }),
   });
@@ -1063,6 +1181,8 @@ export async function sendOrderRefundedNotification(input: {
     return;
   }
 
+  const customerLink = resolveCustomerOrderLink(order);
+
   await sendSafe({
     to: customerEmail,
     subject: `Refund sent for ${order.orderNumber}`,
@@ -1078,6 +1198,12 @@ export async function sendOrderRefundedNotification(input: {
         ...(input.note ? [input.note] : []),
       ],
       action: "Keep this reference for your records.",
+      cta: customerLink
+        ? {
+            label: "Open order",
+            url: customerLink,
+          }
+        : undefined,
     }),
   });
 

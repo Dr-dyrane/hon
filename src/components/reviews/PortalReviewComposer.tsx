@@ -3,6 +3,8 @@
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { submitReviewAction } from "@/app/(portal)/account/reviews/actions";
+import { useFeedback } from "@/components/providers/FeedbackProvider";
+import { ActionStatusMessage } from "@/components/ui/ActionStatusMessage";
 import { INITIAL_REVIEW_ACTION_STATE } from "@/lib/reviews/action-state";
 import styles from "./PortalReviewComposer.module.css";
 
@@ -16,6 +18,7 @@ export function PortalReviewComposer({
   completedAt: string;
 }) {
   const router = useRouter();
+  const feedback = useFeedback();
   const [state, formAction, pending] = useActionState(
     submitReviewAction,
     INITIAL_REVIEW_ACTION_STATE
@@ -23,12 +26,22 @@ export function PortalReviewComposer({
 
   useEffect(() => {
     if (state.status === "success") {
+      feedback.success();
       router.refresh();
+      return;
     }
-  }, [router, state.status]);
+
+    if (state.status === "error") {
+      feedback.blocked();
+    }
+  }, [feedback, router, state.status]);
 
   return (
-    <form action={formAction} className={styles.card}>
+    <form
+      action={formAction}
+      className={styles.card}
+      onSubmitCapture={() => feedback.selection()}
+    >
       <input type="hidden" name="orderId" value={orderId} />
 
       <div className={styles.head}>
@@ -55,8 +68,18 @@ export function PortalReviewComposer({
         />
       </div>
 
+      {pending ? (
+        <ActionStatusMessage tone="info">Submitting review...</ActionStatusMessage>
+      ) : state.message ? (
+        <ActionStatusMessage tone={state.status === "error" ? "error" : "success"}>
+          {state.message}
+        </ActionStatusMessage>
+      ) : null}
+
       <div className={styles.footer}>
-        <p className={styles.statusText}>{state.message ?? "Review"}</p>
+        <p className={styles.statusText}>
+          {pending ? "Submitting..." : state.message ?? "Review"}
+        </p>
         <button type="submit" disabled={pending} className={styles.submitButton}>
           {pending ? "Saving" : "Submit"}
         </button>
@@ -64,4 +87,3 @@ export function PortalReviewComposer({
     </form>
   );
 }
-

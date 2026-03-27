@@ -23,11 +23,21 @@ export type CartCheckoutDefaults = {
 async function readJson<T>(response: Response) {
   const payload = (await response.json()) as JsonResponse<T>;
 
-  if (!response.ok || !payload.ok || !payload.data) {
+  if (!response.ok || !payload.ok || payload.data === undefined) {
     throw new Error(payload.error || "Request failed.");
   }
 
   return payload.data;
+}
+
+async function readJsonAllowNull<T>(response: Response) {
+  const payload = (await response.json()) as JsonResponse<T | null>;
+
+  if (!response.ok || !payload.ok) {
+    throw new Error(payload.error || "Request failed.");
+  }
+
+  return payload.data ?? null;
 }
 
 export async function fetchCartSnapshot() {
@@ -39,13 +49,16 @@ export async function fetchCartSnapshot() {
   return readJson<CartSnapshot>(response);
 }
 
-export async function fetchCartCheckoutDefaults() {
+export async function fetchCartCheckoutDefaults(options?: {
+  signal?: AbortSignal;
+}) {
   const response = await fetch("/api/cart/defaults", {
     credentials: "same-origin",
     cache: "no-store",
+    signal: options?.signal,
   });
 
-  return readJson<CartCheckoutDefaults | null>(response);
+  return readJsonAllowNull<CartCheckoutDefaults>(response);
 }
 
 export async function replaceRemoteCartItems(

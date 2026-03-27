@@ -7,12 +7,13 @@ import {
   type ShellFabAction,
   type ShellHeaderRoute,
 } from "@/lib/app-shell";
+import { dispatchCommerceOpenCart } from "@/lib/cart/events";
 import { useFeedback } from "@/components/providers/FeedbackProvider";
 import { useUI } from "@/components/providers/UIProvider";
 
 function triggerHeaderAction(action: ShellFabAction, router: ReturnType<typeof useRouter>) {
   if (action.kind === "cart") {
-    window.dispatchEvent(new Event("commerce:open-cart"));
+    dispatchCommerceOpenCart();
     return;
   }
 

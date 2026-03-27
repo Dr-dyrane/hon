@@ -569,6 +569,7 @@ export type PortalOrderDetail = {
 };
 
 export type AdminOrderInventoryReadinessRow = {
+  productId: string | null;
   variantId: string;
   title: string;
   quantity: number;

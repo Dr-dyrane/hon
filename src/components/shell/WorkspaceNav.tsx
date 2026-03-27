@@ -15,6 +15,7 @@ import {
 import { useOptionalCommerce } from "@/components/providers/CommerceProvider";
 import { useFeedback } from "@/components/providers/FeedbackProvider";
 import { useUI } from "@/components/providers/UIProvider";
+import { dispatchCommerceOpenCart } from "@/lib/cart/events";
 import { cn } from "@/lib/utils";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { RouteFeedbackLink } from "@/components/ui/RouteFeedbackLink";
@@ -84,7 +85,7 @@ export function WorkspaceNav({
       feedback.selection();
 
       if (mobileFab.kind === "cart") {
-        window.dispatchEvent(new Event("commerce:open-cart"));
+        dispatchCommerceOpenCart();
         return;
       }
 

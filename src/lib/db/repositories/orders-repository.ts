@@ -14,9 +14,10 @@ import {
 } from "@/lib/db/repositories/order-inventory";
 import {
   sendOrderCancelledNotification,
-  sendOrderPlacedNotifications,
+  sendOrderAcceptedNotification,
   sendPaymentDecisionNotification,
 } from "@/lib/email/orders";
+import { buildCustomerOrderLink } from "@/lib/orders/customer-links";
 import { getDeliveryDefaultsSetting } from "@/lib/db/repositories/settings-repository";
 import type {
   AdminOrderInventoryReadiness,
@@ -304,11 +305,13 @@ export async function acceptOrderRequestByAdmin(
     deliveryDefaults.staleTransferWindowMinutes
   );
   let acceptedOrderId: string | null = null;
+  let acceptedCustomerLink: string | null = null;
 
   await withTransaction(async (queryFn) => {
     const orderResult = await queryFn<{
       orderId: string;
       status: string;
+      userId: string | null;
       paymentId: string | null;
       totalNgn: number;
     }>(
@@ -316,6 +319,7 @@ export async function acceptOrderRequestByAdmin(
         select
           o.id as "orderId",
           o.status,
+          o.user_id as "userId",
           p.id as "paymentId",
           o.total_ngn as "totalNgn"
         from app.orders o
@@ -407,6 +411,10 @@ export async function acceptOrderRequestByAdmin(
     );
 
     acceptedOrderId = order.orderId;
+    acceptedCustomerLink = buildCustomerOrderLink({
+      orderId: order.orderId,
+      scope: order.userId ? "account" : "guest",
+    });
   }, {
     actor: {
       userId: actorUserId,
@@ -416,9 +424,9 @@ export async function acceptOrderRequestByAdmin(
   });
 
   if (acceptedOrderId) {
-    await sendOrderPlacedNotifications({
+    await sendOrderAcceptedNotification({
       orderId: acceptedOrderId,
-      notifyAdmin: false,
+      customerLink: acceptedCustomerLink,
     });
   }
 }

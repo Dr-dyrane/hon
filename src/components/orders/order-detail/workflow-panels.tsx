@@ -133,13 +133,26 @@ export function PaymentPanel({
   const canOpen = Boolean(order.paymentId);
   const showInlineForm = inSheet || isFocused;
   const showEntryButton = !inSheet && !isFocused;
+  const paymentFlowStatus = order.payment?.status ?? order.paymentStatus;
+  const paymentAlreadyShared =
+    paymentFlowStatus === "submitted" || paymentFlowStatus === "under_review";
 
   const content = (
     <div className={cn(styles.taskShell, !inSheet && isFocused && styles.taskShellActive)}>
       {!inSheet ? (
         <TaskIntro
-          title={proofs.length > 0 ? "Payment proof activity" : "Upload payment proof"}
-          description={order.paymentId ? undefined : "Awaiting approval."}
+          title={
+            paymentAlreadyShared || proofs.length > 0
+              ? "Payment activity"
+              : "Mark payment sent"
+          }
+          description={
+            order.paymentId
+              ? paymentAlreadyShared
+                ? "Admin review decides the next step. Proof is optional."
+                : "Tell Praxy when transfer is complete. Proof is optional."
+              : "Awaiting approval."
+          }
           status={stageLabel}
           icon={stageIcon}
         />
@@ -153,7 +166,11 @@ export function PaymentPanel({
               className={styles.primaryTaskButton}
               onClick={onToggle}
             >
-              {proofs.length > 0 ? "Manage proofs" : "Upload proof"}
+              {paymentAlreadyShared
+                ? proofs.length > 0
+                  ? "Manage payment"
+                  : "Add proof"
+                : "I made payment"}
             </button>
           ) : null}
 

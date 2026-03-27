@@ -7,13 +7,19 @@ import { PreferenceToggleRow } from "@/components/forms/PreferenceToggleRow";
 import { WorkspacePushPreferenceRow } from "@/components/notifications/WorkspacePushPreferenceRow";
 import { updateProfileAction } from "@/app/(portal)/account/profile/actions";
 import { useUI } from "@/components/providers/UIProvider";
+import { useFeedback } from "@/components/providers/FeedbackProvider";
+import { ActionStatusMessage } from "@/components/ui/ActionStatusMessage";
+import { dispatchCommerceRefreshCheckoutDefaults } from "@/lib/cart/events";
 import { cn } from "@/lib/utils";
 
 export function PortalProfileForm({ profile }: { profile: PortalProfile }) {
   const { hasActiveOverlay } = useUI();
+  const feedback = useFeedback();
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
-  const [messageTone, setMessageTone] = useState<"success" | "error" | null>(null);
+  const [messageTone, setMessageTone] = useState<"success" | "error" | "info" | null>(
+    null
+  );
   const [activeStep, setActiveStep] = useState<"identity" | "updates">("identity");
   const [marketingOptIn, setMarketingOptIn] = useState(profile.marketingOptIn);
   const [workspaceEmailEnabled, setWorkspaceEmailEnabled] = useState(
@@ -31,8 +37,9 @@ export function PortalProfileForm({ profile }: { profile: PortalProfile }) {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage(null);
-    setMessageTone(null);
+    feedback.selection();
+    setMessage("Saving profile...");
+    setMessageTone("info");
 
     const formData = new FormData(event.currentTarget);
     formData.set("marketingOptIn", marketingOptIn ? "true" : "false");
@@ -45,11 +52,14 @@ export function PortalProfileForm({ profile }: { profile: PortalProfile }) {
       if (!result.success) {
         setMessage(result.error || "Unable to save.");
         setMessageTone("error");
+        feedback.blocked();
         return;
       }
 
-      setMessage("Saved.");
+      setMessage("Profile saved. Checkout details refreshed.");
       setMessageTone("success");
+      dispatchCommerceRefreshCheckoutDefaults();
+      feedback.success();
     });
   }
 
@@ -168,6 +178,12 @@ export function PortalProfileForm({ profile }: { profile: PortalProfile }) {
         </div>
       </ProgressiveFormSection>
 
+      {message ? (
+        <ActionStatusMessage tone={messageTone ?? "info"}>
+          {message}
+        </ActionStatusMessage>
+      ) : null}
+
       <div
         className={cn(
           "z-layer-sticky-action sticky bottom-6 hidden md:block",
@@ -180,6 +196,7 @@ export function PortalProfileForm({ profile }: { profile: PortalProfile }) {
               "text-xs font-medium",
               messageTone === "success" && "text-accent",
               messageTone === "error" && "text-red-500",
+              messageTone === "info" && "text-secondary-label",
               !messageTone && "text-secondary-label"
             )}
           >

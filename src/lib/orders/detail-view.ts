@@ -68,7 +68,21 @@ export function getOrderHeroSummary(args: {
     order.status === "awaiting_transfer" ||
     order.paymentStatus === "awaiting_transfer"
   ) {
-    return proofs.length > 0 ? "Proof submitted." : "Awaiting transfer.";
+    return "Awaiting transfer.";
+  }
+
+  if (
+    order.status === "payment_under_review" ||
+    order.paymentStatus === "under_review"
+  ) {
+    return "Payment under review.";
+  }
+
+  if (
+    order.status === "payment_submitted" ||
+    order.paymentStatus === "submitted"
+  ) {
+    return proofs.length > 0 ? "Proof submitted." : "Money sent.";
   }
 
   if (order.fulfillmentStatus === "out_for_delivery") {

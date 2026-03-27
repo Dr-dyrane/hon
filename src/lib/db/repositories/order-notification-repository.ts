@@ -16,6 +16,7 @@ export type OrderNotificationItemSnapshot = {
 export type OrderNotificationSnapshot = {
   orderId: string;
   orderNumber: string;
+  hasAccountAccess: boolean;
   customerName: string;
   customerEmail: string | null;
   customerPhone: string;
@@ -61,6 +62,7 @@ export async function getOrderNotificationSnapshot(orderId: string) {
       select
         o.id as "orderId",
         o.public_order_number as "orderNumber",
+        (o.user_id is not null) as "hasAccountAccess",
         o.customer_name as "customerName",
         o.customer_email as "customerEmail",
         o.customer_phone_e164 as "customerPhone",
@@ -92,6 +94,7 @@ export async function getOrderNotificationSnapshot(orderId: string) {
       group by
         o.id,
         o.public_order_number,
+        o.user_id,
         o.customer_name,
         o.customer_email,
         o.customer_phone_e164,

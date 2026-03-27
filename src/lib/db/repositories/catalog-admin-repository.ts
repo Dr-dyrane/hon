@@ -1445,30 +1445,47 @@ export async function updateAdminCatalogInventory(
       ? null
       : normalizeMoney(input.reorderThreshold);
 
-  await query(
-    `
-      insert into app.inventory_items (
-        variant_id,
-        on_hand,
-        reserved,
-        reorder_threshold
-      )
-      values ($1, $2, 0, $3)
-      on conflict (variant_id)
-      do update set
-        on_hand = $2,
-        reorder_threshold = $3,
-        updated_at = timezone('utc', now())
-    `,
-    [variantId, onHand, reorderThreshold],
-    {
-      actor: {
-        userId: input.actorUserId ?? null,
-        email: input.actorEmail ?? null,
-        role: "admin",
-      },
+  await withTransaction(async (queryFn) => {
+    const existingInventoryResult = await queryFn<{ reserved: number }>(
+      `
+        select reserved
+        from app.inventory_items
+        where variant_id = $1
+        for update
+      `,
+      [variantId]
+    );
+
+    const reserved = existingInventoryResult.rows[0]?.reserved ?? 0;
+
+    if (onHand < reserved) {
+      throw new Error(`On-hand stock cannot be lower than ${reserved} reserved.`);
     }
-  );
+
+    await queryFn(
+      `
+        insert into app.inventory_items (
+          variant_id,
+          on_hand,
+          reserved,
+          reorder_threshold
+        )
+        values ($1, $2, 0, $3)
+        on conflict (variant_id)
+        do update set
+          on_hand = $2,
+          reorder_threshold = $3,
+          updated_at = timezone('utc', now())
+      `,
+      [variantId, onHand, reorderThreshold]
+    );
+  }, {
+    actor: {
+      userId: input.actorUserId ?? null,
+      email: input.actorEmail ?? null,
+      role: "admin",
+    },
+  });
 }
 
 export async function setAdminCatalogProductAvailability(

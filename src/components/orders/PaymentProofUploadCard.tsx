@@ -54,11 +54,11 @@ function isStorageUnavailableError(message: string) {
 function getPaymentStateMessage(paymentStatus: string) {
   switch (paymentStatus) {
     case "submitted":
-      return "Submitted.";
+      return "Payment shared with Praxy.";
     case "under_review":
-      return "Under review.";
+      return "Payment under review.";
     case "confirmed":
-      return "Confirmed.";
+      return "Payment confirmed.";
     case "expired":
       return "Transfer window closed.";
     default:
@@ -105,32 +105,49 @@ export function PaymentProofUploadCard({
   const [isSubmitting, startTransition] = useTransition();
   const { tap, paymentReceived, blocked } = useFeedback();
 
-  const isLocked =
-    typeof paymentStatus === "string" &&
-    !["awaiting_transfer", "rejected"].includes(paymentStatus);
+  const canEditPayment =
+    typeof paymentStatus !== "string" ||
+    ["awaiting_transfer", "rejected", "submitted", "under_review"].includes(paymentStatus);
+  const paymentAlreadyShared =
+    paymentStatus === "submitted" || paymentStatus === "under_review";
+  const isClosed = !canEditPayment;
   const [step, setStep] = useState<PaymentStep>(() =>
-    directEntry && !isLocked ? "pick" : "idle"
+    directEntry && !isClosed ? "pick" : "idle"
   );
 
   const helperText = useMemo(() => {
-    if (isLocked) {
+    if (isClosed) {
       return getPaymentStateMessage(paymentStatus ?? "submitted");
     }
 
-    if (paymentStatus === "submitted") {
-      return "Proof submitted.";
+    if (paymentStatus === "under_review") {
+      return "Payment is with Praxy. Add proof if it helps review.";
     }
 
-    return "Upload proof.";
-  }, [isLocked, paymentStatus]);
+    if (paymentStatus === "submitted") {
+      return "Payment marked sent. Proof is still optional.";
+    }
+
+    return "Tell Praxy when payment is sent. Proof is optional.";
+  }, [isClosed, paymentStatus]);
 
   if (!paymentId) {
     return null;
   }
 
   function openPicker() {
-    if (isLocked) return;
+    if (isClosed) return;
     inputRef.current?.click();
+  }
+
+  function resetToPaymentStep() {
+    setSelectedFile(null);
+    setError("");
+    setStep("pick");
+
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
   }
 
   function onFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -153,13 +170,7 @@ export function PaymentProofUploadCard({
     setStep("confirm");
   }
 
-  async function submitProof() {
-    if (!selectedFile) {
-      setError("Choose a file before submitting.");
-      setStep("pick");
-      return;
-    }
-
+  async function submitPaymentUpdate() {
     startTransition(async () => {
       try {
         setMessage(null);
@@ -173,58 +184,60 @@ export function PaymentProofUploadCard({
             }
           | null = null;
 
-        const presignResponse = await fetch("/api/payment-proofs/presign", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            orderId,
-            paymentId,
-            accessToken,
-            fileName: selectedFile.name,
-            contentType: selectedFile.type || "application/octet-stream",
-          }),
-        });
-
-        const presignPayload = await readJsonPayload<{
-          ok: boolean;
-          error?: string;
-          data?: {
-            uploadUrl: string;
-            storageKey: string;
-            publicUrl: string;
-            contentType: string;
-          };
-        }>(presignResponse);
-
-        if (!presignResponse.ok || !presignPayload?.ok || !presignPayload.data) {
-          const presignError = presignPayload?.error || "Try again.";
-
-          if (!presignResponse.ok && isStorageUnavailableError(presignError)) {
-            storagePayload = null;
-          } else {
-            throw new Error(presignError);
-          }
-        } else {
-          const uploadResponse = await fetch(presignPayload.data.uploadUrl, {
-            method: "PUT",
+        if (selectedFile) {
+          const presignResponse = await fetch("/api/payment-proofs/presign", {
+            method: "POST",
+            credentials: "same-origin",
             headers: {
-              "Content-Type": presignPayload.data.contentType,
+              "Content-Type": "application/json",
             },
-            body: selectedFile,
+            body: JSON.stringify({
+              orderId,
+              paymentId,
+              accessToken,
+              fileName: selectedFile.name,
+              contentType: selectedFile.type || "application/octet-stream",
+            }),
           });
 
-          if (!uploadResponse.ok) {
-            throw new Error("Upload failed. Please try again.");
-          }
+          const presignPayload = await readJsonPayload<{
+            ok: boolean;
+            error?: string;
+            data?: {
+              uploadUrl: string;
+              storageKey: string;
+              publicUrl: string;
+              contentType: string;
+            };
+          }>(presignResponse);
 
-          storagePayload = {
-            storageKey: presignPayload.data.storageKey,
-            publicUrl: presignPayload.data.publicUrl,
-            contentType: presignPayload.data.contentType,
-          };
+          if (!presignResponse.ok || !presignPayload?.ok || !presignPayload.data) {
+            const presignError = presignPayload?.error || "Try again.";
+
+            if (!presignResponse.ok && isStorageUnavailableError(presignError)) {
+              storagePayload = null;
+            } else {
+              throw new Error(presignError);
+            }
+          } else {
+            const uploadResponse = await fetch(presignPayload.data.uploadUrl, {
+              method: "PUT",
+              headers: {
+                "Content-Type": presignPayload.data.contentType,
+              },
+              body: selectedFile,
+            });
+
+            if (!uploadResponse.ok) {
+              throw new Error("Upload failed. Please try again.");
+            }
+
+            storagePayload = {
+              storageKey: presignPayload.data.storageKey,
+              publicUrl: presignPayload.data.publicUrl,
+              contentType: presignPayload.data.contentType,
+            };
+          }
         }
 
         const commitResponse = await fetch("/api/payment-proofs/commit", {
@@ -261,8 +274,10 @@ export function PaymentProofUploadCard({
           tone: "success",
           text:
             selectedFile && !storagePayload
-              ? "Transfer confirmed. Add proof later."
-              : "Proof uploaded.",
+              ? "Payment shared. Proof can be added later."
+              : selectedFile
+                ? "Payment shared. Proof uploaded."
+                : "Payment shared with Praxy.",
         });
         setStep("success");
         paymentReceived();
@@ -305,11 +320,11 @@ export function PaymentProofUploadCard({
             <h3 className={styles.title}>Payment proof</h3>
             <p className={styles.description}>{helperText}</p>
           </div>
-          <div className={styles.statusPill}>{isLocked ? "Locked" : getStepLabel(step)}</div>
+          <div className={styles.statusPill}>{isClosed ? "Locked" : getStepLabel(step)}</div>
         </div>
       ) : null}
 
-      {!isLocked && step === "idle" ? (
+      {!isClosed && step === "idle" ? (
         <div className={styles.compactScene}>
           <button
             type="button"
@@ -319,13 +334,13 @@ export function PaymentProofUploadCard({
               setStep("pick");
             }}
           >
-            Upload proof
+            {paymentAlreadyShared ? "Add proof" : "I made payment"}
           </button>
         </div>
       ) : null}
 
       <AnimatePresence mode="wait" initial={false}>
-        {step === "pick" && !isLocked ? (
+        {step === "pick" && !isClosed ? (
           <motion.section
             key="pick"
             className={styles.scene}
@@ -334,31 +349,65 @@ export function PaymentProofUploadCard({
             exit={SCENE_MOTION.exit}
             transition={SCENE_MOTION.transition}
           >
+            <div className={styles.fieldStack}>
+              <div>
+                <h4 className={styles.sceneTitle}>
+                  {paymentAlreadyShared ? "Add proof if you have it" : "Payment made?"}
+                </h4>
+                <p className={styles.sceneHint}>
+                  {paymentAlreadyShared
+                    ? "Admin review decides the next step. You can still add proof or a note here."
+                    : "Tell Praxy the transfer is done. Proof is optional and can speed up review."}
+                </p>
+              </div>
+
+              <label className={styles.field}>
+                <span className={styles.label}>Optional note</span>
+                <textarea
+                  className={styles.textarea}
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                  placeholder="Reference, sender name, or anything admin should check"
+                  rows={3}
+                />
+              </label>
+            </div>
+
             <button type="button" className={styles.dropZone} onClick={openPicker}>
-              <span className={styles.dropZoneTitle}>Choose a file</span>
+              <span className={styles.dropZoneTitle}>Add proof (optional)</span>
               <span className={styles.dropZoneText}>
-                PNG, JPG, WEBP, PDF - up to {MAX_FILE_MB} MB
+                PNG, JPG, WEBP, PDF - up to {MAX_FILE_MB} MB. You can skip this.
               </span>
             </button>
 
             {error ? <div className={styles.errorBanner}>{error}</div> : null}
 
             <div className={styles.actionsRow}>
-              <button type="button" className={styles.primaryButton} onClick={openPicker}>
-                Browse files
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={() => void submitPaymentUpdate()}
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? "Sending..."
+                  : paymentAlreadyShared
+                    ? "Send update"
+                    : "Notify admin"}
               </button>
               <button
                 type="button"
                 className={styles.secondaryButton}
                 onClick={() => setStep("idle")}
+                disabled={isSubmitting}
               >
-                Cancel
+                Back
               </button>
             </div>
           </motion.section>
         ) : null}
 
-        {step === "confirm" && selectedFile && !isLocked ? (
+        {step === "confirm" && selectedFile && !isClosed ? (
           <motion.section
             key="confirm"
             className={styles.scene}
@@ -391,18 +440,18 @@ export function PaymentProofUploadCard({
               <button
                 type="button"
                 className={styles.secondaryButton}
-                onClick={resetFlow}
+                onClick={resetToPaymentStep}
                 disabled={isSubmitting}
               >
-                Replace
+                Remove proof
               </button>
               <button
                 type="button"
                 className={styles.primaryButton}
-                onClick={() => void submitProof()}
+                onClick={() => void submitPaymentUpdate()}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Uploading..." : "Submit proof"}
+                {isSubmitting ? "Uploading..." : "Send with proof"}
               </button>
             </div>
           </motion.section>
@@ -418,8 +467,8 @@ export function PaymentProofUploadCard({
             transition={SCENE_MOTION.transition}
           >
             <div className={styles.successCard}>
-              <div className={styles.successTitle}>Proof uploaded</div>
-              <div className={styles.successText}>Pending review.</div>
+              <div className={styles.successTitle}>Payment shared</div>
+              <div className={styles.successText}>Admin can review it now.</div>
             </div>
 
             <div className={styles.actionsRow}>
@@ -428,7 +477,7 @@ export function PaymentProofUploadCard({
                 className={styles.secondaryButton}
                 onClick={resetFlow}
               >
-                Upload another file
+                {selectedFile ? "Upload another file" : "Add proof now"}
               </button>
             </div>
           </motion.section>
@@ -447,10 +496,16 @@ export function PaymentProofUploadCard({
         </div>
       ) : null}
 
-      {isLocked ? (
+      {isClosed ? (
         <div className={styles.successCard}>
-          <div className={styles.successTitle}>Payment already reviewed</div>
-          <div className={styles.successText}>Not editable for this status.</div>
+          <div className={styles.successTitle}>
+            {paymentStatus === "confirmed" ? "Payment confirmed" : "Payment closed"}
+          </div>
+          <div className={styles.successText}>
+            {paymentStatus === "confirmed"
+              ? "Admin verified the transfer. No further payment update is needed."
+              : "This transfer window is closed."}
+          </div>
         </div>
       ) : null}
     </div>
