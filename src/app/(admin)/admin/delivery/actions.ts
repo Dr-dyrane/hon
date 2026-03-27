@@ -26,10 +26,18 @@ function normalizeOptionalNote(value: FormDataEntryValue | null) {
 }
 
 function revalidateDeliverySurfaces(orderId?: string | null) {
+  revalidatePath("/admin");
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin/payments");
   revalidatePath("/admin/delivery");
+  revalidatePath("/account");
+  revalidatePath("/account/orders");
 
   if (orderId) {
     revalidatePath(`/admin/orders/${orderId}`);
+    revalidatePath(`/account/orders/${orderId}`);
+    revalidatePath(`/account/tracking/${orderId}`);
+    revalidatePath(`/checkout/orders/${orderId}`);
   }
 }
 

@@ -36,8 +36,8 @@ export function WorkspaceCartTrigger() {
       {itemCount > 0 ? (
         <span
           className={cn(
-            "rounded-full bg-[var(--accent)] px-2 py-1 text-[10px] font-semibold tracking-tight text-[var(--accent-label)]",
-            "md:max-lg:absolute md:max-lg:-right-1 md:max-lg:-top-1 md:max-lg:h-5 md:max-lg:min-w-5 md:max-lg:px-0 md:max-lg:text-center md:max-lg:leading-5"
+            "absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-center text-[10px] font-semibold leading-5 tracking-tight text-[var(--accent-label)]",
+            "lg:static lg:h-auto lg:min-w-0 lg:px-2 lg:py-1 lg:leading-none"
           )}
         >
           {itemCount}

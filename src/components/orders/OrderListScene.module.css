@@ -60,6 +60,7 @@
 .section {
   display: grid;
   gap: 0.62rem;
+  scroll-margin-top: 5rem;
 }
 
 .sectionHeader {
@@ -388,4 +389,3 @@
     transition: none;
   }
 }
-

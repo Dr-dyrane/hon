@@ -803,3 +803,7 @@ export function useCommerce() {
 
   return context;
 }
+
+export function useOptionalCommerce() {
+  return useContext(CommerceContext);
+}

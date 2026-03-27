@@ -14,6 +14,7 @@ import { getDeliveryRouteEstimate } from "@/lib/delivery/route-estimate";
 import { getTrackingCoords } from "@/lib/delivery/tracking";
 import type {
   AdminDeliveryOrder,
+  AdminOrderDeliveryWorkflow,
   AdminDeliveryRider,
   DeliveryCourierSession,
   DeliveryTimelineEvent,
@@ -583,6 +584,87 @@ export async function getAdminDeliveryBoardSnapshot(input?: {
     riders,
     trackingEnabled: deliveryDefaults.trackingEnabled,
   };
+}
+
+export async function getAdminOrderDeliveryWorkflow(
+  orderId: string,
+  actorEmail?: string | null
+) {
+  if (!orderId || !isDatabaseConfigured()) {
+    return null;
+  }
+
+  const result = await query<AdminOrderDeliveryWorkflow>(
+    `
+      select
+        o.id as "orderId",
+        o.status as "orderStatus",
+        o.fulfillment_status as "fulfillmentStatus",
+        case
+          when o.status in ('cancelled', 'expired')
+            or o.fulfillment_status in ('cancelled', 'failed')
+            then 'closed'
+          when o.status = 'delivered'
+            or o.fulfillment_status = 'delivered'
+            then 'delivered'
+          when o.status = 'out_for_delivery'
+            or o.fulfillment_status = 'out_for_delivery'
+            then 'out_for_delivery'
+          when o.status = 'ready_for_dispatch'
+            or o.fulfillment_status = 'ready_for_dispatch'
+            then 'ready_for_dispatch'
+          when o.status in ('payment_confirmed', 'preparing')
+            or o.fulfillment_status = 'preparing'
+            then 'preparing'
+          else 'not_ready'
+        end as "deliveryStage",
+        da."assignmentId",
+        da."assignmentStatus",
+        da."riderId",
+        da."riderName",
+        da."riderPhone",
+        da."riderVehicleType",
+        de."latestDeliveryEventType",
+        de."latestDeliveryEventAt"
+      from app.orders o
+      left join lateral (
+        select
+          a.id as "assignmentId",
+          a.status as "assignmentStatus",
+          r.id as "riderId",
+          r.name as "riderName",
+          r.phone_e164 as "riderPhone",
+          r.vehicle_type as "riderVehicleType"
+        from app.delivery_assignments a
+        left join app.riders r
+          on r.id = a.rider_id
+        where a.order_id = o.id
+        order by
+          case
+            when a.status = any($2::text[]) then 0
+            else 1
+          end asc,
+          a.updated_at desc,
+          a.created_at desc
+        limit 1
+      ) da on true
+      left join lateral (
+        select
+          event_type as "latestDeliveryEventType",
+          created_at as "latestDeliveryEventAt"
+        from app.delivery_events
+        where order_id = o.id
+        order by created_at desc
+        limit 1
+      ) de on true
+      where o.id = $1
+      limit 1
+    `,
+    [orderId, ACTIVE_ORDER_ASSIGNMENT_STATUSES],
+    { actor: buildAdminActor(actorEmail) }
+  );
+
+  return result.rows[0] ?? null;
 }
 
 export async function createOrUpdateRider(input: {

@@ -5,11 +5,29 @@ import { requireAdminSession } from "@/lib/auth/guards";
 import { advanceOrderReturnCase } from "@/lib/db/repositories/order-returns-repository";
 import { ensureUserByEmail } from "@/lib/db/repositories/user-repository";
 import {
+  assignRiderToOrder,
+  markOrderReadyForDispatch,
+  updateDeliveryAssignmentStatus,
+} from "@/lib/db/repositories/delivery-repository";
+import {
   acceptOrderRequestByAdmin,
   cancelOrderByAdmin,
   reviewPayment,
 } from "@/lib/db/repositories/orders-repository";
 import type { OrderAdminActionState } from "@/lib/orders/action-state";
+
+function revalidateOrderManagementSurfaces(orderId: string) {
+  revalidatePath("/admin");
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/admin/payments");
+  revalidatePath("/admin/delivery");
+  revalidatePath("/account");
+  revalidatePath("/account/orders");
+  revalidatePath(`/account/orders/${orderId}`);
+  revalidatePath(`/account/tracking/${orderId}`);
+  revalidatePath(`/checkout/orders/${orderId}`);
+}
 
 export async function acceptOrderRequestAction(
   _previousState: OrderAdminActionState,
@@ -36,12 +54,7 @@ export async function acceptOrderRequestAction(
       note
     );
 
-    revalidatePath(`/admin/orders/${orderId}`);
-    revalidatePath("/admin/orders");
-    revalidatePath("/admin/payments");
-    revalidatePath("/account/orders");
-    revalidatePath(`/account/orders/${orderId}`);
-    revalidatePath(`/checkout/orders/${orderId}`);
+    revalidateOrderManagementSurfaces(orderId);
 
     return {
       status: "success",
@@ -80,7 +93,7 @@ export async function reviewPaymentAction(formData: FormData) {
     note
   );
 
-  revalidatePath(`/admin/orders/${orderId}`);
+  revalidateOrderManagementSurfaces(orderId);
 }
 
 export async function cancelOrderAction(formData: FormData) {
@@ -101,10 +114,7 @@ export async function cancelOrderAction(formData: FormData) {
     note
   );
 
-  revalidatePath(`/admin/orders/${orderId}`);
-  revalidatePath("/admin/orders");
-  revalidatePath("/admin/payments");
-  revalidatePath("/admin/delivery");
+  revalidateOrderManagementSurfaces(orderId);
 }
 
 export async function advanceReturnCaseAction(formData: FormData) {
@@ -134,6 +144,73 @@ export async function advanceReturnCaseAction(formData: FormData) {
     refundReference,
   });
 
-  revalidatePath(`/admin/orders/${orderId}`);
-  revalidatePath("/admin/orders");
+  revalidateOrderManagementSurfaces(orderId);
+}
+
+export async function markReadyForDispatchAction(formData: FormData) {
+  const orderId = formData.get("orderId")?.toString();
+  const note = formData.get("note")?.toString().trim() || null;
+
+  if (!orderId) {
+    throw new Error("Order is required.");
+  }
+
+  const session = await requireAdminSession(`/admin/orders/${orderId}`);
+  const actor = await ensureUserByEmail(session.email);
+
+  await markOrderReadyForDispatch({
+    orderId,
+    actorUserId: actor?.userId ?? null,
+    actorEmail: session.email,
+    note,
+  });
+
+  revalidateOrderManagementSurfaces(orderId);
+}
+
+export async function assignOrderRiderAction(formData: FormData) {
+  const orderId = formData.get("orderId")?.toString();
+  const riderId = formData.get("riderId")?.toString();
+  const note = formData.get("note")?.toString().trim() || null;
+
+  if (!orderId || !riderId) {
+    throw new Error("Order and rider are required.");
+  }
+
+  const session = await requireAdminSession(`/admin/orders/${orderId}`);
+  const actor = await ensureUserByEmail(session.email);
+
+  await assignRiderToOrder({
+    orderId,
+    riderId,
+    actorUserId: actor?.userId ?? null,
+    actorEmail: session.email,
+    note,
+  });
+
+  revalidateOrderManagementSurfaces(orderId);
+}
+
+export async function updateOrderAssignmentStatusAction(formData: FormData) {
+  const orderId = formData.get("orderId")?.toString();
+  const assignmentId = formData.get("assignmentId")?.toString();
+  const nextStatus = formData.get("nextStatus")?.toString();
+  const note = formData.get("note")?.toString().trim() || null;
+
+  if (!orderId || !assignmentId || !nextStatus) {
+    throw new Error("Assignment update is incomplete.");
+  }
+
+  const session = await requireAdminSession(`/admin/orders/${orderId}`);
+  const actor = await ensureUserByEmail(session.email);
+
+  await updateDeliveryAssignmentStatus({
+    assignmentId,
+    nextStatus,
+    actorUserId: actor?.userId ?? null,
+    actorEmail: session.email,
+    note,
+  });
+
+  revalidateOrderManagementSurfaces(orderId);
 }

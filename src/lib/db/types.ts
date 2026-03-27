@@ -292,6 +292,27 @@ export type AdminDeliveryOrder = {
   latestTrackingRecordedAt: string | null;
 };
 
+export type AdminOrderDeliveryWorkflow = {
+  orderId: string;
+  orderStatus: string;
+  fulfillmentStatus: string;
+  deliveryStage:
+    | "not_ready"
+    | "preparing"
+    | "ready_for_dispatch"
+    | "out_for_delivery"
+    | "delivered"
+    | "closed";
+  assignmentId: string | null;
+  assignmentStatus: string | null;
+  riderId: string | null;
+  riderName: string | null;
+  riderPhone: string | null;
+  riderVehicleType: string | null;
+  latestDeliveryEventType: string | null;
+  latestDeliveryEventAt: string | null;
+};
+
 export type AdminDeliveryRider = {
   riderId: string;
   name: string;

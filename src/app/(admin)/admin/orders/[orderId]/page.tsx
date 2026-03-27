@@ -4,6 +4,10 @@ import { OrderDetailView } from "@/components/orders/OrderDetailView";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
 import {
+  getAdminOrderDeliveryWorkflow,
+  listAdminDeliveryRiders,
+} from "@/lib/db/repositories/delivery-repository";
+import {
   getLatestOrderReturnCase,
   listOrderReturnCaseItems,
   listOrderReturnEvents,
@@ -118,6 +122,8 @@ export default async function AdminOrderDetailPage({
     returnEvents,
     returnProofs,
     requestReadiness,
+    deliveryWorkflow,
+    riders,
   ] = await Promise.all([
     listOrderStatusEvents(orderId, adminActor),
     order.paymentId ? listPaymentReviewEvents(order.paymentId, session.email) : [],
@@ -130,6 +136,8 @@ export default async function AdminOrderDetailPage({
     order.status === "checkout_draft"
       ? getAdminOrderInventoryReadiness(orderId, session.email)
       : Promise.resolve(null),
+    getAdminOrderDeliveryWorkflow(orderId, session.email),
+    listAdminDeliveryRiders(24, session.email),
   ]);
 
   const returnItems = returnCase
@@ -177,15 +185,12 @@ export default async function AdminOrderDetailPage({
             isRequestPending={isRequestPending}
             requestReadiness={requestReadiness}
             paymentActions={paymentActions}
+            deliveryWorkflow={deliveryWorkflow}
+            riders={riders}
             canCancel={canCancelOrder(order)}
           />
         </div>
 
-        {requestReadiness ? (
-          <div className="mt-4 rounded-[22px] bg-system-fill/42 px-4 py-3 text-sm text-secondary-label">
-            {requestReadiness.summary}
-          </div>
-        ) : null}
       </section>
 
       {paymentReviews.length > 0 ? (

@@ -12,6 +12,7 @@ import {
   type ShellNavIcon,
   type ShellNavItem,
 } from "@/lib/app-shell";
+import { useOptionalCommerce } from "@/components/providers/CommerceProvider";
 import { useFeedback } from "@/components/providers/FeedbackProvider";
 import { useUI } from "@/components/providers/UIProvider";
 import { cn } from "@/lib/utils";
@@ -54,6 +55,7 @@ export function WorkspaceNav({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const commerce = useOptionalCommerce();
   const { hasActiveOverlay, pendingPathname, startRouteNavigation } = useUI();
   const feedback = useFeedback();
 
@@ -72,6 +74,7 @@ export function WorkspaceNav({
         }
       : null;
     const mobileFab = matchedRoute?.mobileFab ?? defaultAdminFab;
+    const cartItemCount = mobileFab?.kind === "cart" ? commerce?.itemCount ?? 0 : 0;
 
     const handleMobileFab = () => {
       if (!mobileFab) {
@@ -180,7 +183,18 @@ export function WorkspaceNav({
               hasActiveOverlay && "pointer-events-none translate-y-4 opacity-0"
             )}
           >
-            <Icon name={FAB_ICON_MAP[mobileFab.icon]} className="h-[20px] w-[20px]" strokeWidth={1.9} />
+            <span className="relative inline-flex h-[20px] w-[20px] items-center justify-center">
+              <Icon
+                name={FAB_ICON_MAP[mobileFab.icon]}
+                className="h-[20px] w-[20px]"
+                strokeWidth={1.9}
+              />
+              {mobileFab.kind === "cart" && cartItemCount > 0 ? (
+                <span className="absolute -right-5 -top-5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--surface)] px-1.5 text-center text-[10px] font-semibold leading-5 tracking-tight text-label shadow-[0_8px_16px_rgba(15,23,42,0.18)]">
+                  {cartItemCount}
+                </span>
+              ) : null}
+            </span>
           </button>
         ) : null}
       </>

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { CircleEllipsis, Clock3, Landmark, PackageCheck, RotateCcw } from "lucide-react";
 import { MetricRail } from "@/components/admin/MetricRail";
@@ -7,6 +8,7 @@ import {
   type OrderListEntry,
   type OrderListSection,
 } from "@/components/orders/OrderListScene";
+import { RouteFeedbackLink } from "@/components/ui/RouteFeedbackLink";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { formatNgn } from "@/lib/commerce";
 import { listOpenOrderReturnCasesForAdmin } from "@/lib/db/repositories/order-returns-repository";
@@ -23,6 +25,7 @@ import { cn } from "@/lib/utils";
 import styles from "./orders-page.module.css";
 
 type AdminOrderRow = Awaited<ReturnType<typeof listOrdersForAdmin>>[number];
+type OrdersTone = "idle" | "active" | "overloaded";
 
 type OrderEntry = {
   order: AdminOrderRow;
@@ -50,6 +53,26 @@ function formatDate(value?: string | null) {
 
 function formatStatusLabel(value: string) {
   return value.replace(/_/g, " ");
+}
+
+function resolveOrdersTone(input: {
+  needsAttentionCount: number;
+  activeCount: number;
+  openReturnsCount: number;
+}): OrdersTone {
+  if (input.needsAttentionCount >= 8) {
+    return "overloaded";
+  }
+
+  if (
+    input.needsAttentionCount > 0 ||
+    input.activeCount > 0 ||
+    input.openReturnsCount > 0
+  ) {
+    return "active";
+  }
+
+  return "idle";
 }
 
 function getBannerState(input: {
@@ -116,6 +139,96 @@ function mapAdminEntryToListSceneEntry(entry: OrderEntry): OrderListEntry {
   };
 }
 
+function getHeroState(input: {
+  tone: OrdersTone;
+  activeCount: number;
+  needsAttentionCount: number;
+  openReturnsCount: number;
+  paymentReviewCount: number;
+  nextAttentionEntry: OrderEntry | null;
+  nextLiveEntry: OrderEntry | null;
+}) {
+  const {
+    tone,
+    activeCount,
+    needsAttentionCount,
+    openReturnsCount,
+    paymentReviewCount,
+    nextAttentionEntry,
+    nextLiveEntry,
+  } = input;
+
+  if (tone === "overloaded") {
+    return {
+      title: "Order queue pressure is high.",
+      detail: nextAttentionEntry
+        ? `Start with #${nextAttentionEntry.order.orderNumber}. Clear requests and payment checks before prep slips.`
+        : "Clear requests and payment checks before prep slips.",
+      primaryActionHref: nextAttentionEntry?.href ?? "#needs_attention",
+      primaryActionLabel: nextAttentionEntry?.action.label ?? "Open queue",
+      secondaryActionHref:
+        paymentReviewCount > 0 ? "/admin/payments" : "#needs_attention",
+      secondaryActionLabel:
+        paymentReviewCount > 0 ? "Open payments" : "Open queue",
+      pill: "Escalated queue",
+    };
+  }
+
+  if (needsAttentionCount > 0) {
+    return {
+      title: `${needsAttentionCount} order${needsAttentionCount === 1 ? "" : "s"} need attention.`,
+      detail: nextAttentionEntry
+        ? `Start with #${nextAttentionEntry.order.orderNumber}, then move back into prep and dispatch.`
+        : "Clear blockers first, then move back into prep and dispatch.",
+      primaryActionHref: nextAttentionEntry?.href ?? "#needs_attention",
+      primaryActionLabel: nextAttentionEntry?.action.label ?? "Open queue",
+      secondaryActionHref:
+        paymentReviewCount > 0 ? "/admin/payments" : "#in_progress",
+      secondaryActionLabel:
+        paymentReviewCount > 0 ? "Open payments" : "Live queue",
+      pill: "Attention queue active",
+    };
+  }
+
+  if (activeCount > 0) {
+    return {
+      title: `${activeCount} order${activeCount === 1 ? "" : "s"} in motion.`,
+      detail: nextLiveEntry
+        ? `Fulfillment is moving. Jump into #${nextLiveEntry.order.orderNumber} and keep the queue tight.`
+        : "Fulfillment is moving. Keep preparation and dispatch moving.",
+      primaryActionHref: nextLiveEntry?.href ?? "#in_progress",
+      primaryActionLabel: nextLiveEntry ? "Open live order" : "Open live queue",
+      secondaryActionHref:
+        openReturnsCount > 0 ? "#open-returns" : "/admin/payments",
+      secondaryActionLabel:
+        openReturnsCount > 0 ? "Open returns" : "Open payments",
+      pill: "Fulfillment active",
+    };
+  }
+
+  if (openReturnsCount > 0) {
+    return {
+      title: `${openReturnsCount} return${openReturnsCount === 1 ? "" : "s"} still open.`,
+      detail: "Order flow is clear, but return follow-through still needs attention.",
+      primaryActionHref: "#open-returns",
+      primaryActionLabel: "Open returns",
+      secondaryActionHref: "/admin/catalog/products",
+      secondaryActionLabel: "Open catalog",
+      pill: "Return queue active",
+    };
+  }
+
+  return {
+    title: "Order queue is clear.",
+    detail: "No active orders right now. Keep payments and catalog ready for the next request.",
+    primaryActionHref: "/admin/catalog/products",
+    primaryActionLabel: "Open catalog",
+    secondaryActionHref: "/admin/payments",
+    secondaryActionLabel: "Open payments",
+    pill: "No active queue",
+  };
+}
+
 export default async function AdminOrdersPage() {
   const session = await requireAdminSession("/admin/orders");
   const [orders, openReturns] = await Promise.all([
@@ -124,6 +237,10 @@ export default async function AdminOrdersPage() {
   ]);
 
   const requests = orders.filter((order) => order.status === "checkout_draft").length;
+  const paymentReviewCount = orders.filter(
+    (order) =>
+      order.status === "payment_submitted" || order.status === "payment_under_review"
+  ).length;
   const awaitingTransfer = orders.filter(
     (order) =>
       order.status !== "checkout_draft" &&
@@ -177,6 +294,27 @@ export default async function AdminOrdersPage() {
     activeCount: activeEntries.length,
     needsAttentionCount: needsAttentionEntries.length,
   });
+  const tone = resolveOrdersTone({
+    needsAttentionCount: needsAttentionEntries.length,
+    activeCount: activeEntries.length,
+    openReturnsCount: openReturns.length,
+  });
+  const heroState = getHeroState({
+    tone,
+    activeCount: activeEntries.length,
+    needsAttentionCount: needsAttentionEntries.length,
+    openReturnsCount: openReturns.length,
+    paymentReviewCount,
+    nextAttentionEntry: needsAttentionEntries[0] ?? null,
+    nextLiveEntry: inProgressEntries[0] ?? null,
+  });
+  const queueSummary = `${requests} requests - ${paymentReviewCount} payment checks - ${preparingOrders} preparing`;
+  const activityPillText =
+    activeEntries.length === 0 && openReturns.length > 0
+      ? `${openReturns.length} return${openReturns.length === 1 ? "" : "s"} open`
+      : tone === "idle"
+        ? heroState.pill
+        : queueSummary;
 
   const sections: OrderListSection[] = [
     {
@@ -197,15 +335,73 @@ export default async function AdminOrdersPage() {
   ];
 
   return (
-    <div className="space-y-6 pb-20 md:space-y-8">
-      <section className="space-y-5">
-        <div className="rounded-[24px] bg-system-fill/42 p-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.04)] md:inline-flex">
-          <div className="grid grid-cols-2 gap-1.5">
-            <QuickLink href="/admin/orders" label="Orders" />
-            <QuickLink href="/admin/payments" label="Payments" />
-          </div>
+    <div className={styles.page}>
+      <section
+        className={cn(
+          styles.hero,
+          tone === "overloaded"
+            ? styles.heroOverloaded
+            : tone === "active"
+              ? styles.heroActive
+              : styles.heroIdle
+        )}
+      >
+        <div>
+          <p className={styles.heroEyebrow}>Order workflow</p>
+          <h1 className={styles.heroTitle}>{heroState.title}</h1>
+          <p className={styles.heroDetail}>{heroState.detail}</p>
         </div>
 
+        <div className={styles.heroActions}>
+          <SurfaceLink href={heroState.primaryActionHref} className={styles.primaryAction}>
+            {heroState.primaryActionLabel}
+          </SurfaceLink>
+          <SurfaceLink
+            href={heroState.secondaryActionHref}
+            className={styles.secondaryAction}
+          >
+            {heroState.secondaryActionLabel}
+          </SurfaceLink>
+        </div>
+
+        <div className={styles.activityPill}>{activityPillText}</div>
+
+        <div className={styles.mobileQueueStrip}>
+          <QueueAction
+            href={needsAttentionEntries[0]?.href ?? "#needs_attention"}
+            label="Needs attention"
+            detail={
+              needsAttentionEntries[0]
+                ? `#${needsAttentionEntries[0].order.orderNumber}`
+                : "Queue clear"
+            }
+            value={`${needsAttentionEntries.length}`}
+            meta={needsAttentionEntries[0]?.action.label ?? "Open queue"}
+            priority={needsAttentionEntries.length > 0}
+          />
+          <QueueAction
+            href="/admin/payments"
+            label="Payments"
+            detail={
+              paymentReviewCount > 0 ? "Money sent" : `${awaitingTransfer} awaiting`
+            }
+            value={`${paymentReviewCount}`}
+            meta={paymentReviewCount > 0 ? "Review" : "Monitor"}
+          />
+          <QueueAction
+            href={inProgressEntries[0]?.href ?? "#in_progress"}
+            label="Live queue"
+            detail={
+              preparingOrders > 0 ? `${preparingOrders} preparing` : "Prep and dispatch"
+            }
+            value={`${inProgressEntries.length}`}
+            meta={inProgressEntries[0] ? "Open" : "Queue"}
+            priority={needsAttentionEntries.length === 0 && inProgressEntries.length > 0}
+          />
+        </div>
+      </section>
+
+      <div className="hidden md:block">
         <MetricRail
           items={[
             {
@@ -242,7 +438,7 @@ export default async function AdminOrdersPage() {
           ]}
           columns={4}
         />
-      </section>
+      </div>
 
       <OrderListScene
         banner={bannerState}
@@ -252,7 +448,7 @@ export default async function AdminOrdersPage() {
       />
 
       {openReturns.length > 0 ? (
-        <section className={styles.section}>
+        <section id="open-returns" className={styles.section}>
           <header className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>Open returns</h2>
             <span className={styles.sectionCount}>{openReturns.length}</span>
@@ -287,9 +483,12 @@ export default async function AdminOrdersPage() {
                     <span className={styles.footerState}>
                       {formatDate(returnCase.requestedAt)}
                     </span>
-                    <Link href={`/admin/orders/${returnCase.orderId}`} className={styles.actionButton}>
+                    <SurfaceLink
+                      href={`/admin/orders/${returnCase.orderId}`}
+                      className={styles.actionButton}
+                    >
                       Open case
-                    </Link>
+                    </SurfaceLink>
                   </div>
                 </div>
               </article>
@@ -316,14 +515,59 @@ function CompactOrderStat({
   );
 }
 
-function QuickLink({ href, label }: { href: string; label: string }) {
+function QueueAction({
+  href,
+  label,
+  detail,
+  value,
+  meta,
+  priority = false,
+}: {
+  href: string;
+  label: string;
+  detail: string;
+  value: string;
+  meta: string;
+  priority?: boolean;
+}) {
   return (
-    <Link
+    <SurfaceLink
       href={href}
-      className="flex min-h-[40px] items-center justify-center rounded-[18px] px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-label transition-colors duration-200 hover:bg-[color:var(--surface)] hover:shadow-soft"
+      className={cn(styles.queueAction, priority && styles.queueActionPriority)}
     >
-      {label}
-    </Link>
+      <div>
+        <p className={styles.queueActionLabel}>{label}</p>
+        <p className={styles.queueActionDetail}>{detail}</p>
+      </div>
+      <div>
+        <p className={styles.queueActionValue}>{value}</p>
+        <p className={styles.queueActionMeta}>{meta}</p>
+      </div>
+    </SurfaceLink>
+  );
+}
+
+function SurfaceLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className: string;
+  children: ReactNode;
+}) {
+  if (href.startsWith("#")) {
+    return (
+      <Link href={href} className={className}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <RouteFeedbackLink href={href} className={className}>
+      {children}
+    </RouteFeedbackLink>
   );
 }
 

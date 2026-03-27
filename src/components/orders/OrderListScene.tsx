@@ -88,7 +88,11 @@ export function OrderListScene({
       ) : (
         <div className={styles.sectionStack}>
           {visibleSections.map((section) => (
-            <section key={section.sectionKey} className={styles.section}>
+            <section
+              key={section.sectionKey}
+              id={section.sectionKey}
+              className={styles.section}
+            >
               <header className={styles.sectionHeader}>
                 <h2 className={styles.sectionTitle}>{section.title}</h2>
                 <span className={styles.sectionCount}>{section.entries.length}</span>
