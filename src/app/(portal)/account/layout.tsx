@@ -17,7 +17,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
 
   return (
     <MarketingContentProvider snapshot={marketingSnapshot}>
-      <CommerceProvider>
+      <CommerceProvider checkoutDraftScope={session.email}>
         <WorkspaceShell
           eyebrow="Customer Portal"
           title="Store"

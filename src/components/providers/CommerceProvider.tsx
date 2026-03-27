@@ -7,6 +7,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -25,6 +26,13 @@ import {
   submitCheckoutOrder,
 } from "@/lib/cart/api-client";
 import {
+  clearPersistedCheckoutDraft,
+  persistCartItems,
+  persistCheckoutDraft,
+  readPersistedCartItems,
+  readPersistedCheckoutDraft,
+} from "@/lib/cart/indexed-db";
+import {
   SHOT_BUNDLE,
   getProductDisplayName,
   getProductPriceSnapshot,
@@ -33,7 +41,7 @@ import {
 } from "@/lib/commerce";
 import type { ProductId } from "@/lib/marketing/types";
 
-const CART_STORAGE_KEY = "hop-cart-v1";
+const LEGACY_CART_STORAGE_KEY = "hop-cart-v1";
 
 type CartItem = {
   productId: ProductId;
@@ -193,7 +201,7 @@ function readLegacyCartSnapshot(productIds: Set<string>) {
     return emptyCartSnapshot;
   }
 
-  const rawValue = window.localStorage.getItem(CART_STORAGE_KEY);
+  const rawValue = window.localStorage.getItem(LEGACY_CART_STORAGE_KEY);
 
   if (!rawValue) {
     return emptyCartSnapshot;
@@ -211,7 +219,19 @@ function clearLegacyCartSnapshot() {
     return;
   }
 
-  window.localStorage.removeItem(CART_STORAGE_KEY);
+  window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
+}
+
+function hasCheckoutDraftContent(value: CheckoutFormState) {
+  return (
+    value.fullName.trim().length > 0 ||
+    value.email.trim().length > 0 ||
+    value.phoneNumber.trim().length > 0 ||
+    value.deliveryLocation.trim().length > 0 ||
+    value.notes.trim().length > 0 ||
+    value.latitude.trim().length > 0 ||
+    value.longitude.trim().length > 0
+  );
 }
 
 const RECOVERABLE_CART_MESSAGES = new Set([
@@ -236,11 +256,18 @@ function isRecoverableCartMessage(message: string) {
   return RECOVERABLE_CART_MESSAGES.has(message);
 }
 
-export function CommerceProvider({ children }: { children: ReactNode }) {
+export function CommerceProvider({
+  children,
+  checkoutDraftScope = null,
+}: {
+  children: ReactNode;
+  checkoutDraftScope?: string | null;
+}) {
   const router = useRouter();
   const { productIds, productsById } = useMarketingContent();
   const { blocked, selection, success, tap } = useFeedback();
   const validProductIds = useMemo(() => new Set(productIds), [productIds]);
+  const hasHydratedPersistenceRef = useRef(false);
   const [cartItems, setCartItems] = useState<CartItem[]>(emptyCartSnapshot);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartReady, setIsCartReady] = useState(false);
@@ -271,13 +298,34 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
     let active = true;
 
     async function hydrateCart() {
+      const [persistedCartItems, persistedCheckoutDraft] = await Promise.all([
+        readPersistedCartItems(),
+        readPersistedCheckoutDraft(checkoutDraftScope),
+      ]);
       const legacyItems = readLegacyCartSnapshot(validProductIds);
+      const indexedDbItems = sanitizeCartItems(persistedCartItems, validProductIds);
+      const fallbackItems =
+        indexedDbItems.length > 0 ? indexedDbItems : legacyItems;
+
+      if (!active) {
+        return;
+      }
+
+      if (fallbackItems.length > 0) {
+        setCartItems(fallbackItems);
+      }
+
+      if (persistedCheckoutDraft) {
+        setCheckoutForm(persistedCheckoutDraft);
+      }
+
+      hasHydratedPersistenceRef.current = true;
 
       try {
         let snapshot = await fetchCartSnapshot();
 
-        if (snapshot.items.length === 0 && legacyItems.length > 0) {
-          snapshot = await replaceRemoteCartItems(legacyItems);
+        if (snapshot.items.length === 0 && fallbackItems.length > 0) {
+          snapshot = await replaceRemoteCartItems(fallbackItems);
         }
 
         if (!active) {
@@ -292,7 +340,7 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        setCartItems(legacyItems);
+        setCartItems(fallbackItems);
       } finally {
         if (active) {
           setIsCartReady(true);
@@ -305,12 +353,38 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [validProductIds]);
+  }, [checkoutDraftScope, validProductIds]);
 
   const applyRemoteSnapshot = useCallback((items: CartItem[]) => {
     setCartItems(items);
     clearLegacyCartSnapshot();
   }, []);
+
+  useEffect(() => {
+    if (!hasHydratedPersistenceRef.current) {
+      return;
+    }
+
+    void persistCartItems(
+      cartItems.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      }))
+    );
+  }, [cartItems]);
+
+  useEffect(() => {
+    if (!hasHydratedPersistenceRef.current) {
+      return;
+    }
+
+    if (!hasCheckoutDraftContent(checkoutForm)) {
+      void clearPersistedCheckoutDraft(checkoutDraftScope);
+      return;
+    }
+
+    void persistCheckoutDraft(checkoutDraftScope, checkoutForm);
+  }, [checkoutDraftScope, checkoutForm]);
 
   useEffect(() => {
     const handleSyncCart = (event: Event) => {
